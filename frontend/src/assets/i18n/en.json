@@ -1813,7 +1813,7 @@
       "Address": "Incident address",
       "Placeholder": "e.g. Warszawa, Wiejska 4/6/8",
       "Find": "Find",
-      "MapHint": "You can also click a spot on the map.",
+      "MapHint": "or click a spot on the map",
       "MapPoint": "Point chosen on the map",
       "Approx": "building number not found, showing the street",
       "Clear": "Clear",
@@ -1828,7 +1828,11 @@
       "Unknown": "Opening hours unknown – availability must be checked on site:",
       "Api": "The same for 112 systems via the API:",
       "NotFound": "Address not found. Type it as: Warszawa, Wiejska 4/6/8.",
-      "Error": "Search failed. Please try again."
+      "Error": "Search failed. Please try again.",
+      "UseLocation": "Use my location",
+      "Locating": "Finding your location…",
+      "MyLocation": "Your location",
+      "GeoDenied": "Could not get your location. Allow it in the browser or type the address."
     }
   }
 }

@@ -28,6 +28,7 @@ type IncidentQuery = { address: string } | { lat: number; lon: number };
 
 const FAR_WALK_MIN = 5;
 const NOT_FOUND = 404;
+const GEO_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 };
 
 @Component({
   selector: 'app-aed-page',
@@ -74,6 +75,7 @@ export class AedPageComponent implements OnInit {
   readonly nearestLoading = signal(false);
   readonly nearestError = signal('');
   readonly copied = signal(-1);
+  readonly locating = signal(false);
   readonly farWalkMin = FAR_WALK_MIN;
   private incident: IncidentQuery | null = null;
   private incidentLabel: Pick<AedIncidentPoint, 'label' | 'exact'> | null = null;
@@ -119,6 +121,43 @@ export class AedPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.locateIfAllowed();
+  }
+
+  get canLocate(): boolean {
+    return !!this.document.defaultView?.navigator.geolocation;
+  }
+
+  useMyLocation(): void {
+    const geolocation = this.document.defaultView?.navigator.geolocation;
+    if (!geolocation) {
+      return;
+    }
+    this.locating.set(true);
+    this.nearestError.set('');
+    geolocation.getCurrentPosition(
+      ({ coords }) => {
+        this.locating.set(false);
+        this.incidentText.set('');
+        this.incident = { lat: coords.latitude, lon: coords.longitude };
+        this.incidentLabel = { label: this.translate.instant('Aed.Nearest.MyLocation'), exact: true };
+        this.findNearest();
+      },
+      () => {
+        this.locating.set(false);
+        this.nearestError.set('Aed.Nearest.GeoDenied');
+      },
+      GEO_OPTIONS,
+    );
+  }
+
+  /** Searches from the visitor's position on load only when they already allowed it, so the page never opens with a prompt. */
+  private locateIfAllowed(): void {
+    const permissions = this.document.defaultView?.navigator.permissions;
+    permissions
+      ?.query({ name: 'geolocation' })
+      .then((status) => status.state === 'granted' && this.useMyLocation())
+      .catch(() => undefined);
   }
 
   get hourLabel(): string {

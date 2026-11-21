@@ -90,7 +90,17 @@
               [placeholder]="'Aed.Nearest.Placeholder' | translate" />
             <button type="submit" class="aed-btn">{{ 'Aed.Nearest.Find' | translate }}</button>
           </div>
-          <p class="aed-muted aed-incident__hint">{{ 'Aed.Nearest.MapHint' | translate }}</p>
+          <div class="aed-incident__alt">
+            <button
+              *ngIf="canLocate"
+              type="button"
+              class="aed-btn aed-btn--ghost"
+              [disabled]="locating()"
+              (click)="useMyLocation()">
+              {{ (locating() ? 'Aed.Nearest.Locating' : 'Aed.Nearest.UseLocation') | translate }}
+            </button>
+            <span class="aed-muted">{{ 'Aed.Nearest.MapHint' | translate }}</span>
+          </div>
         </form>
 
         <section class="aed-nearest" *ngIf="nearestLoading() || nearest() || nearestError()" aria-live="polite">

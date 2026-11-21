@@ -1816,7 +1816,7 @@
       "Address": "Adres zdarzenia",
       "Placeholder": "np. Warszawa, Wiejska 4/6/8",
       "Find": "Znajdź",
-      "MapHint": "Możesz też kliknąć miejsce na mapie.",
+      "MapHint": "albo kliknij miejsce na mapie",
       "MapPoint": "Punkt wskazany na mapie",
       "Approx": "nie znaleziono numeru, pokazano ulicę",
       "Clear": "Wyczyść",
@@ -1831,7 +1831,11 @@
       "Unknown": "Godziny nieznane – dostępność trzeba sprawdzić na miejscu:",
       "Api": "To samo dla systemów 112 przez API:",
       "NotFound": "Nie znaleziono adresu. Wpisz go jako: Warszawa, Wiejska 4/6/8.",
-      "Error": "Nie udało się wyszukać. Spróbuj ponownie."
+      "Error": "Nie udało się wyszukać. Spróbuj ponownie.",
+      "UseLocation": "Użyj mojej lokalizacji",
+      "Locating": "Ustalam lokalizację…",
+      "MyLocation": "Twoja lokalizacja",
+      "GeoDenied": "Nie udało się ustalić lokalizacji. Zezwól na nią w przeglądarce albo wpisz adres."
     }
   }
 }
