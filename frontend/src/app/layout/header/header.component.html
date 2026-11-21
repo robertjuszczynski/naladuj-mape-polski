@@ -20,6 +20,8 @@
     </ul>
   </div>
 
+  <app-aed-campaign-banner></app-aed-campaign-banner>
+
   <!-- GOV.PL BAR -->
   <div class="govpl">
     <a class="govpl__logo" href="https://www.gov.pl/" aria-label="Strona główna gov.pl" target="_blank">
@@ -358,6 +360,19 @@
                 #menuLinkDatasets="routerLinkActive"
                 [attr.aria-current]="menuLinkDatasets.isActive ? true : null">
                 {{ 'Menu.Datasets' | translate }}
+              </a>
+            </li>
+            <!-- Naładuj mapę Polski -->
+            <li class="nav-item" role="presentation">
+              <a
+                class="nav-link"
+                role="menuitem"
+                [routerLink]="['/!aed'] | localize"
+                routerLinkActive="active"
+                #menuLinkAed="routerLinkActive"
+                [attr.aria-current]="menuLinkAed.isActive ? true : null"
+                (click)="isMenuCollapsed = true">
+                {{ 'Menu.AedMap' | translate }}
               </a>
             </li>
 

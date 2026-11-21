@@ -1,0 +1,88 @@
+@use 'aed/tokens';
+
+:host {
+  @include tokens.tokens;
+  display: block;
+}
+@include tokens.contrast-tokens;
+
+.aed-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 14px 1.75rem;
+  border-bottom: 4px solid var(--aed-accent);
+  background: var(--aed-deep);
+  color: var(--aed-on-deep);
+
+  p,
+  span,
+  div {
+    background: none;
+  }
+  &__mark {
+    --aed-mark-outline: var(--aed-on-deep);
+    --aed-mark-pulse: var(--aed-accent);
+    flex: none;
+    width: 86px;
+  }
+  &__copy {
+    flex: 1 1 360px;
+  }
+  &__slogan {
+    margin: 0;
+    color: var(--aed-on-deep);
+    font-size: 1.6rem;
+    font-weight: bold;
+    line-height: 1.2;
+  }
+  &__sub {
+    margin: 4px 0 0;
+    color: var(--aed-on-deep-muted);
+  }
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+  }
+}
+
+:host .aed-top__cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 20px;
+  border: 2px solid var(--aed-accent);
+  border-radius: 8px;
+  background: var(--aed-accent);
+  color: var(--aed-on-accent);
+  font-weight: 800;
+  text-decoration: none;
+
+  &:hover,
+  &:focus {
+    border-color: var(--aed-accent-strong);
+    background: var(--aed-accent-strong);
+  }
+}
+:host .aed-top__more {
+  color: var(--aed-on-deep);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+@media (max-width: 1199.98px) {
+  .aed-top {
+    padding: 12px 1.25rem;
+  }
+}
+@media (max-width: 576px) {
+  .aed-top__mark {
+    width: 56px;
+  }
+  .aed-top__slogan {
+    font-size: 1.3rem;
+  }
+}

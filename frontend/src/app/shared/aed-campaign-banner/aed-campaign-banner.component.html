@@ -1,0 +1,19 @@
+<section class="aed-top" [attr.aria-label]="'Aed.BannerLabel' | translate">
+  <app-aed-mark class="aed-top__mark"></app-aed-mark>
+  <div class="aed-top__copy">
+    <p class="aed-top__slogan">Naładuj mapę Polski.</p>
+    <p class="aed-top__sub">
+      {{ 'Aed.BannerSub' | translate }}
+      <span *ngIf="stats$ | async as stats">
+        {{
+          'Aed.BannerCount'
+            | translate: { n: (stats.liczba_aed | aedNumber: translate.currentLang), m: stats.liczba_instytucji }
+        }}
+      </span>
+    </p>
+  </div>
+  <div class="aed-top__actions">
+    <a class="aed-top__cta" [href]="wizardUrl">{{ 'Aed.AddData' | translate }}</a>
+    <a class="aed-top__more" [routerLink]="route | localize">{{ 'Aed.SeeMap' | translate }}</a>
+  </div>
+</section>

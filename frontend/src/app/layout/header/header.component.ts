@@ -21,6 +21,7 @@ import { IWidget } from '@app/services/models/cms/widgets/widget';
 import { RouterEndpoints } from '@app/services/models/routerEndpoints';
 import { UserStateService } from '@app/services/user-state.service';
 import { UserService } from '@app/services/user.service';
+import { AedCampaignBannerComponent } from '@app/shared/aed-campaign-banner/aed-campaign-banner.component';
 import { BreadcrumbsComponent } from '@app/shared/breadcrumbs/breadcrumbs.component';
 import { CmsBlock2Component } from '@app/shared/cms/cms-block2/cms-block2.component';
 import { ClickOutsideDirective } from '@app/shared/directives/click-outside.directive';
@@ -35,6 +36,7 @@ import { TooltipDirective } from '@app/shared/tooltip/tooltip.directive';
   styleUrl: 'header.component.scss',
   animations: [toggleVertically],
   imports: [
+    AedCampaignBannerComponent,
     TranslatePipe,
     CmsBlock2Component,
     NgClass,
