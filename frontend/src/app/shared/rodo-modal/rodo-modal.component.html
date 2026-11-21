@@ -1,6 +1,6 @@
 <div app-focus-trap>
   <div class="modal-header">
-    <h1 class="modal-title pull-left">
+    <h1 class="modal-title pull-left" id="rodo-modal-title">
       {{ pageTitle ? pageTitle : ('Rodo.Title' | translate) }}
     </h1>
 
@@ -16,7 +16,8 @@
 
   <!-- RODO assumptions -->
   <div class="modal-body">
-    <app-loader *ngIf="!pageTitle"></app-loader>
+    <app-loader *ngIf="!pageTitle && !failed"></app-loader>
+    <p *ngIf="failed">{{ 'Rodo.DemoFallback' | translate }}</p>
     <cms-block2 *ngIf="pageTitle" [widgetsSubject]="pageWidget" [isFullWidth]="true"></cms-block2>
   </div>
 

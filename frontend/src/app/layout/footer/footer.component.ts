@@ -122,7 +122,10 @@ export class FooterComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private rodoModalOpen() {
-    this.rodoModalRef = this.modalService.show(this.rodoModalTemplate, { class: 'modal-lg' });
+    this.rodoModalRef = this.modalService.show(this.rodoModalTemplate, {
+      class: 'modal-lg',
+      ariaLabelledBy: 'rodo-modal-title',
+    });
   }
 
   rodoModalClose() {

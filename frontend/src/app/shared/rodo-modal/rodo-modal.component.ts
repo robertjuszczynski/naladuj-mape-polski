@@ -22,13 +22,17 @@ export class RodoModalComponent implements OnInit {
   pageTitle: string;
   page: Subscription;
   pageWidget = new BehaviorSubject(null);
+  failed = false;
 
   constructor(private cmsService: CmsService) {}
 
   ngOnInit() {
-    this.page = this.cmsService.getSimplePage(CmsHardcodedPages.GDPR).subscribe((pageList: IPageCms) => {
-      this.pageTitle = pageList.title;
-      this.pageWidget.next([pageList]);
+    this.page = this.cmsService.getSimplePage(CmsHardcodedPages.GDPR).subscribe({
+      next: (pageList: IPageCms) => {
+        this.pageTitle = pageList.title;
+        this.pageWidget.next([pageList]);
+      },
+      error: () => (this.failed = true),
     });
   }
 
