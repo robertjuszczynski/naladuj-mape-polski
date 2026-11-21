@@ -9,8 +9,10 @@ import { EMPTY, catchError, map, switchMap } from 'rxjs';
 import { AED_ROUTE } from './aed.constants';
 import { AedBrief, AedDetail } from './aed.models';
 import { AedService } from './aed.service';
+import { readableHours } from './aed-hours';
 import { AedMapComponent } from './aed-map.component';
 
+const HOURS_FIELD = 'godziny_dostepnosci';
 const SHOWN_FIELDS = [
   'opis_lokalizacji',
   'pietro',
@@ -65,7 +67,10 @@ export class AedDetailComponent {
     private readonly translate: TranslateService,
   ) {}
 
-  value(raw: string | undefined): string {
+  value(raw: string | undefined, field = ''): string {
+    if (field === HOURS_FIELD) {
+      return readableHours(raw, this.translate.currentLang);
+    }
     if (raw === 'true') {
       return this.translate.instant('Aed.Yes');
     }

@@ -2,7 +2,9 @@
 
 from collections import namedtuple
 
+from mcod.aed.changes import HOURS, readable, row_changes, summarize
 from mcod.aed.constants import Decision, RecordStatus, Severity
+from mcod.aed.importing.mapper import normalize_value
 from mcod.aed.profile import FIELDS_BY_NAME, format_address
 from mcod.aed.validation import RecordChecker
 
@@ -11,13 +13,16 @@ EditableField = namedtuple("EditableField", "name label placeholder")
 EDITABLE_FIELDS = (
     EditableField("szerokosc_geograficzna", "Szerokość geogr.", ""),
     EditableField("dlugosc_geograficzna", "Długość geogr.", ""),
-    EditableField("godziny_dostepnosci", "Godziny dostępności", "Mo-Fr 08:00-16:00"),
+    EditableField(HOURS, "Godziny dostępności", "pn–pt 8–16, sob. 9–14"),
     EditableField("dostepny_calodobowo", "Dostępny całodobowo", ""),
     EditableField("sprawny", "Sprawny", ""),
 )
 ROW_DECISIONS = (Decision.ACCEPT, Decision.HOLD)
 HELD_BY_INSTITUTION = "wstrzymany przez instytucję"
 ACCEPTED_BY_INSTITUTION = "zatwierdzony przez instytucję"
+FILTER_AUTO = "auto"
+FILTER_PENDING = "pending"
+FILTER_BLOCKED = "blocked"
 
 
 class UploadReview:
@@ -49,13 +54,25 @@ class UploadReview:
         return self._operator_key(record.get("dysponent_nazwa")) not in ("", self.own_operator)
 
     def summary(self):
-        out = {"publish": 0, "auto": 0, "pending": 0, "blocked": 0}
+        out = {"publish": 0, "pending": 0, "blocked": 0}
         for i, row in enumerate(self.checked):
             out["publish"] += self.is_published_row(i, row)
-            out["auto"] += bool(any(f["auto"] for f in row["fixes"]) or row.get("notes"))
-            out["pending"] += row["status"] == RecordStatus.NEEDS_DECISION and self.decision(i) not in ROW_DECISIONS
+            out["pending"] += self.is_pending(i, row)
             out["blocked"] += row["status"] in RecordStatus.BLOCKED
+        out["changes"] = summarize(self.checked)
         return out
+
+    def is_pending(self, index, row):
+        return row["status"] == RecordStatus.NEEDS_DECISION and self.decision(index) not in ROW_DECISIONS
+
+    def matches(self, row_filter, index, row):
+        if row_filter == FILTER_AUTO:
+            return bool(row_changes(row))
+        if row_filter == FILTER_PENDING:
+            return self.is_pending(index, row)
+        if row_filter == FILTER_BLOCKED:
+            return row["status"] in RecordStatus.BLOCKED
+        return True
 
     def status_label(self, index, row):
         decision = self.decision(index)
@@ -85,13 +102,13 @@ class UploadReview:
         record = dict(previous["record"])
         for field in EDITABLE_FIELDS:
             if field.name in values:
-                record[field.name] = (values[field.name] or "").strip()
+                record[field.name], _ = normalize_value(field.name, values[field.name])
         fixed = RecordChecker().check_all([record], [previous.get("notes", [])])[0]
         fixed["fixes"] = previous["fixes"] + fixed["fixes"]
         self.checked[index] = fixed
 
-    def review_rows(self):
-        return [self._review_row(i, row) for i, row in enumerate(self.checked)]
+    def review_rows(self, row_filter=""):
+        return [self._review_row(i, row) for i, row in enumerate(self.checked) if self.matches(row_filter, i, row)]
 
     def _review_row(self, index, row):
         decision = self.decision(index)
@@ -112,6 +129,8 @@ class UploadReview:
             label=RecordStatus.LABELS[RecordStatus.HELD] if held else RecordStatus.LABELS[row["status"]],
             badge_class=RecordStatus.BADGE_CLASSES.get(row["status"], RecordStatus.DEFAULT_BADGE_CLASS),
             address=format_address(row["record"]),
+            changes=row_changes(row),
+            to_check=[f for f in row["fixes"] if not f["auto"]],
             issues=[dict(i, css="bad" if i["severity"] == Severity.ERROR else "warn") for i in row["issues"]],
             is_foreign_operator=self.is_foreign_operator(row["record"]),
             actions=actions,
@@ -125,7 +144,7 @@ class UploadReview:
             "name": field.name,
             "label": field.label,
             "placeholder": field.placeholder,
-            "value": record.get(field.name, ""),
+            "value": readable(field.name, record.get(field.name, "")),
             "is_boolean": is_boolean,
         }
 

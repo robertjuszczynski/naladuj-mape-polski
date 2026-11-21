@@ -130,7 +130,9 @@
                     'Aed.Avail.faulty' | translate
                   }}</ng-container>
                   <ng-template #hours>{{
-                    c.opens_at ? ('Aed.Nearest.OpensAt' | translate: { when: opensLabel(c.opens_at) }) : c.opening_hours
+                    c.opens_at
+                      ? ('Aed.Nearest.OpensAt' | translate: { when: opensLabel(c.opens_at) })
+                      : hours(c.opening_hours)
                   }}</ng-template>
                 </li>
               </ul>

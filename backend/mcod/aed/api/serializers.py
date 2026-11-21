@@ -1,12 +1,7 @@
 from django.core.cache import cache
 
 from mcod.aed.availability import availability_at
-from mcod.aed.constants import (
-    MUNICIPALITY_CODE_LENGTH,
-    STATS_CACHE_KEY,
-    STATS_CACHE_TTL_S,
-    VOIVODESHIPS,
-)
+from mcod.aed.constants import MUNICIPALITY_CODE_LENGTH, STATS_CACHE_KEY, STATS_CACHE_TTL_S, VOIVODESHIPS
 from mcod.aed.models import AedRecord
 from mcod.aed.profile import format_address
 from mcod.aed.publishing import national_dataset

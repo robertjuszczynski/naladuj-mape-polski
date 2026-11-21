@@ -14,6 +14,7 @@ _TIMES = r"%s-%s(,%s-%s)*" % (_TIME, _TIME, _TIME, _TIME)
 _RULE = re.compile(r"^(%s )?(%s|off|closed)$" % (_DAYS, _TIMES))
 _SPEC_START = re.compile(r"^(%s|%s)" % ("|".join(WEEKDAYS + ("PH",)), re.escape(ALWAYS_OPEN)))
 _RANGE = r"\s*(?:-|–|do)\s*"
+_POLISH_SHORT_DAYS = dict(zip(WEEKDAYS + ("PH",), ("pn", "wt", "śr", "czw", "pt", "sob.", "nd", "święta")))
 
 _POLISH_DAY_WORDS = (
     (r"poniedzia[łl]\w*", "Mo"),
@@ -48,6 +49,33 @@ class OpeningHours:
     @staticmethod
     def looks_like_spec(text):
         return bool(_SPEC_START.match(text))
+
+    @staticmethod
+    def to_polish(spec):
+        """Readable Polish form: "Mo-Fr 08:00-16:00; Sa 09:00-14:00" -> "pn–pt 8:00–16:00; sob. 9:00–14:00"."""
+        spec = (spec or "").strip()
+        if spec == ALWAYS_OPEN:
+            return "całodobowo"
+        if not spec or not OpeningHours.is_valid(spec):
+            return spec
+
+        def day(code):
+            return _POLISH_SHORT_DAYS.get(code, code)
+
+        def time(value):
+            return value.lstrip("0") if not value.startswith("00") else value[1:]
+
+        rules = []
+        for rule in [r.strip() for r in spec.split(";")]:
+            days, _, ranges = rule.rpartition(" ")
+            days = "" if days == "Mo-Su" else days
+            days_text = ", ".join("–".join(day(d) for d in part.split("-")) for part in days.split(",")) if days else "codziennie"
+            if ranges in CLOSED_WORDS:
+                hours_text = "nieczynne"
+            else:
+                hours_text = ", ".join("–".join(time(t) for t in r.split("-")) for r in ranges.split(","))
+            rules.append("%s %s" % (days_text, hours_text))
+        return "; ".join(rules)
 
     @classmethod
     def from_polish(cls, text):

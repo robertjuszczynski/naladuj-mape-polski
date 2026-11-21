@@ -1,5 +1,6 @@
 import re
 
+from mcod.aed.changes import ADDRESS, change
 from mcod.aed.field_types import type_of
 from mcod.aed.importing.address import AddressParser
 from mcod.aed.importing.columns import ADDRESS_TARGET
@@ -43,18 +44,18 @@ class RecordMapper:
     def _set(record, notes, target, raw):
         if target == ADDRESS_TARGET:
             record.update({k: v for k, v in AddressParser.parse(raw).items() if v})
-            notes.append("Adres z jednej kolumny rozdzielono na osobne pola")
+            notes.append(change(ADDRESS, "Adres z jednej kolumny rozdzielono na ulicę, numer, kod i miejscowość", raw))
             return
         record[target], note = normalize_value(target, raw)
         if note:
-            notes.append(note)
+            notes.append(change(target, note, raw, record[target]))
 
     @staticmethod
     def _complete_street(record, notes):
         if record.get("ulica") and not record.get("cecha_adresu"):
             record["cecha_adresu"], record["ulica"], assumed = AddressParser.split_street(record["ulica"])
             if assumed:
-                notes.append("Brak cechy adresu – przyjęto „ul.”")
+                notes.append(change("cecha_adresu", "Brak cechy adresu – przyjęto „ul.”", "", "ul."))
 
     def _assign_id(self, record, index):
         own_id = record.get("id_aed") or str(index + 1)
@@ -67,4 +68,11 @@ class RecordMapper:
             record["godziny_dostepnosci"] = ALWAYS_OPEN
         elif not record.get("dostepny_calodobowo") and hours:
             record["dostepny_calodobowo"] = "true" if hours == ALWAYS_OPEN else "false"
-            notes.append("Dostępność całodobową ustalono z godzin dostępności")
+            notes.append(
+                change(
+                    "dostepny_calodobowo",
+                    "Dostępność całodobową ustalono z godzin dostępności",
+                    "",
+                    record["dostepny_calodobowo"],
+                )
+            )

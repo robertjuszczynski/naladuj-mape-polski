@@ -6,12 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
-from mcod.aed.constants import (
-    GEOCODE_CACHE_TTL_S,
-    GEOCODE_LIMIT,
-    GEOCODE_TIMEOUT_S,
-    GEOCODE_WORKERS,
-)
+from mcod.aed.changes import COORDINATES, change
+from mcod.aed.constants import GEOCODE_CACHE_TTL_S, GEOCODE_LIMIT, GEOCODE_TIMEOUT_S, GEOCODE_WORKERS
 
 logger = logging.getLogger("mcod")
 
@@ -98,7 +94,8 @@ class GugikGeocoder:
                 record["szerokosc_geograficzna"], record["dlugosc_geograficzna"] = hit["lat"], hit["lon"]
                 if not record.get("kod_simc") and hit["simc"]:
                     record["kod_simc"] = hit["simc"]
-                notes.append("Współrzędne ustalono z adresu (geokodowanie GUGiK): %s, %s" % (hit["lat"], hit["lon"]))
+                coordinates = "%s, %s" % (hit["lat"], hit["lon"])
+                notes.append(change(COORDINATES, "Współrzędne ustalono z adresu (geokodowanie GUGiK)", "", coordinates))
         return mapped
 
     @staticmethod

@@ -17,7 +17,7 @@
             <dl>
               <ng-container *ngFor="let f of shown">
                 <dt>{{ 'Aed.Field.' + f | translate }}</dt>
-                <dd>{{ value(aed.fields[f]) || ('Aed.NoInfo' | translate) }}</dd>
+                <dd>{{ value(aed.fields[f], f) || ('Aed.NoInfo' | translate) }}</dd>
               </ng-container>
             </dl>
             <p class="aed-muted">

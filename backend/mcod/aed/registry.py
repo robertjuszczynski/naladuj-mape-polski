@@ -6,14 +6,7 @@ import logging
 from django.core.cache import cache
 from django.db import transaction
 
-from mcod.aed.constants import (
-    FOREIGN_TAG_NAMES,
-    NATIONAL_KEY,
-    NATIONAL_ORG_TITLE,
-    PROFILE_KEY,
-    STATS_CACHE_KEY,
-    RecordStatus,
-)
+from mcod.aed.constants import FOREIGN_TAG_NAMES, NATIONAL_KEY, NATIONAL_ORG_TITLE, PROFILE_KEY, STATS_CACHE_KEY, RecordStatus
 from mcod.aed.export import AedCsv
 from mcod.aed.importing.pipeline import ImportPipeline, ImportSource
 from mcod.aed.importing.reader import TabularReader, UploadError

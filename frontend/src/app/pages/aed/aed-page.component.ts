@@ -20,6 +20,7 @@ import {
 } from './aed.constants';
 import { AedAvailability, AedBrief, AedIncidentPoint, AedNearest } from './aed.models';
 import { AedService } from './aed.service';
+import { readableHours } from './aed-hours';
 import { AedMapComponent } from './aed-map.component';
 import { AedNumberPipe } from './aed-number.pipe';
 
@@ -226,6 +227,10 @@ export class AedPageComponent implements OnInit {
 
   copyPhrase(index: number, phrase: string): void {
     this.document.defaultView?.navigator.clipboard?.writeText(phrase).then(() => this.copied.set(index));
+  }
+
+  hours(spec: string): string {
+    return readableHours(spec, this.translate.currentLang);
   }
 
   /** "środa 07:00" for an ISO moment from the API. */

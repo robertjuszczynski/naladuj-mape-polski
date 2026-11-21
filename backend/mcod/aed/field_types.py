@@ -178,11 +178,15 @@ class OpeningHoursType(FieldType):
             return value, None
         spec = OpeningHours.from_polish(value)
         if spec:
-            return spec, "Godziny „%s” zapisano jako %s" % (value, spec)
+            return spec, "Godziny „%s” rozpoznano jako: %s" % (value, OpeningHours.to_polish(spec))
         return value, None
 
     def error(self, value, field):
-        return None if OpeningHours.is_valid(value) else "Godziny w formacie opening_hours, np. Mo-Fr 08:00-16:00"
+        return (
+            None
+            if OpeningHours.is_valid(value)
+            else "Nie rozpoznano godzin – wpisz np. „pn–pt 8–16, sob. 9–14” albo „całodobowo”"
+        )
 
 
 class Enum(FieldType):

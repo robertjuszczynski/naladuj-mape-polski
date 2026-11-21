@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 from django.http import HttpResponse
 
+from mcod.aed.changes import row_changes
 from mcod.aed.field_types import STRING_COLUMN, type_of
 from mcod.aed.profile import FIELD_NAMES, FIELDS_BY_NAME
 
@@ -53,8 +54,7 @@ class CorrectedCsvExport:
     def rows(self):
         review = self.upload.review
         for i, row in enumerate(self.upload.checked):
-            changes = ["%s (%s → %s)" % (f["message"], f["before"], f["after"]) for f in row["fixes"] if f["auto"]]
-            changes += list(row.get("notes", []))
+            changes = ["%s: %s" % (c["label"], c["message"]) for c in row_changes(row)]
             todo = [x["message"] for x in row["issues"]] + [f["message"] for f in row["fixes"] if not f["auto"]]
             values = [row["record"].get(f, "") for f in FIELD_NAMES]
             yield values + [review.status_label(i, row), " | ".join(changes), " | ".join(todo)]

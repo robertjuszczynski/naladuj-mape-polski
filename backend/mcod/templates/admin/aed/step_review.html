@@ -7,13 +7,16 @@
 <div class="aed-block">
 <div class="aed-figures">
 <div><b>{{ summary.publish }}</b><span>do publikacji</span></div>
-<div><b>{{ summary.auto }}</b><span>poprawionych automatycznie</span></div>
 <div class="warn"><b>{{ summary.pending }}</b><span>czeka na Twoją decyzję</span></div>
 <div class="bad"><b>{{ summary.blocked }}</b><span>wstrzymanych lub do poprawy</span></div>
 </div>
+{% if summary.changes.fields %}<p class="aed-changes"><strong>Poprawiliśmy automatycznie {{ summary.changes.fields }} pól w {{ summary.changes.records }} rekordach:</strong> {% for label, count in summary.changes.by_field %}{{ label }} ({{ count }}){% if not forloop.last %}, {% endif %}{% endfor %}.</p>{% endif %}
 {% if quality_errors %}<p class="aed-quality warn">Weryfikacja jakości portalu: błędy w kolumnach {% for q in quality_errors %}{{ q.field }} ({{ q.label }}){% if not forloop.last %}, {% endif %}{% endfor %}.</p>
 {% else %}<p class="aed-quality">✓ Plik przejdzie weryfikację jakości portalu dane.gov.pl ({{ quality_checked }} sprawdzanych kolumn, 0 błędów).</p>{% endif %}
 </div>
+<nav class="aed-filters" aria-label="Filtr rekordów">
+{% for value, label, count in filters %}<a href="?filter={{ value }}"{% if value == row_filter %} aria-current="true"{% endif %}>{{ label }} <span>{{ count }}</span></a>{% endfor %}
+</nav>
 <table class="aed-table">
 <colgroup><col class="aed-col-status"><col class="aed-col-record"><col><col class="aed-col-action"></colgroup>
 <thead><tr><th>Status</th><th>AED</th><th>Co zrobiliśmy · co sprawdzić</th><th>Akcja</th></tr></thead><tbody>
@@ -21,16 +24,16 @@
 <td><span class="aed-badge {{ r.badge_class }}">{{ r.label }}</span></td>
 <td><strong>{{ r.record.nazwa_obiektu|default:"–" }}</strong><br><span class="aed-small">{{ r.address }}</span>{% if r.is_foreign_operator %}<br><span class="aed-small">Dysponent: {{ r.record.dysponent_nazwa }}</span>{% endif %}</td>
 <td><ul class="aed-checks">
-{% for f in r.fixes %}{% if f.auto %}<li>{{ f.message }} <span class="aed-small">({{ f.before }} → {{ f.after }})</span></li>{% else %}<li class="warn">{{ f.message }}</li>{% endif %}{% endfor %}
-{% for n in r.notes %}<li>{{ n }}</li>{% endfor %}
+{% for c in r.changes %}<li class="auto"><strong>{{ c.label }}:</strong> {{ c.message }}{% if c.show_values %} <span class="aed-small">({% if c.before %}{{ c.before }} → {% endif %}{{ c.after }})</span>{% endif %}</li>{% endfor %}
+{% for f in r.to_check %}<li class="warn">{{ f.message }}</li>{% endfor %}
 {% for i in r.issues %}<li class="{{ i.css }}">{{ i.message }}</li>{% endfor %}
 </ul>
-<details><summary>Popraw ręcznie</summary><form method="post" class="aed-edit">{% csrf_token %}<input type="hidden" name="row" value="{{ r.index }}"><input type="hidden" name="action" value="{{ fix_action }}">
+<details><summary>Popraw ręcznie</summary><form method="post" class="aed-edit">{% csrf_token %}<input type="hidden" name="row" value="{{ r.index }}"><input type="hidden" name="action" value="{{ fix_action }}"><input type="hidden" name="filter" value="{{ row_filter }}">
 {% for f in r.edit_fields %}<label>{{ f.label }}{% if f.is_boolean %}{% include "admin/aed/_bool_select.html" with name=f.name value=f.value %}{% else %}<input name="{{ f.name }}" value="{{ f.value }}"{% if f.placeholder %} placeholder="{{ f.placeholder }}"{% endif %}>{% endif %}</label>
 {% endfor %}<button class="aed-btn sec sm" type="submit">Zapisz i sprawdź ponownie</button></form></details></td>
-<td><form method="post" class="aed-rowacts">{% csrf_token %}<input type="hidden" name="row" value="{{ r.index }}">
+<td><form method="post" class="aed-rowacts">{% csrf_token %}<input type="hidden" name="row" value="{{ r.index }}"><input type="hidden" name="filter" value="{{ row_filter }}">
 {% for value, label in r.actions %}<button class="aed-btn sec sm" name="action" value="{{ value }}">{{ label }}</button>{% endfor %}
-</form></td></tr>{% endfor %}
+</form></td></tr>{% empty %}<tr><td colspan="4" class="aed-small">Brak rekordów w tym widoku.</td></tr>{% endfor %}
 </tbody></table>
 <div class="aed-foot"><a class="aed-btn sec" href="{% url 'admin:aed_columns' up.pk %}">← Kolumny</a><a class="aed-btn sec" href="{% url 'admin:aed_download' up.pk %}">Pobierz poprawiony plik (CSV)</a><div class="aed-push"><a class="aed-btn" href="{% url 'admin:aed_license' up.pk %}">Dalej: licencja ({{ summary.publish }} AED) →</a></div></div>
 {% endblock %}

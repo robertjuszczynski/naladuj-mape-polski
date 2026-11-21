@@ -129,3 +129,27 @@ def test_static_template_matches_profile():
     path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "aed", "szablon-danych-aed.csv")
     with open(path, encoding="utf-8-sig") as fp:
         assert TabularReader().parse_csv(fp.read()).header == FIELD_NAMES
+
+
+def test_opening_hours_in_polish():
+    from mcod.aed.opening_hours import OpeningHours
+
+    assert OpeningHours.to_polish("Mo-Fr 08:00-16:00; Sa 09:00-14:00") == "pn–pt 8:00–16:00; sob. 9:00–14:00"
+    assert OpeningHours.to_polish("24/7") == "całodobowo"
+    assert OpeningHours.to_polish("Mo-Fr 07:00-15:00; Su off") == "pn–pt 7:00–15:00; nd nieczynne"
+    assert OpeningHours.to_polish("00:00-24:00") == "codziennie 0:00–24:00"
+    assert OpeningHours.to_polish("Mo-Su 07:00-22:00") == "codziennie 7:00–22:00"
+    assert OpeningHours.to_polish("rano") == "rano"
+
+
+def test_changes_are_counted_per_field():
+    from mcod.aed.changes import change, summarize
+
+    rows = [
+        {"notes": [change("godziny_dostepnosci", "a"), change("szerokosc_geograficzna", "b")], "fixes": []},
+        {"notes": ["stary wpis"], "fixes": [{"auto": True, "message": "zamiana", "before": "1, 2", "after": "2, 1"}]},
+        {"notes": [], "fixes": [{"auto": False, "message": "do sprawdzenia", "before": "", "after": ""}]},
+    ]
+    summary = summarize(rows)
+    assert summary["fields"] == 4 and summary["records"] == 2
+    assert dict(summary["by_field"]) == {"Współrzędne": 2, "Godziny dostępności": 1, "Inne": 1}

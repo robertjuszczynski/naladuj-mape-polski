@@ -284,7 +284,7 @@
 /* Review summary */
 .aed-wrap .aed-figures {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0 0 16px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -312,6 +312,41 @@
 }
 .aed-figures .bad b {
   color: var(--bad);
+}
+.aed-changes {
+  margin: 0 0 10px;
+  color: var(--navy);
+  line-height: 1.5;
+}
+.aed-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 18px 0 12px;
+}
+.aed-filters a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--navy);
+  font-weight: 600;
+  text-decoration: none;
+}
+.aed-filters a span {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.aed-filters a[aria-current] {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #fff;
+}
+.aed-filters a[aria-current] span {
+  color: #fff;
 }
 .aed-quality {
   display: flex;
@@ -580,6 +615,7 @@
   .aed-figures div:nth-child(3) {
     border-left: 0;
     padding-left: 0;
+    grid-column: 1 / -1;
   }
   .aed-edit {
     grid-template-columns: 1fr 1fr;

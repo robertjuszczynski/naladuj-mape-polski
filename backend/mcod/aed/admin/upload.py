@@ -16,9 +16,9 @@ from mcod.aed.importing.pipeline import ImportPipeline, ImportSource
 from mcod.aed.importing.reader import UploadError, UploadValidator
 from mcod.aed.models import AedUpload
 from mcod.aed.profile import FIELDS, PROFILE_VERSION
-from mcod.aed.publishing import (DatasetPublisher, license_from_form,
-                                 license_name, license_options)
+from mcod.aed.publishing import DatasetPublisher, license_from_form, license_name, license_options
 from mcod.aed.registry import RegistryBuilder
+from mcod.aed.review import FILTER_AUTO, FILTER_BLOCKED, FILTER_PENDING
 from mcod.aed.validation import PortalQualityCheck
 
 STEPS = ["Plik", "Kolumny", "Sprawdzenie", "Licencja", "Gotowe"]
@@ -161,23 +161,37 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
 
     def step_review(self, request, pk):
         upload = self.get_upload(request, pk)
+        row_filter = request.POST.get("filter") or request.GET.get("filter") or ""
         if request.method == "POST":
             index = request.POST.get("row", "")
             if index.isdigit() and upload.apply_decision(int(index), request.POST.get("action"), request.POST):
                 upload.save()
-            return redirect("admin:aed_review", pk=upload.pk)
+            url = reverse("admin:aed_review", args=[upload.pk])
+            return redirect("%s?filter=%s" % (url, row_filter) if row_filter else url)
         quality = PortalQualityCheck().run([c["record"] for c in upload.checked])
+        summary = upload.summary()
         return self.render_step(
             request,
             "step_review",
             3,
             up=upload,
-            rows=upload.review.review_rows(),
-            summary=upload.summary(),
+            rows=upload.review.review_rows(row_filter),
+            row_filter=row_filter,
+            filters=self._filters(upload, summary),
+            summary=summary,
             fix_action=Decision.FIX,
             quality_errors=[q for q in quality if q["errors"]],
             quality_checked=len([q for q in quality if q["checked"]]),
         )
+
+    @staticmethod
+    def _filters(upload, summary):
+        return [
+            ("", "Wszystkie", len(upload.checked)),
+            (FILTER_AUTO, "Poprawione automatycznie", summary["changes"]["records"]),
+            (FILTER_PENDING, "Czeka na decyzję", summary["pending"]),
+            (FILTER_BLOCKED, "Wstrzymane", summary["blocked"]),
+        ]
 
     def download_fixed(self, request, pk):
         return CorrectedCsvExport(self.get_upload(request, pk)).response()
