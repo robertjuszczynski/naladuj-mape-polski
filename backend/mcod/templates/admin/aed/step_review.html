@@ -25,12 +25,12 @@
 {% for n in r.notes %}<li>{{ n }}</li>{% endfor %}
 {% for i in r.issues %}<li class="{{ i.css }}">{{ i.message }}</li>{% endfor %}
 </ul>
-<details><summary>Popraw ręcznie</summary><form method="post" class="aed-edit">{% csrf_token %}<input type="hidden" name="idx" value="{{ r.idx }}"><input type="hidden" name="action" value="{{ fix_action }}">
+<details><summary>Popraw ręcznie</summary><form method="post" class="aed-edit">{% csrf_token %}<input type="hidden" name="row" value="{{ r.index }}"><input type="hidden" name="action" value="{{ fix_action }}">
 {% for f in r.edit_fields %}<label>{{ f.label }}{% if f.is_boolean %}{% include "admin/aed/_bool_select.html" with name=f.name value=f.value %}{% else %}<input name="{{ f.name }}" value="{{ f.value }}"{% if f.placeholder %} placeholder="{{ f.placeholder }}"{% endif %}>{% endif %}</label>
 {% endfor %}<button class="aed-btn sec sm" type="submit">Zapisz i sprawdź ponownie</button></form></details></td>
-<td><form method="post" class="aed-rowacts">{% csrf_token %}<input type="hidden" name="idx" value="{{ r.idx }}">
+<td><form method="post" class="aed-rowacts">{% csrf_token %}<input type="hidden" name="row" value="{{ r.index }}">
 {% for value, label in r.actions %}<button class="aed-btn sec sm" name="action" value="{{ value }}">{{ label }}</button>{% endfor %}
 </form></td></tr>{% endfor %}
 </tbody></table>
-<div class="aed-foot"><a class="aed-btn sec" href="{% url 'admin:aed_kolumny' up.pk %}">← Kolumny</a><a class="aed-btn sec" href="{% url 'admin:aed_pobierz' up.pk %}">Pobierz poprawiony plik (CSV)</a><div class="aed-push"><a class="aed-btn" href="{% url 'admin:aed_licencja' up.pk %}">Dalej: licencja ({{ summary.publish }} AED) →</a></div></div>
+<div class="aed-foot"><a class="aed-btn sec" href="{% url 'admin:aed_columns' up.pk %}">← Kolumny</a><a class="aed-btn sec" href="{% url 'admin:aed_download' up.pk %}">Pobierz poprawiony plik (CSV)</a><div class="aed-push"><a class="aed-btn" href="{% url 'admin:aed_license' up.pk %}">Dalej: licencja ({{ summary.publish }} AED) →</a></div></div>
 {% endblock %}

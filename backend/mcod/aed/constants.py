@@ -4,11 +4,11 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
 class RecordStatus:
-    READY = "gotowy"
-    INCOMPLETE = "niepelny"
-    NEEDS_DECISION = "do_decyzji"
-    NEEDS_FIX = "do_poprawy"
-    HELD = "wstrzymany"
+    READY = "ready"
+    INCOMPLETE = "incomplete"
+    NEEDS_DECISION = "needs_decision"
+    NEEDS_FIX = "needs_fix"
+    HELD = "held"
 
     LABELS = {
         READY: "Gotowy",
@@ -25,39 +25,39 @@ class RecordStatus:
 
 
 class Decision:
-    ACCEPT = "akceptuj"
-    HOLD = "wstrzymaj"
-    RESTORE = "przywroc"
-    FIX = "popraw"
+    ACCEPT = "accept"
+    HOLD = "hold"
+    RESTORE = "restore"
+    FIX = "fix"
 
 
 class Severity:
-    ERROR = "blad"
-    WARNING = "ostrzezenie"
+    ERROR = "error"
+    WARNING = "warning"
 
 
 class IssueCode:
-    PERSONAL_DATA = "dane_osobowe"
-    MISSING_REQUIRED = "brak_wymaganego"
-    BAD_FORMAT = "zly_format"
-    MISSING_HOURS = "brak_godzin"
-    OUTSIDE_POLAND = "poza_polska"
-    OUTSIDE_MUNICIPALITY = "poza_gmina"
-    NEAR_BORDER = "przy_granicy_gminy"
-    DUPLICATE_POINT = "duplikat_punktu"
-    SWAPPED_COORDINATES = "zamiana_wspolrzednych"
+    PERSONAL_DATA = "personal_data"
+    MISSING_REQUIRED = "missing_required"
+    BAD_FORMAT = "bad_format"
+    MISSING_HOURS = "missing_hours"
+    OUTSIDE_POLAND = "outside_poland"
+    OUTSIDE_MUNICIPALITY = "outside_municipality"
+    NEAR_BORDER = "near_municipality_border"
+    DUPLICATE_POINT = "duplicate_point"
+    SWAPPED_COORDINATES = "swapped_coordinates"
 
 
 class Availability:
-    OPEN = "otwarte"
-    CLOSED = "zamkniete"
-    UNKNOWN = "nieznane"
-    OUT_OF_ORDER = "niesprawny"
+    OPEN = "open"
+    CLOSED = "closed"
+    UNKNOWN = "unknown"
+    FAULTY = "faulty"
 
 
 class UploadStatus:
-    DRAFT = "szkic"
-    PUBLISHED = "opublikowany"
+    DRAFT = "draft"
+    PUBLISHED = "published"
 
     CHOICES = ((DRAFT, "Szkic"), (PUBLISHED, "Opublikowany"))
 
@@ -78,16 +78,17 @@ DUPLICATE_COORDINATE_DECIMALS = 5
 QUALITY_EXAMPLES = 5
 NIGHT_HOUR = 3
 
-STATS_CACHE_KEY = "aed:stats"
+STATS_CACHE_KEY = "aed:stats:v2"
 STATS_CACHE_TTL_S = 300
 
-PROFILE_KEY = "aed_profil"
-NATIONAL_KEY = "aed_zbior_ogolnopolski"
+PROFILE_KEY = "aed_profile"
+NATIONAL_KEY = "aed_national_dataset"
+NATIONAL_FLAG = "true"
 NATIONAL_ORG_TITLE = "Departament Zarządzania Danymi – Ministerstwo Cyfryzacji"
 AED_TAG_NAMES = ("AED", "defibrylator", "Naładuj mapę Polski")
 FOREIGN_TAG_NAMES = ("aed", "defibrylator", "defibrylatory", "defibrylatory aed")
 
-# Liczba gmin w województwach wg TERYT (GUS); kod województwa to pierwsze dwie cyfry kodu gminy.
+# Municipalities per voivodeship (TERYT, GUS); the voivodeship code is the first two digits of a municipality code.
 VOIVODESHIPS = {
     "02": ("dolnośląskie", 169),
     "04": ("kujawsko-pomorskie", 144),
@@ -106,5 +107,5 @@ VOIVODESHIPS = {
     "30": ("wielkopolskie", 226),
     "32": ("zachodniopomorskie", 113),
 }
-# Kod gminy bez ostatniej cyfry (rodzaju gminy), żeby gmina miejsko-wiejska liczyła się raz.
+# Municipality code without the last (type) digit, so an urban-rural municipality counts once.
 MUNICIPALITY_CODE_LENGTH = 6

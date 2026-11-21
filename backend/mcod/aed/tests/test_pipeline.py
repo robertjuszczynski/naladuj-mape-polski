@@ -1,6 +1,6 @@
 import pytest
 
-from mcod.aed.constants import RecordStatus
+from mcod.aed.constants import IssueCode, RecordStatus
 from mcod.aed.importing.pipeline import ImportPipeline, ImportSource
 from mcod.aed.tests.helpers import MARKI, import_test_file, read_table
 
@@ -69,7 +69,7 @@ def test_mixed_file():
 def test_operator_from_file_is_kept_and_email_is_flagged():
     results = import_test_file("05-gmina-z-innymi-dysponentami.csv")
     assert results[1]["record"]["dysponent_nazwa"] == "Szkoła Podstawowa nr 1 w Markach"
-    assert any(i["code"] == "dane_osobowe" for i in results[2]["issues"])
+    assert any(i["code"] == IssueCode.PERSONAL_DATA for i in results[2]["issues"])
 
 
 def test_defaults_and_id_prefix():

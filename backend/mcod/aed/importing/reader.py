@@ -1,4 +1,4 @@
-"""Odczyt plików CSV/XLSX od dysponentów i limity wgrywanych plików."""
+"""Reading CSV/XLSX files from operators and upload limits."""
 
 import csv
 import datetime
@@ -18,7 +18,7 @@ READ_ERRORS = (ValueError, UnicodeDecodeError, csv.Error, zipfile.BadZipFile, In
 
 
 class UploadError(Exception):
-    """Błąd z komunikatem, który można pokazać użytkownikowi."""
+    """Error with a message that can be shown to the user."""
 
 
 class UploadValidator:
@@ -38,7 +38,7 @@ class UploadValidator:
             raise UploadError(self.TOO_LARGE)
 
     def read(self, uploaded):
-        """uploaded: plik z atrybutami name i size oraz metodą read() (np. UploadedFile Django)."""
+        """uploaded: a file with name, size and read(), e.g. a Django UploadedFile."""
         self.validate_file(uploaded.name, uploaded.size)
         return TabularReader(max_rows=self.max_rows).read(uploaded.name, uploaded.read())
 
@@ -68,7 +68,7 @@ class TabularReader:
         raise UploadError(self.UNREADABLE)
 
     def parse_csv(self, text):
-        """Naprawia też pliki, w których każdy wiersz jest w całości ujęty w cudzysłów."""
+        """Also repairs files where every whole row is wrapped in quotes."""
         repairs = []
         text = text.lstrip("﻿")
         first_line = text.splitlines()[0] if text.strip() else ""
@@ -116,6 +116,6 @@ class TabularReader:
 
 
 def read_records(text):
-    """Plik CSV we wzorcowym zakresie jako lista słowników."""
+    """A data standard CSV as a list of dicts."""
     table = TabularReader().parse_csv(text)
     return [dict(zip(table.header, row)) for row in table.rows]

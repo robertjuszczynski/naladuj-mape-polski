@@ -6,7 +6,7 @@ from mcod.aed.opening_hours import OpeningHours
 
 def availability_at(record, when):
     if record.get("sprawny") == "false":
-        return Availability.OUT_OF_ORDER
+        return Availability.FAULTY
     if record.get("dostepny_calodobowo") == "true":
         return Availability.OPEN
     is_open = OpeningHours.is_open_at(record.get("godziny_dostepnosci"), when)
@@ -16,6 +16,6 @@ def availability_at(record, when):
 
 
 def night_of(now):
-    """Najbliższa noc (godzina NIGHT_HOUR) od chwili now."""
+    """The nearest NIGHT_HOUR o'clock after now."""
     day = now + datetime.timedelta(days=1) if now.hour >= NIGHT_HOUR else now
     return day.replace(hour=NIGHT_HOUR, minute=0, second=0, microsecond=0)

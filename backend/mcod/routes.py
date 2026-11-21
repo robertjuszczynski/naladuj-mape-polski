@@ -21,7 +21,7 @@ from mcod.users import views as user_views
 from mcod.watchers import views as watcher_views
 
 routes = [
-    # Defibrylatory AED (Naładuj mapę Polski)
+    # AED defibrillators
     ("/aed", aed_views.AedListView()),
     ("/aed/stats", aed_views.AedStatsView()),
     ("/aed/{id}", aed_views.AedDetailView()),

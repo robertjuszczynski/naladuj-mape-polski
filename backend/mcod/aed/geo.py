@@ -46,7 +46,7 @@ def in_poland(lat, lon):
 
 
 class Boundaries:
-    """Granice gmin z data/gminy.geojson, kluczowane kodem TERYT gminy."""
+    """Municipality boundaries from data/gminy.geojson, keyed by TERYT code."""
 
     @staticmethod
     @lru_cache(maxsize=1)
@@ -57,7 +57,7 @@ class Boundaries:
         for feature in collection["features"]:
             geometry = feature["geometry"]
             polygons = [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
-            out[feature["properties"]["kod_teryt_gminy"]] = {"nazwa": feature["properties"]["nazwa"], "polygons": polygons}
+            out[feature["properties"]["kod_teryt_gminy"]] = {"name": feature["properties"]["nazwa"], "polygons": polygons}
         return out
 
     @classmethod

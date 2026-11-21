@@ -10,12 +10,12 @@
 <colgroup><col class="aed-col-name"><col><col class="aed-col-target"></colgroup>
 <thead><tr><th>Kolumna w pliku</th><th>Przykładowe wartości</th><th>Pole we wzorcowym zakresie</th></tr></thead><tbody>
 {% for c in columns %}<tr><td><strong>{{ c.name }}</strong></td><td class="aed-sample">{{ c.sample|default:"–" }}</td><td>
-<select name="col_{{ c.i }}" aria-label="Pole dla kolumny {{ c.name }}">
+<select name="column_{{ c.i }}" aria-label="Pole dla kolumny {{ c.name }}">
 <option value="">– pomiń tę kolumnę –</option>
 <option value="{{ address_target }}"{% if c.target == address_target %} selected{% endif %}>Adres w jednej kolumnie (rozdziel)</option>
 {% for f in fields %}<option value="{{ f.name }}"{% if c.target == f.name %} selected{% endif %}>{{ f.label }}{% if f.required %} *{% endif %}</option>{% endfor %}
 </select></td></tr>{% endfor %}
 </tbody></table>
-<div class="aed-foot"><a class="aed-btn sec" href="{% url 'admin:aed_wgraj' %}">← Inny plik</a><div class="aed-push"><button class="aed-btn" type="submit">Sprawdź dane →</button></div></div>
+<div class="aed-foot"><a class="aed-btn sec" href="{% url 'admin:aed_upload' %}">← Inny plik</a><div class="aed-push"><button class="aed-btn" type="submit">Sprawdź dane →</button></div></div>
 </form>
 {% endblock %}

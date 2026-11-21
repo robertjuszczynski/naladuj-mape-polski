@@ -1,4 +1,4 @@
-"""Metadane istniejących zbiorów AED instytucji z data/zrodla/zrodla.json (dane demonstracyjne)."""
+"""Metadata of existing institution AED datasets from data/zrodla/zrodla.json (demo data)."""
 
 import json
 import os
@@ -16,7 +16,7 @@ def source_meta():
 
 
 def teryt_for(organization_title):
-    """TERYT gminy instytucji. Na razie znany tylko dla instytucji z pliku źródeł (ograniczenie wersji demonstracyjnej)."""
+    """Municipality TERYT of an institution; for now known only for institutions in the sources file (demo limitation)."""
     return next((m["kod_teryt_gminy"] for m in source_meta() if m["wydawca"] == organization_title), "")
 
 

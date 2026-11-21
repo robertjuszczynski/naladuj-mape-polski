@@ -61,7 +61,7 @@ def test_hold_removes_ready_row_from_publication():
 def test_invalid_decision_is_ignored():
     review = review_of()
     assert not review.apply_decision(len(review.checked), Decision.ACCEPT)
-    assert not review.apply_decision(0, "usun")
+    assert not review.apply_decision(0, "delete")
     assert review.decisions == {}
 
 

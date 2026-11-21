@@ -41,25 +41,25 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
     def get_urls(self):
         view = self.admin_site.admin_view
         return [
-            path("wgraj/", view(self.step_file), name="aed_wgraj"),
-            path("<int:pk>/kolumny/", view(self.step_columns), name="aed_kolumny"),
-            path("<int:pk>/sprawdzenie/", view(self.step_review), name="aed_sprawdzenie"),
-            path("<int:pk>/licencja/", view(self.step_license), name="aed_licencja"),
-            path("<int:pk>/gotowe/", view(self.step_done), name="aed_gotowe"),
-            path("<int:pk>/pobierz/", view(self.download_fixed), name="aed_pobierz"),
+            path("upload/", view(self.step_file), name="aed_upload"),
+            path("<int:pk>/columns/", view(self.step_columns), name="aed_columns"),
+            path("<int:pk>/review/", view(self.step_review), name="aed_review"),
+            path("<int:pk>/license/", view(self.step_license), name="aed_license"),
+            path("<int:pk>/done/", view(self.step_done), name="aed_done"),
+            path("<int:pk>/download/", view(self.download_fixed), name="aed_download"),
         ] + super().get_urls()
 
     def add_view(self, request, form_url="", extra_context=None):
-        return redirect("admin:aed_wgraj")
+        return redirect("admin:aed_upload")
 
     def changelist_view(self, request, extra_context=None):
         if not self.get_queryset(request).exists():
-            return redirect("admin:aed_wgraj")
+            return redirect("admin:aed_upload")
         return super().changelist_view(request, extra_context)
 
     def change_view(self, request, object_id, form_url="", extra_context=None):
         upload = self.get_upload(request, object_id)
-        return redirect("admin:aed_gotowe" if upload.is_published else "admin:aed_sprawdzenie", pk=upload.pk)
+        return redirect("admin:aed_done" if upload.is_published else "admin:aed_review", pk=upload.pk)
 
     def render_step(self, request, template, step, **context):
         base = dict(
@@ -83,12 +83,12 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
         if request.method == "POST":
             upload = self._create_upload(request, organizations)
             if upload is not None:
-                return redirect("admin:aed_kolumny", pk=upload.pk)
-        return self.render_step(request, "step_file", 1, orgs=organizations)
+                return redirect("admin:aed_columns", pk=upload.pk)
+        return self.render_step(request, "step_file", 1, organizations=organizations)
 
     def _create_upload(self, request, organizations):
-        uploaded = request.FILES.get("plik")
-        organization = organizations.filter(pk=request.POST.get("organizacja")).first()
+        uploaded = request.FILES.get("file")
+        organization = organizations.filter(pk=request.POST.get("organization")).first()
         if not uploaded or not organization:
             messages.error(request, "Wybierz instytucję i plik CSV albo XLSX.")
             return None
@@ -113,10 +113,10 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
     def step_columns(self, request, pk):
         upload = self.get_upload(request, pk)
         if request.method == "POST":
-            mapping = {column: request.POST.get("col_%d" % i, "") for i, column in enumerate(upload.header)}
+            mapping = {column: request.POST.get("column_%d" % i, "") for i, column in enumerate(upload.header)}
             upload.run_import(self._pipeline(upload), mapping)
             upload.save()
-            return redirect("admin:aed_sprawdzenie", pk=upload.pk)
+            return redirect("admin:aed_review", pk=upload.pk)
         sample = upload.rows[:COLUMN_SAMPLE_SIZE]
         columns = [
             {
@@ -142,10 +142,10 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
     def step_review(self, request, pk):
         upload = self.get_upload(request, pk)
         if request.method == "POST":
-            index = request.POST.get("idx", "")
+            index = request.POST.get("row", "")
             if index.isdigit() and upload.apply_decision(int(index), request.POST.get("action"), request.POST):
                 upload.save()
-            return redirect("admin:aed_sprawdzenie", pk=upload.pk)
+            return redirect("admin:aed_review", pk=upload.pk)
         quality = PortalQualityCheck().run([c["record"] for c in upload.checked])
         return self.render_step(
             request,
@@ -172,7 +172,7 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
                 messages.error(request, error)
             else:
                 self._publish(request, upload, to_publish)
-                return redirect("admin:aed_gotowe", pk=upload.pk)
+                return redirect("admin:aed_done", pk=upload.pk)
         return self.render_step(
             request,
             "step_license",
@@ -181,15 +181,15 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
             count=len(to_publish),
             held=len(upload.checked) - len(to_publish),
             others=len(others),
-            others_orgs=len({(r.get("dysponent_nazwa") or "").strip().lower() for r in others}),
+            others_organizations=len({(r.get("dysponent_nazwa") or "").strip().lower() for r in others}),
             licenses=license_options(),
         )
 
     @staticmethod
     def _license_error(request, to_publish, others):
-        if not request.POST.get("zgoda"):
+        if not request.POST.get("consent"):
             return "Publikacja wymaga oświadczenia o prawie do udostępnienia danych."
-        if others and not request.POST.get("zgoda_inni"):
+        if others and not request.POST.get("consent_others"):
             return "Plik zawiera AED innych dysponentów – potwierdź zgodę lub podstawę prawną."
         if not to_publish:
             return "Brak rekordów do publikacji."
@@ -198,7 +198,7 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
     @staticmethod
     @transaction.atomic
     def _publish(request, upload, records):
-        license_code = license_from_form(request.POST.get("licencja", ""))
+        license_code = license_from_form(request.POST.get("license", ""))
         dataset = DatasetPublisher(upload.organization, request.user).publish(records, license_code)
         RegistryBuilder.rebuild_on_commit()
         upload.mark_published(dataset, license_name(license_code))
@@ -207,4 +207,4 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
     def step_done(self, request, pk):
         upload = self.get_upload(request, pk)
         dataset_url = reverse("admin:datasets_dataset_change", args=[upload.dataset_id]) if upload.dataset_id else None
-        return self.render_step(request, "step_done", 5, up=upload, ds_url=dataset_url)
+        return self.render_step(request, "step_done", 5, up=upload, dataset_url=dataset_url)

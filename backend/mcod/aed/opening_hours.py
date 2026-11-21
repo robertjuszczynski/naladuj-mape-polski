@@ -1,4 +1,4 @@
-"""Godziny dostępności w formacie opening_hours (OpenStreetMap): zamiana z opisu po polsku, walidacja i sprawdzenie otwarcia."""
+"""Opening hours in the OpenStreetMap opening_hours format: parsing Polish descriptions, validation and open-at checks."""
 
 import re
 
@@ -51,7 +51,7 @@ class OpeningHours:
 
     @classmethod
     def from_polish(cls, text):
-        """Zamienia opis typu „pn-pt 7-18, sob. 9-14” na „Mo-Fr 07:00-18:00; Sa 09:00-14:00”; None, gdy się nie da."""
+        """Turns "pn-pt 7-18, sob. 9-14" into "Mo-Fr 07:00-18:00; Sa 09:00-14:00"; None if it cannot be parsed."""
         text = (text or "").strip()
         if not text:
             return None
@@ -93,7 +93,7 @@ class OpeningHours:
 
     @classmethod
     def is_open_at(cls, spec, when):
-        """True/False wg reguł; None, gdy brak godzin albo nie da się ich odczytać."""
+        """True/False by the rules; None when hours are missing or unreadable."""
         spec = (spec or "").strip()
         if not spec:
             return None

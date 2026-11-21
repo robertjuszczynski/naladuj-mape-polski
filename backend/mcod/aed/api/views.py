@@ -9,7 +9,7 @@ from mcod.aed.api.serializers import AedStats, brief, detail
 from mcod.aed.availability import night_of
 from mcod.aed.models import AedRecord
 
-NIGHT_PARAM = "noc"
+NIGHT_PARAM = "night"
 
 
 def requested_time(request):
@@ -21,7 +21,7 @@ def requested_time(request):
             return datetime.datetime.fromisoformat(at)
         except ValueError:
             raise falcon.HTTPBadRequest(
-                title="Nieprawidłowy parametr at", description="Użyj formatu RRRR-MM-DDTGG:MM albo at=noc"
+                title="Nieprawidłowy parametr at", description="Użyj formatu RRRR-MM-DDTGG:MM albo at=night"
             )
     return timezone.localtime()
 
@@ -40,7 +40,7 @@ class AedListView:
         if query:
             queryset = queryset.filter(Q(nazwa_obiektu__icontains=query) | Q(miejscowosc__icontains=query))
         data = [brief(r, when) for r in queryset]
-        send_json(response, {"meta": {"liczba": len(data), "na_godzine": when.isoformat()}, "data": data})
+        send_json(response, {"meta": {"count": len(data), "at": when.isoformat()}, "data": data})
 
 
 class AedDetailView:

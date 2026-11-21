@@ -1,4 +1,4 @@
-"""Publikacja danych AED jako natywnych zbiorów i zasobów portalu."""
+"""Publishing AED data as native portal datasets and resources."""
 
 import datetime
 
@@ -6,7 +6,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
 
-from mcod.aed.constants import AED_TAG_NAMES, NATIONAL_KEY, PROFILE_KEY
+from mcod.aed.constants import AED_TAG_NAMES, NATIONAL_FLAG, NATIONAL_KEY, PROFILE_KEY
 from mcod.aed.export import AedCsv
 from mcod.aed.profile import PROFILE_VERSION
 from mcod.categories.models import Category
@@ -87,7 +87,7 @@ class DatasetPublisher:
     def _create_dataset(self, license_code, national):
         custom = {PROFILE_KEY: PROFILE_VERSION}
         if national:
-            custom[NATIONAL_KEY] = "tak"
+            custom[NATIONAL_KEY] = NATIONAL_FLAG
         title, notes = self._describe(national)
         category = self.health_category()
         dataset = Dataset.objects.create(
@@ -122,7 +122,7 @@ class DatasetPublisher:
         )
 
     def replace_resource(self, dataset, content, title, description):
-        """Usuwa poprzedni zasób CSV zbioru i dodaje nowy z plikiem; portal sam waliduje i indeksuje plik."""
+        """Replace the dataset's CSV resource; the portal validates and indexes the new file itself."""
         for old in Resource.objects.filter(dataset=dataset, status="published"):
             old.delete()
         resource = Resource.objects.create(

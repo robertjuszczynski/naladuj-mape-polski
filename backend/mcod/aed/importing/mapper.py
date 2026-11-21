@@ -8,7 +8,7 @@ from mcod.aed.profile import FIELDS_BY_NAME
 
 
 def normalize_value(name, raw):
-    """Zwraca (wartość, notatka o zmianie albo None) dla pola wzorcowego zakresu."""
+    """Returns (value, change note or None) for a data standard field."""
     value = re.sub(r"\s+", " ", (raw or "").strip())
     field = FIELDS_BY_NAME.get(name)
     if not field or value == "":
@@ -17,14 +17,14 @@ def normalize_value(name, raw):
 
 
 class RecordMapper:
-    """Zamienia wiersze pliku na rekordy wzorcowego zakresu według dopasowania kolumn."""
+    """Turns file rows into data standard records using the column mapping."""
 
     def __init__(self, defaults, id_prefix):
         self.defaults = defaults
         self.id_prefix = id_prefix
 
     def map(self, header, rows, mapping):
-        """Zwraca listę (rekord, notatki)."""
+        """Returns a list of (record, notes)."""
         return [self._map_row(index, header, row, mapping) for index, row in enumerate(rows)]
 
     def _map_row(self, index, header, row, mapping):

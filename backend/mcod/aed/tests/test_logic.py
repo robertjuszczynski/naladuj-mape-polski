@@ -106,7 +106,7 @@ def test_availability():
     assert OpeningHours.is_open_at("Mo-Fr 08:00-16:00", sat3) is False
     assert OpeningHours.is_open_at("Sa-Mo 22:00-04:00", sat3) is True
     assert availability_at({"dostepny_calodobowo": "false"}, sat3) == Availability.UNKNOWN
-    assert availability_at({"dostepny_calodobowo": "true", "sprawny": "false"}, sat3) == Availability.OUT_OF_ORDER
+    assert availability_at({"dostepny_calodobowo": "true", "sprawny": "false"}, sat3) == Availability.FAULTY
 
 
 def test_night_of():

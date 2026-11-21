@@ -1,4 +1,4 @@
-"""Typy pól wzorcowego zakresu: normalizacja wartości z pliku, walidacja i reguła weryfikacji jakości portalu."""
+"""Field types of the data standard: value normalization, validation and the portal quality rule."""
 
 import datetime
 import re
@@ -26,7 +26,7 @@ class FieldType:
     table_type = STRING_COLUMN
 
     def normalize(self, value, field):
-        """Zwraca (wartość, notatka o zmianie albo None)."""
+        """Returns (value, change note or None)."""
         return value, None
 
     def error(self, value, field):

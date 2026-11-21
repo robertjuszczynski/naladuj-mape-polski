@@ -1,4 +1,4 @@
-"""Walidacja rekordów AED: format pól, lokalizacja (zamiana współrzędnych, punkt poza gminą), duplikaty i status rekordu."""
+"""AED record validation: field formats, location (swapped coordinates, point outside the municipality), duplicates and status."""
 
 import re
 
@@ -72,7 +72,7 @@ class LocationCheck:
         self.tolerance_m = tolerance_m
 
     def check(self, record):
-        """Zwraca (rekord, poprawki, uwagi); rekord jest kopią, w której mogą być zamienione współrzędne."""
+        """Returns (record, fixes, issues); the record is a copy whose coordinates may be swapped."""
         record = dict(record)
         lat, lon = coordinates(record)
         if lat is None or lon is None:
@@ -108,13 +108,13 @@ class LocationCheck:
     def _outside_municipality(self, lat, lon, own):
         distance = distance_to_boundary_m(lat, lon, own)
         if distance <= self.tolerance_m:
-            message = "Punkt leży %d m poza granicą gminy %s – sprawdź lokalizację" % (distance, own["nazwa"])
+            message = "Punkt leży %d m poza granicą gminy %s – sprawdź lokalizację" % (distance, own["name"])
             return issue(LAT, IssueCode.NEAR_BORDER, Severity.WARNING, message)
         other = Boundaries.containing(lat, lon, exclude=own)
         if other:
-            message = "Punkt leży w granicach gminy %s, %d km od gminy %s" % (other["nazwa"], distance / 1000, own["nazwa"])
+            message = "Punkt leży w granicach gminy %s, %d km od gminy %s" % (other["name"], distance / 1000, own["name"])
         else:
-            message = "Punkt leży %.1f km poza gminą %s" % (distance / 1000, own["nazwa"])
+            message = "Punkt leży %.1f km poza gminą %s" % (distance / 1000, own["name"])
         return issue(LAT, IssueCode.OUTSIDE_MUNICIPALITY, Severity.ERROR, message)
 
 
@@ -153,7 +153,7 @@ class StatusResolver:
 
 
 class RecordChecker:
-    """Pełne sprawdzenie partii rekordów. Wynik: lista {record, fixes, issues, status, notes}."""
+    """Full check of a batch of records. Result: list of {record, fixes, issues, status, notes}."""
 
     def __init__(self):
         self.location = LocationCheck()
@@ -175,7 +175,7 @@ class RecordChecker:
 
 
 class PortalQualityCheck:
-    """Reguły weryfikacji jakości portalu (odwzorowane z mcod/templates/painless) dla kolumn wzorcowego zakresu."""
+    """Portal quality rules (mirrored from mcod/templates/painless) for the data standard columns."""
 
     def run(self, records):
         out = []

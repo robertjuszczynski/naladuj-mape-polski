@@ -1,4 +1,4 @@
-"""Wzorcowy zakres danych o defibrylatorach AED: jedna definicja pól dla walidacji, importu i eksportu."""
+"""AED data standard: a single field definition for validation, import and export."""
 
 from dataclasses import dataclass
 from typing import Optional, Tuple
@@ -25,9 +25,9 @@ ADDRESS_FEATURES = (
 
 
 class Requirement:
-    REQUIRED = "obowiazkowe"
-    RECOMMENDED = "zalecane"
-    OPTIONAL = "opcjonalne"
+    REQUIRED = "required"
+    RECOMMENDED = "recommended"
+    OPTIONAL = "optional"
 
 
 @dataclass(frozen=True)

@@ -2,7 +2,7 @@ import re
 
 from mcod.aed.profile import FIELD_NAMES
 
-ADDRESS_TARGET = "_adres_w_jednej_kolumnie"
+ADDRESS_TARGET = "_address_in_one_column"
 
 SYNONYMS = (
     ("id_aed", r"^(id(_aed)?|identyfikator|numer id|nr|lp\.?)$"),
@@ -38,7 +38,7 @@ ALTERNATIVE_NAME_COLUMN = re.compile(r"lokalizacja|miejsce|obiekt", re.I)
 
 
 class ColumnMatcher:
-    """Podpowiada, które pole wzorcowego zakresu odpowiada każdej kolumnie pliku."""
+    """Suggests which data standard field matches each file column."""
 
     def suggest(self, header, sample_rows=()):
         used, mapping = set(), {}
@@ -53,7 +53,7 @@ class ColumnMatcher:
 
     @staticmethod
     def _prefer_distinct_names(header, sample_rows, mapping):
-        """Kolumna „Nazwa” z tą samą wartością w każdym wierszu (np. „Defibrylator”) ustępuje kolumnie z nazwami miejsc."""
+        """A "Nazwa" column with the same value in every row (e.g. "Defibrylator") yields to a column with place names."""
         name_column = next((h for h in header if mapping[h] == "nazwa_obiektu"), None)
         alternative = next((h for h in header if not mapping[h] and ALTERNATIVE_NAME_COLUMN.search(h)), None)
         if not name_column or not alternative or len(sample_rows) <= 1:

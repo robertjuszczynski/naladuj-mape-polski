@@ -13,7 +13,7 @@ UTF8_BOM = "﻿"
 
 
 class AedCsv:
-    """Plik CSV we wzorcowym zakresie i schemat kolumn dla widoku tabeli portalu."""
+    """CSV in the data standard and the column schema for the portal table view."""
 
     @staticmethod
     def write(header, rows):
@@ -29,7 +29,7 @@ class AedCsv:
 
     @staticmethod
     def table_schema(content):
-        """Kolumna z pustymi komórkami zostaje tekstowa, bo portal nie traktuje pustej komórki jako braku danych."""
+        """A column with empty cells stays a string column, because the portal does not treat empty cells as missing."""
         rows = list(csv.reader(io.StringIO(content.decode("utf-8-sig"))))
         header, body = rows[0], rows[1:]
         fields = []
@@ -43,7 +43,7 @@ class AedCsv:
 
 
 class CorrectedCsvExport:
-    """Plik z kroku „Sprawdzenie”: dane po poprawkach i kolumny status, zmiany_automatyczne, do_sprawdzenia."""
+    """Review step download: fixed data plus status, automatic changes and to-check columns."""
 
     EXTRA_COLUMNS = ["status", "zmiany_automatyczne", "do_sprawdzenia"]
 
@@ -70,7 +70,7 @@ class CorrectedCsvExport:
 
 
 def attachment_header(filename):
-    """Nazwa ASCII dla starszych przeglądarek i pełna nazwa w UTF-8 (RFC 6266), bez znaków sterujących."""
+    """ASCII fallback name for older browsers plus the full UTF-8 name (RFC 6266), without control characters."""
     clean = re.sub(r"[\x00-\x1f\x7f]", "", filename)
     ascii_name = unicodedata.normalize("NFKD", clean).encode("ascii", "ignore").decode("ascii").replace('"', "").replace("\\", "")
     return "attachment; filename=\"%s\"; filename*=UTF-8''%s" % (ascii_name or "aed.csv", quote(clean))

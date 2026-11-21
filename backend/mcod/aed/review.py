@@ -1,4 +1,4 @@
-"""Decyzje instytucji w kroku „Sprawdzenie” kreatora: co trafi do publikacji, podsumowanie, ręczne poprawki."""
+"""Institution decisions in the wizard review step: what gets published, the summary and manual fixes."""
 
 from collections import namedtuple
 
@@ -21,7 +21,7 @@ ACCEPTED_BY_INSTITUTION = "zatwierdzony przez instytucję"
 
 
 class UploadReview:
-    """checked: lista wyników sprawdzenia {record, fixes, issues, status, notes}; decisions: {indeks wiersza: decyzja}."""
+    """checked: list of {record, fixes, issues, status, notes}; decisions: {row index: decision}."""
 
     def __init__(self, checked, decisions, organization_title):
         self.checked = checked
@@ -66,7 +66,7 @@ class UploadReview:
         return RecordStatus.LABELS[row["status"]]
 
     def apply_decision(self, index, action, values=None):
-        """Zwraca False, gdy indeks albo akcja są nieprawidłowe."""
+        """Returns False for an invalid index or action."""
         if not 0 <= index < len(self.checked):
             return False
         key = str(index)
@@ -106,7 +106,7 @@ class UploadReview:
             actions.append((Decision.HOLD, "Wstrzymaj"))
         return dict(
             row,
-            idx=index,
+            index=index,
             held=held,
             publish=publish,
             label=RecordStatus.LABELS[RecordStatus.HELD] if held else RecordStatus.LABELS[row["status"]],

@@ -1,4 +1,4 @@
-"""Uzupełnianie brakujących współrzędnych z usługi geokodowania GUGiK (Państwowy Rejestr Granic, dane otwarte)."""
+"""Filling in missing coordinates with the GUGiK geocoding service (open data)."""
 
 import hashlib
 import logging
@@ -31,13 +31,13 @@ class GugikGeocoder:
 
     @staticmethod
     def query_for(record):
-        """Adres w formacie usługi GUGiK: „kod miejscowość, ulica numer”."""
+        """Address in the GUGiK format: "postcode city, street number"."""
         street = " ".join(x for x in (record.get("ulica"), record.get("numer_budynku")) if x)
         city = " ".join(x for x in (record.get("kod_pocztowy"), record.get("miejscowosc")) if x)
         return ", ".join(x for x in (city, street) if x)
 
     def geocode(self, address):
-        """{"lat", "lon", "simc"} albo None. Porażki nie trafiają do cache, więc chwilowy błąd usługi nie blokuje adresu."""
+        """{"lat", "lon", "simc"} or None. Failures are not cached, so a transient outage does not block an address."""
         if not address:
             return None
         key = self.CACHE_PREFIX + hashlib.sha1(address.encode("utf-8")).hexdigest()
@@ -60,7 +60,7 @@ class GugikGeocoder:
         return None
 
     def fill_missing(self, mapped, limit=GEOCODE_LIMIT):
-        """mapped: lista (rekord, notatki). Uzupełnia współrzędne rekordów bez nich (najwyżej limit adresów)."""
+        """mapped: list of (record, notes). Fills in coordinates for records without them (up to limit addresses)."""
         pending = [(record, notes, self.query_for(record)) for record, notes in mapped if self._needs_coordinates(record)][:limit]
         addresses = sorted({address for _, _, address in pending})
         if not addresses:

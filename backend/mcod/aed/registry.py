@@ -1,4 +1,4 @@
-"""Rejestr zbiorczy AED i zbiór ogólnopolski odbudowywane ze zbiorów instytucji."""
+"""Aggregated AED registry and national dataset, rebuilt from institution datasets."""
 
 import datetime
 import logging
@@ -28,7 +28,7 @@ BULK_BATCH_SIZE = 500
 
 
 def tagged_datasets():
-    """Zbiory oznaczone tagiem AED, wgrane bez kreatora (np. zwykłym formularzem zasobu)."""
+    """Datasets tagged as AED but uploaded without the wizard (e.g. with the regular resource form)."""
     queryset = Dataset.objects.filter(status="published", tags__name__iregex=r"^(%s)$" % "|".join(FOREIGN_TAG_NAMES)).distinct()
     return (
         queryset.exclude(customfields__has_key=PROFILE_KEY)
@@ -46,14 +46,14 @@ class RegistryBuilder:
         transaction.on_commit(lambda: cls().rebuild())
 
     def sources(self):
-        """(zbiór, najnowszy opublikowany zasób) dla zbiorów z profilem AED i zbiorów z tagiem AED."""
+        """(dataset, latest published resource) for AED-profile and AED-tagged datasets."""
         for dataset in list(aed_datasets()) + list(tagged_datasets()):
             resource = Resource.objects.filter(dataset=dataset, status="published").order_by("-created").first()
             if resource is not None:
                 yield dataset, resource
 
     def records(self, dataset, resource):
-        """Wyniki sprawdzenia rekordów jednego zasobu; zasób, którego nie da się odczytać, jest pomijany z wpisem w logu."""
+        """Checked records of one resource; an unreadable resource is skipped and logged."""
         main_file = resource._main_file
         if main_file is None or not main_file.file:
             return []

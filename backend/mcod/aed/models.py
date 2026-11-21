@@ -9,7 +9,7 @@ from mcod.aed.validation import coordinates
 
 
 class AedRecord(models.Model):
-    """Rekord zbiorczego rejestru AED, odbudowywany ze zbiorów instytucji oznaczonych profilem AED."""
+    """Aggregated AED registry entry, rebuilt from institution datasets that carry the AED profile."""
 
     id_aed = models.CharField("Identyfikator AED", max_length=120, unique=True)
     dataset = models.ForeignKey(
@@ -42,7 +42,6 @@ class AedRecord(models.Model):
 
     @classmethod
     def from_result(cls, dataset, resource, result):
-        """Rekord rejestru z wyniku sprawdzenia {record, fixes, issues, status}."""
         record = result["record"]
         lat, lon = coordinates(record)
         return cls(
@@ -67,7 +66,7 @@ class AedRecord(models.Model):
 
 
 class AedUpload(models.Model):
-    """Sesja kreatora „Dodaj dane o AED” w panelu dostawcy danych."""
+    """A session of the "Dodaj dane o AED" wizard in the data provider panel."""
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="aed_uploads", verbose_name="Użytkownik"
@@ -82,7 +81,7 @@ class AedUpload(models.Model):
     mapping = JSONField("Dopasowanie kolumn", default=dict)
     checked = JSONField("Wynik sprawdzenia", default=list)
     decisions = JSONField("Decyzje instytucji", default=dict)
-    licencja = models.CharField("Licencja", max_length=20, blank=True)
+    license = models.CharField("Licencja", max_length=20, blank=True)
     status = models.CharField("Status", max_length=20, choices=UploadStatus.CHOICES, default=UploadStatus.DRAFT)
     dataset = models.ForeignKey("datasets.Dataset", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Zbiór")
     created = models.DateTimeField("Utworzono", auto_now_add=True)
@@ -122,4 +121,4 @@ class AedUpload(models.Model):
         return self.review.apply_decision(index, action, values)
 
     def mark_published(self, dataset, license_name):
-        self.status, self.licencja, self.dataset, self.published = UploadStatus.PUBLISHED, license_name, dataset, timezone.now()
+        self.status, self.license, self.dataset, self.published = UploadStatus.PUBLISHED, license_name, dataset, timezone.now()

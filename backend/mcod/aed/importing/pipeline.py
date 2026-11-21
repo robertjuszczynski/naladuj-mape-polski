@@ -8,7 +8,7 @@ from mcod.aed.validation import RecordChecker
 
 @dataclass(frozen=True)
 class ImportSource:
-    """Skąd pochodzą rekordy: wartości domyślne dla pól, których plik nie ma, i prefiks identyfikatorów."""
+    """Where records come from: defaults for fields missing in the file and the id prefix."""
 
     operator: str
     source_label: str
@@ -30,9 +30,9 @@ class ImportSource:
 
 
 class ImportPipeline:
-    """Dopasowanie kolumn → rekordy wzorcowego zakresu → (opcjonalnie) geokodowanie → walidacja.
+    """Column matching -> standard records -> optional geocoding -> validation.
 
-    Używany przez kreator w panelu i przy odbudowie rejestru (zbiory z tagiem AED).
+    Used by the admin wizard and by the registry rebuild (AED-tagged datasets).
     """
 
     def __init__(self, source, geocoder=None):

@@ -29,7 +29,7 @@ FEATURE_ALIASES = {
     "ogród": "ogród",
     "wyspa": "wyspa",
 }
-# Słowa, które są częścią nazwy („Rynek Główny”, „Plac Wolności”), a jednocześnie wyznaczają cechę adresu.
+# Words that stay part of the street name (e.g. Rynek, Plac) but still set the address feature.
 FEATURES_KEPT_IN_NAME = {"rynek": "rynek", "rondo": "rondo", "park": "park", "skwer": "skwer", "plac": "pl.", "osiedle": "os."}
 
 _POSTCODE_AND_CITY = re.compile(r"(\d{2}-\d{3})\s*(.*)$")
@@ -39,7 +39,7 @@ _STREET_AND_NUMBER = re.compile(r"^(.*?)\s+(\d+[A-Za-z]?(?:[-–]\d+[A-Za-z]?)?)
 class AddressParser:
     @staticmethod
     def split_street(text):
-        """Zwraca (cecha, ulica, czy_cecha_przyjeta_domyslnie)."""
+        """Returns (feature, street, feature_assumed)."""
         street = re.sub(r"\s+", " ", (text or "").strip())
         if not street:
             return "", "", False
@@ -53,7 +53,7 @@ class AddressParser:
 
     @classmethod
     def parse(cls, text):
-        """Rozdziela adres z jednej kolumny („al. Piłsudskiego 95, 05-270 Marki”) na pola wzorcowego zakresu."""
+        """Splits a one-column address ("al. X 95, 05-270 Marki") into data standard fields."""
         out = {"cecha_adresu": "", "ulica": "", "numer_budynku": "", "numer_lokalu": "", "kod_pocztowy": "", "miejscowosc": ""}
         street = re.sub(r"\s+", " ", (text or "").strip())
         city = _POSTCODE_AND_CITY.search(street)
