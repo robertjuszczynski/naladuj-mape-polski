@@ -75,6 +75,53 @@
     <p class="aed-error" role="alert" *ngIf="error()">{{ error() | translate }}</p>
     <div class="aed-explorer__grid">
       <div class="aed-panel">
+        <fieldset class="aed-group">
+          <legend>{{ 'Aed.WhenLegend' | translate }}</legend>
+          <label class="aed-option"
+            ><input type="radio" name="when" [checked]="mode === 'now'" (change)="setMode('now')" />
+            {{ 'Aed.Now' | translate }}</label
+          >
+          <label class="aed-option"
+            ><input type="radio" name="when" [checked]="mode === 'chosen'" (change)="setMode('chosen')" />
+            {{ 'Aed.PickDayHour' | translate }}</label
+          >
+          <div class="aed-when" *ngIf="mode === 'chosen'">
+            <label class="aed-field">
+              {{ 'Aed.Day' | translate }}
+              <select name="day" [(ngModel)]="day" (ngModelChange)="load()">
+                <option *ngFor="let d of days" [ngValue]="d">{{ 'Aed.Days.' + d | translate }}</option>
+              </select>
+            </label>
+            <label class="aed-field" for="aed-hour"
+              >{{ 'Aed.Hour' | translate }}: <output for="aed-hour">{{ hourLabel }}</output></label
+            >
+            <input
+              id="aed-hour"
+              class="aed-range"
+              type="range"
+              min="0"
+              max="23"
+              step="1"
+              name="hour"
+              [(ngModel)]="hour"
+              (change)="load()"
+              aria-describedby="aed-when-hint" />
+            <div class="aed-range__scale" aria-hidden="true">
+              <span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
+            </div>
+          </div>
+          <p id="aed-when-hint" class="aed-when__hint" aria-live="polite">
+            <span class="aed-loading" *ngIf="loading(); else summary"
+              ><span class="aed-spinner" aria-hidden="true"></span>{{ 'Aed.Loading' | translate }}</span
+            >
+            <ng-template #summary>
+              {{ 'Aed.Available' | translate }}: {{ counts().open }} {{ 'Aed.Of' | translate }}
+              {{ points().length }} ({{
+                mode === 'now' ? ('Aed.NowLower' | translate) : ('Aed.Days.' + day | translate) + ', ' + hourLabel
+              }})
+            </ng-template>
+          </p>
+        </fieldset>
         <form class="aed-group aed-incident" role="search" (ngSubmit)="findAddress()">
           <h3 class="aed-incident__title">{{ 'Aed.Nearest.Title' | translate }}</h3>
           <p class="aed-muted aed-incident__lead">{{ 'Aed.Nearest.Lead' | translate }}</p>
@@ -125,7 +172,7 @@
               <ul>
                 <li *ngFor="let c of n.data.closed">
                   <strong>{{ c.name || 'AED' }}</strong
-                  >, {{ c.distance_m }} m –
+                  >, {{ distance(c.distance_m) }} –
                   <ng-container *ngIf="c.availability === 'faulty'; else hours">{{
                     'Aed.Avail.faulty' | translate
                   }}</ng-container>
@@ -144,7 +191,7 @@
                 <div>
                   <a [routerLink]="[route, p.id] | localize" class="aed-nearest__name">{{ p.name || 'AED' }}</a>
                   <span class="aed-nearest__dist">{{
-                    'Aed.Nearest.Walk' | translate: { m: p.distance_m, min: p.walk_min }
+                    'Aed.Nearest.Walk' | translate: { distance: distance(p.distance_m), min: p.walk_min }
                   }}</span>
                   <span class="aed-muted">{{ p.address }}</span>
                   <figure class="aed-nearest__phrase" *ngIf="i === 0">
@@ -158,7 +205,10 @@
               </li>
             </ol>
             <ng-template #noneOpen>
-              <p class="aed-nearest__far">{{ 'Aed.Nearest.NoneOpen' | translate }}</p>
+              <p class="aed-nearest__far">
+                {{ 'Aed.Nearest.NoneOpen' | translate: { km: n.meta.radius_km } }}
+                <a [href]="wizardUrl">{{ 'Aed.AddData' | translate }} →</a>
+              </p>
             </ng-template>
             <p class="aed-nearest__far" *ngIf="(n.data.open[0]?.walk_min ?? 0) > farWalkMin">
               {{ 'Aed.Nearest.Far' | translate }}
@@ -167,7 +217,7 @@
             <div class="aed-nearest__unknown" *ngIf="n.data.unknown.length">
               <p>{{ 'Aed.Nearest.Unknown' | translate }}</p>
               <ul>
-                <li *ngFor="let u of n.data.unknown">{{ u.name || 'AED' }}, {{ u.distance_m }} m</li>
+                <li *ngFor="let u of n.data.unknown">{{ u.name || 'AED' }}, {{ distance(u.distance_m) }}</li>
               </ul>
             </div>
 
@@ -180,53 +230,6 @@
           </ng-container>
         </section>
 
-        <fieldset class="aed-group">
-          <legend>{{ 'Aed.WhenLegend' | translate }}</legend>
-          <label class="aed-option"
-            ><input type="radio" name="when" [checked]="mode === 'now'" (change)="setMode('now')" />
-            {{ 'Aed.Now' | translate }}</label
-          >
-          <label class="aed-option"
-            ><input type="radio" name="when" [checked]="mode === 'chosen'" (change)="setMode('chosen')" />
-            {{ 'Aed.PickDayHour' | translate }}</label
-          >
-          <div class="aed-when" *ngIf="mode === 'chosen'">
-            <label class="aed-field">
-              {{ 'Aed.Day' | translate }}
-              <select name="day" [(ngModel)]="day" (ngModelChange)="load()">
-                <option *ngFor="let d of days" [ngValue]="d">{{ 'Aed.Days.' + d | translate }}</option>
-              </select>
-            </label>
-            <label class="aed-field" for="aed-hour"
-              >{{ 'Aed.Hour' | translate }}: <output for="aed-hour">{{ hourLabel }}</output></label
-            >
-            <input
-              id="aed-hour"
-              class="aed-range"
-              type="range"
-              min="0"
-              max="23"
-              step="1"
-              name="hour"
-              [(ngModel)]="hour"
-              (change)="load()"
-              aria-describedby="aed-when-hint" />
-            <div class="aed-range__scale" aria-hidden="true">
-              <span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
-            </div>
-          </div>
-          <p id="aed-when-hint" class="aed-when__hint" aria-live="polite">
-            <span class="aed-loading" *ngIf="loading(); else summary"
-              ><span class="aed-spinner" aria-hidden="true"></span>{{ 'Aed.Loading' | translate }}</span
-            >
-            <ng-template #summary>
-              {{ 'Aed.Available' | translate }}: {{ counts().open }} {{ 'Aed.Of' | translate }}
-              {{ points().length }} ({{
-                mode === 'now' ? ('Aed.NowLower' | translate) : ('Aed.Days.' + day | translate) + ', ' + hourLabel
-              }})
-            </ng-template>
-          </p>
-        </fieldset>
         <ng-container *ngIf="!nearest()">
           <fieldset class="aed-group">
             <legend>{{ 'Aed.Show' | translate }}</legend>

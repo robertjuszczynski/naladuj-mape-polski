@@ -14,6 +14,7 @@ WALK_M_PER_MIN = 80
 DETOUR_FACTOR = 1.3
 DISTANCE_ROUNDING_M = 10
 SEARCH_RADIUS_DEG = 0.3
+MAX_DISTANCE_M = 5000
 OPEN_LIMIT = 3
 CLOSED_LIMIT = 3
 UNKNOWN_LIMIT = 2
@@ -117,6 +118,7 @@ class NearestAed:
             ((distance_m(lat, lon, r.lat, r.lon), r, availability_at(r.data, self.when)) for r in self.records),
             key=lambda item: item[0],
         )
+        ranked = [item for item in ranked if item[0] <= MAX_DISTANCE_M]
         available = [item for item in ranked if item[2] == Availability.OPEN][:OPEN_LIMIT]
         reach = available[-1][0] if len(available) == OPEN_LIMIT else float("inf")
         closer = [item for item in ranked if item[0] < reach]

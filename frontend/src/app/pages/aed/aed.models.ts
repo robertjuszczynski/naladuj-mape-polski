@@ -56,6 +56,6 @@ export interface AedIncidentPoint {
 }
 
 export interface AedNearest {
-  meta: { at: string; point: AedIncidentPoint };
+  meta: { at: string; point: AedIncidentPoint; radius_km: number };
   data: { open: AedNearby[]; closed: AedNearby[]; unknown: AedNearby[] };
 }

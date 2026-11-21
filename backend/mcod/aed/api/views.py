@@ -10,7 +10,7 @@ from mcod.aed.api.serializers import AedStats, brief, detail
 from mcod.aed.availability import night_of
 from mcod.aed.importing.geocoder import GugikGeocoder
 from mcod.aed.models import AedRecord
-from mcod.aed.nearest import SEARCH_RADIUS_DEG, AddressLocator, NearestAed
+from mcod.aed.nearest import MAX_DISTANCE_M, SEARCH_RADIUS_DEG, AddressLocator, NearestAed
 
 NIGHT_PARAM = "night"
 MIN_NEARBY_RECORDS = 20
@@ -69,7 +69,7 @@ class AedNearestView:
         point = self.point(request)
         records = self.records_near(point["lat"], point["lon"])
         payload = {
-            "meta": {"at": when.isoformat(), "point": point},
+            "meta": {"at": when.isoformat(), "point": point, "radius_km": MAX_DISTANCE_M // 1000},
             "data": NearestAed(records, when).find(point["lat"], point["lon"]),
         }
         send_json(response, payload)

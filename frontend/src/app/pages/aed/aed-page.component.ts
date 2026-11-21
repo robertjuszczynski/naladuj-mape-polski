@@ -229,6 +229,17 @@ export class AedPageComponent implements OnInit {
     this.document.defaultView?.navigator.clipboard?.writeText(phrase).then(() => this.copied.set(index));
   }
 
+  /** "380 m" or "1,3 km" in the page language. */
+  distance(meters: number): string {
+    if (meters < 1000) {
+      return `${meters} m`;
+    }
+    const km = new Intl.NumberFormat(this.translate.currentLang === 'en' ? 'en-GB' : 'pl-PL', {
+      maximumFractionDigits: 1,
+    }).format(meters / 1000);
+    return `${km} km`;
+  }
+
   hours(spec: string): string {
     return readableHours(spec, this.translate.currentLang);
   }
