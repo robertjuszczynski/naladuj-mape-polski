@@ -18,12 +18,16 @@ import {
   AED_TEMPLATE_PATH,
   AED_WIZARD_PATH,
 } from './aed.constants';
-import { AedAvailability, AedBrief } from './aed.models';
+import { AedAvailability, AedBrief, AedIncidentPoint, AedNearest } from './aed.models';
 import { AedService } from './aed.service';
 import { AedMapComponent } from './aed-map.component';
 import { AedNumberPipe } from './aed-number.pipe';
 
 type TimeMode = 'now' | 'chosen';
+type IncidentQuery = { address: string } | { lat: number; lon: number };
+
+const FAR_WALK_MIN = 5;
+const NOT_FOUND = 404;
 
 @Component({
   selector: 'app-aed-page',
@@ -65,6 +69,23 @@ export class AedPageComponent implements OnInit {
   });
   readonly limit = signal(AED_PAGE_SIZE);
   readonly focus = signal<LatLngTuple | null>(null);
+  readonly incidentText = signal('');
+  readonly nearest = signal<AedNearest | null>(null);
+  readonly nearestLoading = signal(false);
+  readonly nearestError = signal('');
+  readonly copied = signal(-1);
+  readonly farWalkMin = FAR_WALK_MIN;
+  private incident: IncidentQuery | null = null;
+  private incidentLabel: Pick<AedIncidentPoint, 'label' | 'exact'> | null = null;
+
+  readonly incidentPoint = computed<LatLngTuple | null>(() => {
+    const point = this.nearest()?.meta.point;
+    return point ? [point.lat, point.lon] : null;
+  });
+  readonly nearestApi = computed(() => {
+    const n = this.nearest();
+    return n ? this.aed.nearestApiUrl(n.meta.point.lat, n.meta.point.lon, this.momentParam()) : '';
+  });
 
   mode: TimeMode = 'now';
   day = (new Date().getDay() + 6) % 7;
@@ -104,10 +125,19 @@ export class AedPageComponent implements OnInit {
     return String(this.hour).padStart(2, '0') + ':00';
   }
 
+  get timeLabel(): string {
+    return this.mode === 'now'
+      ? this.translate.instant('Aed.NowLower')
+      : `${this.translate.instant('Aed.Days.' + this.day)}, ${this.hourLabel}`;
+  }
+
   load(): void {
     this.loading.set(true);
+    if (this.incident) {
+      this.findNearest();
+    }
     this.aed
-      .list(this.mode === 'chosen' ? this.chosenMoment() : undefined)
+      .list(this.momentParam())
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({ next: (points) => this.points.set(points), error: () => this.error.set('Aed.ErrList') });
   }
@@ -131,6 +161,73 @@ export class AedPageComponent implements OnInit {
 
   locate(p: AedBrief): void {
     this.focus.set([p.lat, p.lon]);
+  }
+
+  findAddress(): void {
+    const address = this.incidentText().trim();
+    if (address) {
+      this.incident = { address };
+      this.incidentLabel = null;
+      this.findNearest();
+    }
+  }
+
+  pick([lat, lon]: LatLngTuple): void {
+    this.incident = { lat, lon };
+    this.incidentLabel = null;
+    this.findNearest();
+  }
+
+  clearNearest(): void {
+    this.incident = null;
+    this.incidentLabel = null;
+    this.nearest.set(null);
+    this.nearestError.set('');
+  }
+
+  copyPhrase(index: number, phrase: string): void {
+    this.document.defaultView?.navigator.clipboard?.writeText(phrase).then(() => this.copied.set(index));
+  }
+
+  /** "środa 07:00" for an ISO moment from the API. */
+  opensLabel(iso: string): string {
+    const [date, time] = iso.split('T');
+    const [y, m, d] = date.split('-').map(Number);
+    const weekday = (new Date(y, m - 1, d).getDay() + 6) % 7;
+    return `${this.translate.instant('Aed.Days.' + weekday)} ${time.slice(0, 5)}`;
+  }
+
+  private findNearest(): void {
+    if (!this.incident) {
+      return;
+    }
+    this.nearestLoading.set(true);
+    this.nearestError.set('');
+    this.copied.set(-1);
+    this.aed
+      .nearest(this.incident, this.momentParam())
+      .pipe(finalize(() => this.nearestLoading.set(false)))
+      .subscribe({
+        next: (result) => {
+          if (!this.incident) {
+            return;
+          }
+          const point = result.meta.point;
+          if ('address' in this.incident) {
+            this.incidentLabel = { label: point.label, exact: point.exact };
+          }
+          this.incident = { lat: point.lat, lon: point.lon };
+          this.nearest.set({ ...result, meta: { ...result.meta, point: { ...point, ...this.incidentLabel } } });
+        },
+        error: (err) => {
+          this.nearest.set(null);
+          this.nearestError.set(err?.status === NOT_FOUND ? 'Aed.Nearest.NotFound' : 'Aed.Nearest.Error');
+        },
+      });
+  }
+
+  private momentParam(): string | undefined {
+    return this.mode === 'chosen' ? this.chosenMoment() : undefined;
   }
 
   scrollTo(event: Event, id: string): void {

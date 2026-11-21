@@ -49,15 +49,40 @@ class GugikGeocoder:
         return hit
 
     def _request(self, address):
+        found = self.candidates(address, use_cache=False)
+        if not found:
+            return None
+        return {key: found[0][key] for key in ("lat", "lon", "simc")}
+
+    def candidates(self, address, use_cache=True):
+        """All GUGiK matches for a free-text address, in GUGiK's order; [] when nothing matched or the service failed."""
+        key = self.CACHE_PREFIX + "all:" + hashlib.sha1(address.encode("utf-8")).hexdigest()
+        if use_cache and self.cache is not None:
+            hit = self.cache.get(key)
+            if hit is not None:
+                return hit
         params = {"request": "GetAddress", "address": address, "srid": "4326"}
         try:
             response = self.http.get(self.URL, params=params, timeout=self.timeout)
-            result = (response.json().get("results") or {}).get("1")
-            if result and result.get("x") and result.get("y"):
-                return {"lat": "%.6f" % float(result["y"]), "lon": "%.6f" % float(result["x"]), "simc": result.get("simc") or ""}
+            results = response.json().get("results") or {}
+            found = [self._parse(results[k]) for k in sorted(results, key=int) if results[k].get("x") and results[k].get("y")]
         except (requests.RequestException, ValueError, TypeError, AttributeError) as exc:
             logger.warning("GUGiK geocode failed for %s: %s", address, exc)
-        return None
+            return []
+        if found and use_cache and self.cache is not None:
+            self.cache.set(key, found, self.cache_ttl)
+        return found
+
+    @staticmethod
+    def _parse(result):
+        return {
+            "lat": "%.6f" % float(result["y"]),
+            "lon": "%.6f" % float(result["x"]),
+            "simc": result.get("simc") or "",
+            "city": result.get("city") or "",
+            "street": result.get("street") or "",
+            "number": result.get("number") or "",
+        }
 
     def fill_missing(self, mapped, limit=GEOCODE_LIMIT):
         """mapped: list of (record, notes). Fills in coordinates for records without them (up to limit addresses)."""

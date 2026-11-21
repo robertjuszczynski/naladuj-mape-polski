@@ -356,6 +356,152 @@ li:not(.on) > .aed-battery {
   }
 }
 
+.aed-incident {
+  &__title {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+  }
+  &__lead {
+    margin: 0 0 12px;
+    font-size: 0.92rem;
+  }
+  &__row {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+
+    input {
+      flex: 1;
+      min-width: 0;
+      min-height: 46px;
+      padding: 8px 12px;
+      border: 1px solid var(--aed-field);
+      border-radius: 8px;
+      background: var(--aed-bg);
+      color: var(--aed-fg);
+      font: inherit;
+    }
+  }
+  &__hint {
+    margin: 8px 0 0;
+    font-size: 0.88rem;
+  }
+}
+.aed-nearest {
+  margin: 0 0 20px;
+  padding: 16px 0 4px;
+  border-top: 2px solid var(--aed-fg);
+
+  p {
+    margin: 0;
+  }
+  ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+  }
+  &__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  &__warn {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-left: 4px solid var(--aed-accent);
+    background: var(--aed-tint);
+    font-size: 0.92rem;
+
+    > p {
+      font-weight: 700;
+    }
+  }
+  &__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--aed-line);
+    }
+    li > div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .aed-muted {
+      font-size: 0.92rem;
+    }
+  }
+  &__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--aed-fg);
+    color: var(--aed-bg);
+    font-family: var(--aed-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  &__name {
+    color: var(--aed-fg);
+    font-weight: 700;
+  }
+  &__dist {
+    color: var(--aed-fg);
+    font-family: var(--aed-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  &__phrase {
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border: 1px solid var(--aed-line);
+    border-radius: 8px;
+
+    figcaption {
+      color: var(--aed-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    blockquote {
+      margin: 4px 0 6px;
+      color: var(--aed-fg);
+      font-weight: 600;
+      line-height: 1.45;
+    }
+  }
+  &__far {
+    margin-top: 12px !important;
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+  &__unknown {
+    margin-top: 14px;
+    color: var(--aed-muted);
+    font-size: 0.9rem;
+  }
+  &__api {
+    margin-top: 14px !important;
+    color: var(--aed-muted);
+    font-size: 0.82rem;
+    overflow-wrap: anywhere;
+
+    code {
+      font-family: var(--aed-mono);
+    }
+  }
+}
+
 .aed-how {
   padding: 48px 0 56px;
   background: var(--aed-tint);

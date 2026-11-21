@@ -1806,6 +1806,29 @@
     "Rules1": "Taking part is voluntary. Each provider publishes its own dataset and is responsible for keeping it up to date. You can update or withdraw your data at any time.",
     "Rules2": "Do not publish personal data – give a business phone number, not a private one.",
     "Loading": "Loading data…",
-    "ReportComment": "[Naładuj mapę Polski] Report about AED {id} ({name}, {address}): {problem}.{text}"
+    "ReportComment": "[Naładuj mapę Polski] Report about AED {id} ({name}, {address}): {problem}.{text}",
+    "Nearest": {
+      "Title": "Nearest available AED",
+      "Lead": "For 112 dispatchers and bystanders. Shows AEDs that are open at the chosen time, not just the closest ones.",
+      "Address": "Incident address",
+      "Placeholder": "e.g. Warszawa, Wiejska 4/6/8",
+      "Find": "Find",
+      "MapHint": "You can also click a spot on the map.",
+      "MapPoint": "Point chosen on the map",
+      "Approx": "building number not found, showing the street",
+      "Clear": "Clear",
+      "ClosedNearer": "Closer, but closed at this time – do not send the bystander there:",
+      "OpensAt": "opens: {when}",
+      "Walk": "{m} m · approx. {min} min walk",
+      "ReadOut": "To read to the caller (in Polish)",
+      "Copy": "Copy",
+      "Copied": "Copied",
+      "NoneOpen": "No AED nearby is available at this time.",
+      "Far": "The nearest available AED is more than a 5-minute walk away. A second person should fetch it while the caller keeps doing chest compressions.",
+      "Unknown": "Opening hours unknown – availability must be checked on site:",
+      "Api": "The same for 112 systems via the API:",
+      "NotFound": "Address not found. Type it as: Warszawa, Wiejska 4/6/8.",
+      "Error": "Search failed. Please try again."
+    }
   }
 }

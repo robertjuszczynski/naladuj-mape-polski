@@ -24,6 +24,7 @@ routes = [
     # AED defibrillators
     ("/aed", aed_views.AedListView()),
     ("/aed/stats", aed_views.AedStatsView()),
+    ("/aed/nearest", aed_views.AedNearestView()),
     ("/aed/{id}", aed_views.AedDetailView()),
     # Tools & utilities
     ("/search", search_views.SearchView()),

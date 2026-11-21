@@ -46,6 +46,18 @@ const COLOR_TOKENS: Record<AedAvailability, string> = {
         width: 100%;
         height: 100%;
         min-height: 360px;
+        cursor: crosshair;
+      }
+      :host ::ng-deep .aed-map__num {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        color: var(--aed-bg, #fff);
+        font: 700 12px/1 var(--aed-mono, monospace);
+      }
+      :host ::ng-deep .aed-map__num::before {
+        display: none;
       }
     `,
   ],
@@ -55,12 +67,16 @@ export class AedMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() center: Leaflet.LatLngTuple | null = null;
   @Input() zoom = 16;
   @Input() label = '';
+  @Input() incident: Leaflet.LatLngTuple | null = null;
+  @Input() highlight: AedBrief[] = [];
   @Output() selected = new EventEmitter<AedBrief>();
+  @Output() picked = new EventEmitter<Leaflet.LatLngTuple>();
   @ViewChild('map', { static: true }) mapEl!: ElementRef<HTMLDivElement>;
 
   private L?: typeof Leaflet;
   private map?: Leaflet.Map;
   private layer?: Leaflet.LayerGroup;
+  private incidentLayer?: Leaflet.LayerGroup;
   private fitted = false;
 
   constructor(
@@ -85,7 +101,12 @@ export class AedMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         maxZoom: 19,
       }).addTo(this.map);
       this.layer = this.L.layerGroup().addTo(this.map);
+      this.incidentLayer = this.L.layerGroup().addTo(this.map);
+      this.map.on('click', (e: Leaflet.LeafletMouseEvent) =>
+        this.zone.run(() => this.picked.emit([e.latlng.lat, e.latlng.lng])),
+      );
       this.render();
+      this.renderIncident();
       requestAnimationFrame(() => this.map?.invalidateSize());
     });
   }
@@ -93,6 +114,9 @@ export class AedMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['points']) {
       this.zone.runOutsideAngular(() => this.render());
+    }
+    if (changes['incident'] || changes['highlight']) {
+      this.zone.runOutsideAngular(() => this.renderIncident());
     }
     if (changes['center'] && this.center && this.map && !this.sameCenter(changes['center'].previousValue)) {
       this.zone.runOutsideAngular(() =>
@@ -126,6 +150,7 @@ export class AedMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         weight: 1.5,
         fillColor: color(p.availability),
         fillOpacity: 0.95,
+        bubblingMouseEvents: false,
       })
         .bindTooltip(`${p.name} – ${this.translate.instant('Aed.Avail.' + p.availability)}`)
         .on('click', () => this.zone.run(() => this.selected.emit(p)))
@@ -135,6 +160,51 @@ export class AedMapComponent implements AfterViewInit, OnChanges, OnDestroy {
       this.map.fitBounds(this.L.latLngBounds(this.densestCluster(coords)), { padding: [24, 24], maxZoom: 13 });
       this.fitted = true;
     }
+  }
+
+  /** Incident point, numbered nearest available AED and lines to them; the view fits all of them. */
+  private renderIncident(): void {
+    if (!this.L || !this.incidentLayer || !this.map) {
+      return;
+    }
+    this.incidentLayer.clearLayers();
+    if (!this.incident) {
+      return;
+    }
+    const style = getComputedStyle(this.host.nativeElement);
+    const accent = style.getPropertyValue('--aed-accent').trim();
+    const fg = style.getPropertyValue('--aed-fg').trim();
+    const ring = style.getPropertyValue('--aed-bg').trim() || '#fff';
+    const bounds: Leaflet.LatLngTuple[] = [this.incident];
+    this.highlight.forEach((p, i) => {
+      bounds.push([p.lat, p.lon]);
+      this.L!.polyline([this.incident!, [p.lat, p.lon]], {
+        color: fg,
+        weight: 2,
+        dashArray: '4 6',
+        interactive: false,
+      }).addTo(this.incidentLayer!);
+      this.L!.circleMarker([p.lat, p.lon], {
+        radius: 11,
+        color: ring,
+        weight: 2,
+        fillColor: fg,
+        fillOpacity: 1,
+        bubblingMouseEvents: false,
+      })
+        .bindTooltip(String(i + 1), { permanent: true, direction: 'center', className: 'aed-map__num' })
+        .on('click', () => this.zone.run(() => this.selected.emit(p)))
+        .addTo(this.incidentLayer!);
+    });
+    this.L.circleMarker(this.incident, {
+      radius: 9,
+      color: ring,
+      weight: 3,
+      fillColor: accent,
+      fillOpacity: 1,
+      interactive: false,
+    }).addTo(this.incidentLayer);
+    this.map.flyToBounds(this.L.latLngBounds(bounds), { padding: [48, 48], maxZoom: 17, duration: 0.6 });
   }
 
   private sameCenter(previous: Leaflet.LatLngTuple | null): boolean {

@@ -39,3 +39,23 @@ export interface AedStats {
   national_dataset: { id: number; slug: string; title: string } | null;
   coverage: { municipalities: number; municipalities_total: number; percent: number; provinces: AedProvinceCoverage[] };
 }
+
+export interface AedNearby extends AedBrief {
+  distance_m: number;
+  walk_min: number;
+  opening_hours: string;
+  opens_at: string | null;
+  phrase: string;
+}
+
+export interface AedIncidentPoint {
+  lat: number;
+  lon: number;
+  label: string;
+  exact: boolean;
+}
+
+export interface AedNearest {
+  meta: { at: string; point: AedIncidentPoint };
+  data: { open: AedNearby[]; closed: AedNearby[]; unknown: AedNearby[] };
+}

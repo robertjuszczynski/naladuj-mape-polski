@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { Observable, map, shareReplay } from 'rxjs';
 
-import { AedBrief, AedDetail, AedStats } from './aed.models';
+import { AedBrief, AedDetail, AedNearest, AedStats } from './aed.models';
 
 interface ApiResponse<T> {
   data: T;
@@ -25,6 +25,19 @@ export class AedService {
 
   list(at?: string): Observable<AedBrief[]> {
     return this.http.get<ApiResponse<AedBrief[]>>(this.base, { params: at ? { at } : {} }).pipe(map((r) => r.data));
+  }
+
+  /** Nearest AED available at `at` (now when empty) for an address or a point. */
+  nearest(where: { address: string } | { lat: number; lon: number }, at?: string): Observable<AedNearest> {
+    const params: Record<string, string> = Object.fromEntries(Object.entries(where).map(([k, v]) => [k, String(v)]));
+    if (at) {
+      params['at'] = at;
+    }
+    return this.http.get<AedNearest>(`${this.base}/nearest`, { params });
+  }
+
+  nearestApiUrl(lat: number, lon: number, at?: string): string {
+    return `${this.base}/nearest?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}${at ? '&at=' + at : ''}`;
   }
 
   detail(id: string): Observable<AedDetail> {

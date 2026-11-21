@@ -1809,6 +1809,29 @@
     "Rules1": "Udział jest dobrowolny. Każdy dostawca publikuje własny zbiór i odpowiada za jego aktualność. Dane możesz w każdej chwili zaktualizować albo wycofać.",
     "Rules2": "Nie publikuj danych osobowych – podaj służbowy numer telefonu, nie prywatny.",
     "Loading": "Ładowanie danych…",
-    "ReportComment": "[Naładuj mapę Polski] Zgłoszenie dotyczące AED {id} ({name}, {address}): {problem}.{text}"
+    "ReportComment": "[Naładuj mapę Polski] Zgłoszenie dotyczące AED {id} ({name}, {address}): {problem}.{text}",
+    "Nearest": {
+      "Title": "Najbliższy dostępny AED",
+      "Lead": "Dla dyspozytora 112 i świadka zdarzenia. Pokazuje AED otwarte w wybranym czasie, a nie tylko najbliższe.",
+      "Address": "Adres zdarzenia",
+      "Placeholder": "np. Warszawa, Wiejska 4/6/8",
+      "Find": "Znajdź",
+      "MapHint": "Możesz też kliknąć miejsce na mapie.",
+      "MapPoint": "Punkt wskazany na mapie",
+      "Approx": "nie znaleziono numeru, pokazano ulicę",
+      "Clear": "Wyczyść",
+      "ClosedNearer": "Bliżej, ale zamknięte o tej porze – nie wysyłaj tam świadka:",
+      "OpensAt": "otwarte od: {when}",
+      "Walk": "{m} m · ok. {min} min pieszo",
+      "ReadOut": "Do przeczytania dzwoniącemu",
+      "Copy": "Kopiuj",
+      "Copied": "Skopiowano",
+      "NoneOpen": "W okolicy nie ma AED dostępnego o tej porze.",
+      "Far": "Najbliższy dostępny AED jest dalej niż 5 minut pieszo. Po defibrylator powinna pójść druga osoba, a dzwoniący nie przerywa uciskania klatki piersiowej.",
+      "Unknown": "Godziny nieznane – dostępność trzeba sprawdzić na miejscu:",
+      "Api": "To samo dla systemów 112 przez API:",
+      "NotFound": "Nie znaleziono adresu. Wpisz go jako: Warszawa, Wiejska 4/6/8.",
+      "Error": "Nie udało się wyszukać. Spróbuj ponownie."
+    }
   }
 }

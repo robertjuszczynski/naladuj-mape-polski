@@ -75,6 +75,99 @@
     <p class="aed-error" role="alert" *ngIf="error()">{{ error() | translate }}</p>
     <div class="aed-explorer__grid">
       <div class="aed-panel">
+        <form class="aed-group aed-incident" role="search" (ngSubmit)="findAddress()">
+          <h3 class="aed-incident__title">{{ 'Aed.Nearest.Title' | translate }}</h3>
+          <p class="aed-muted aed-incident__lead">{{ 'Aed.Nearest.Lead' | translate }}</p>
+          <label class="aed-field" for="aed-incident">{{ 'Aed.Nearest.Address' | translate }}</label>
+          <div class="aed-incident__row">
+            <input
+              id="aed-incident"
+              type="text"
+              name="incident"
+              autocomplete="street-address"
+              [ngModel]="incidentText()"
+              (ngModelChange)="incidentText.set($event)"
+              [placeholder]="'Aed.Nearest.Placeholder' | translate" />
+            <button type="submit" class="aed-btn">{{ 'Aed.Nearest.Find' | translate }}</button>
+          </div>
+          <p class="aed-muted aed-incident__hint">{{ 'Aed.Nearest.MapHint' | translate }}</p>
+        </form>
+
+        <section class="aed-nearest" *ngIf="nearestLoading() || nearest() || nearestError()" aria-live="polite">
+          <p class="aed-loading" *ngIf="nearestLoading()">
+            <span class="aed-spinner" aria-hidden="true"></span>{{ 'Aed.Loading' | translate }}
+          </p>
+          <p class="aed-error" role="alert" *ngIf="nearestError()">{{ nearestError() | translate }}</p>
+          <ng-container *ngIf="nearest() as n">
+            <div class="aed-nearest__head">
+              <p>
+                <strong>{{ n.meta.point.label || ('Aed.Nearest.MapPoint' | translate) }}</strong>
+                <span class="aed-muted" *ngIf="!n.meta.point.exact"> ({{ 'Aed.Nearest.Approx' | translate }})</span>
+                <span class="aed-muted"> · {{ timeLabel }}</span>
+              </p>
+              <button type="button" class="aed-link" (click)="clearNearest()">
+                {{ 'Aed.Nearest.Clear' | translate }}
+              </button>
+            </div>
+
+            <div class="aed-nearest__warn" *ngIf="n.data.closed.length">
+              <p>{{ 'Aed.Nearest.ClosedNearer' | translate }}</p>
+              <ul>
+                <li *ngFor="let c of n.data.closed">
+                  <strong>{{ c.name || 'AED' }}</strong
+                  >, {{ c.distance_m }} m –
+                  <ng-container *ngIf="c.availability === 'faulty'; else hours">{{
+                    'Aed.Avail.faulty' | translate
+                  }}</ng-container>
+                  <ng-template #hours>{{
+                    c.opens_at ? ('Aed.Nearest.OpensAt' | translate: { when: opensLabel(c.opens_at) }) : c.opening_hours
+                  }}</ng-template>
+                </li>
+              </ul>
+            </div>
+
+            <ol class="aed-nearest__list" *ngIf="n.data.open.length; else noneOpen">
+              <li *ngFor="let p of n.data.open; let i = index">
+                <span class="aed-nearest__num" aria-hidden="true">{{ i + 1 }}</span>
+                <div>
+                  <a [routerLink]="[route, p.id] | localize" class="aed-nearest__name">{{ p.name || 'AED' }}</a>
+                  <span class="aed-nearest__dist">{{
+                    'Aed.Nearest.Walk' | translate: { m: p.distance_m, min: p.walk_min }
+                  }}</span>
+                  <span class="aed-muted">{{ p.address }}</span>
+                  <figure class="aed-nearest__phrase" *ngIf="i === 0">
+                    <figcaption>{{ 'Aed.Nearest.ReadOut' | translate }}</figcaption>
+                    <blockquote lang="pl">{{ p.phrase }}</blockquote>
+                    <button type="button" class="aed-link" (click)="copyPhrase(i, p.phrase)">
+                      {{ (copied() === i ? 'Aed.Nearest.Copied' : 'Aed.Nearest.Copy') | translate }}
+                    </button>
+                  </figure>
+                </div>
+              </li>
+            </ol>
+            <ng-template #noneOpen>
+              <p class="aed-nearest__far">{{ 'Aed.Nearest.NoneOpen' | translate }}</p>
+            </ng-template>
+            <p class="aed-nearest__far" *ngIf="(n.data.open[0]?.walk_min ?? 0) > farWalkMin">
+              {{ 'Aed.Nearest.Far' | translate }}
+            </p>
+
+            <div class="aed-nearest__unknown" *ngIf="n.data.unknown.length">
+              <p>{{ 'Aed.Nearest.Unknown' | translate }}</p>
+              <ul>
+                <li *ngFor="let u of n.data.unknown">{{ u.name || 'AED' }}, {{ u.distance_m }} m</li>
+              </ul>
+            </div>
+
+            <p class="aed-nearest__api">
+              {{ 'Aed.Nearest.Api' | translate }}
+              <a [href]="nearestApi()" target="_blank" rel="noopener"
+                ><code>GET {{ nearestApi() }}</code></a
+              >
+            </p>
+          </ng-container>
+        </section>
+
         <fieldset class="aed-group">
           <legend>{{ 'Aed.WhenLegend' | translate }}</legend>
           <label class="aed-option"
@@ -122,57 +215,62 @@
             </ng-template>
           </p>
         </fieldset>
-        <fieldset class="aed-group">
-          <legend>{{ 'Aed.Show' | translate }}</legend>
-          <label class="aed-option" *ngFor="let a of order">
-            <input type="checkbox" [name]="'show-' + a" [ngModel]="show()[a]" (ngModelChange)="toggle(a, $event)" />
-            <span class="aed-dot" [attr.data-a]="a" aria-hidden="true"></span>
-            {{ 'Aed.Avail.' + a | translate }}
-            <span class="aed-count">{{ counts()[a] }}</span>
+        <ng-container *ngIf="!nearest()">
+          <fieldset class="aed-group">
+            <legend>{{ 'Aed.Show' | translate }}</legend>
+            <label class="aed-option" *ngFor="let a of order">
+              <input type="checkbox" [name]="'show-' + a" [ngModel]="show()[a]" (ngModelChange)="toggle(a, $event)" />
+              <span class="aed-dot" [attr.data-a]="a" aria-hidden="true"></span>
+              {{ 'Aed.Avail.' + a | translate }}
+              <span class="aed-count">{{ counts()[a] }}</span>
+            </label>
+          </fieldset>
+          <label class="aed-field">
+            {{ 'Aed.Search' | translate }}
+            <input
+              type="search"
+              name="q"
+              [ngModel]="query()"
+              (ngModelChange)="query.set($event)"
+              [placeholder]="'Aed.SearchPlaceholder' | translate" />
           </label>
-        </fieldset>
-        <label class="aed-field">
-          {{ 'Aed.Search' | translate }}
-          <input
-            type="search"
-            name="q"
-            [ngModel]="query()"
-            (ngModelChange)="query.set($event)"
-            [placeholder]="'Aed.SearchPlaceholder' | translate" />
-        </label>
-        <ol
-          class="aed-list"
-          [class.busy]="loading()"
-          [attr.aria-busy]="loading()"
-          [attr.aria-label]="'Aed.ListLabel' | translate">
-          <li *ngFor="let p of visible()">
-            <a [routerLink]="[route, p.id] | localize" class="aed-list__item">
-              <span class="aed-dot" [attr.data-a]="p.availability" aria-hidden="true"></span>
-              <span class="aed-list__text">
-                <strong>{{ p.name || 'AED' }}</strong>
-                <span class="aed-muted">{{ p.address }}</span>
-                <span class="aed-tag" [attr.data-a]="p.availability">{{
-                  'Aed.Avail.' + p.availability | translate
-                }}</span>
-              </span>
-            </a>
-            <button type="button" class="aed-link" (click)="locate(p)">{{ 'Aed.ShowOnMap' | translate }}</button>
-          </li>
-        </ol>
-        <button
-          *ngIf="filtered().length > limit()"
-          type="button"
-          class="aed-btn aed-btn--ghost aed-btn--block"
-          (click)="showMore()">
-          {{ 'Aed.ShowMore' | translate }} ({{ filtered().length - limit() }})
-        </button>
+          <ol
+            class="aed-list"
+            [class.busy]="loading()"
+            [attr.aria-busy]="loading()"
+            [attr.aria-label]="'Aed.ListLabel' | translate">
+            <li *ngFor="let p of visible()">
+              <a [routerLink]="[route, p.id] | localize" class="aed-list__item">
+                <span class="aed-dot" [attr.data-a]="p.availability" aria-hidden="true"></span>
+                <span class="aed-list__text">
+                  <strong>{{ p.name || 'AED' }}</strong>
+                  <span class="aed-muted">{{ p.address }}</span>
+                  <span class="aed-tag" [attr.data-a]="p.availability">{{
+                    'Aed.Avail.' + p.availability | translate
+                  }}</span>
+                </span>
+              </a>
+              <button type="button" class="aed-link" (click)="locate(p)">{{ 'Aed.ShowOnMap' | translate }}</button>
+            </li>
+          </ol>
+          <button
+            *ngIf="filtered().length > limit()"
+            type="button"
+            class="aed-btn aed-btn--ghost aed-btn--block"
+            (click)="showMore()">
+            {{ 'Aed.ShowMore' | translate }} ({{ filtered().length - limit() }})
+          </button>
+        </ng-container>
       </div>
       <div class="aed-mapwrap" [class.busy]="loading()" [attr.aria-busy]="loading()">
         <app-aed-map
           [points]="filtered()"
           [center]="focus()"
           [label]="'Aed.MapLabel' | translate"
-          (selected)="open($event)"></app-aed-map>
+          [incident]="incidentPoint()"
+          [highlight]="nearest()?.data?.open ?? []"
+          (selected)="open($event)"
+          (picked)="pick($event)"></app-aed-map>
       </div>
     </div>
   </section>
