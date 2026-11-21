@@ -1,0 +1,8 @@
+{% extends "admin/aed/base_aed.html" %}
+{% block aed %}
+<div class="aed-head">
+<h2 class="aed-success"><span aria-hidden="true">✓</span>Dane opublikowane w zbiorze {{ up.organization }}</h2>
+<p>Licencja {{ up.licencja }}. Portal sprawdza teraz plik (walidacja, widok tabeli, weryfikacja jakości) jak każdy inny zasób. Zbiór ogólnopolski odświeży się automatycznie, a nowe defibrylatory pojawią się na mapie akcji.</p>
+</div>
+<div class="aed-foot">{% if ds_url %}<a class="aed-btn sec" href="{{ ds_url }}">Zobacz zbiór w panelu</a>{% endif %}<a class="aed-btn sec" href="{% url 'admin:aed_pobierz' up.pk %}">Pobierz poprawiony plik (CSV)</a><a class="aed-btn sec" href="{% url 'admin:aed_aedrecord_changelist' %}">Rejestr AED</a><div class="aed-push"><a class="aed-btn" href="{% url 'admin:aed_wgraj' %}">Wgraj kolejny plik</a></div></div>
+{% endblock %}

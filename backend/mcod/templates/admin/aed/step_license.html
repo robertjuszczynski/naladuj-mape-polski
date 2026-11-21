@@ -1,0 +1,19 @@
+{% extends "admin/aed/base_aed.html" %}
+{% block aed %}
+<form method="post">{% csrf_token %}
+<div class="aed-head">
+<h2>Licencja i publikacja</h2>
+<p>Opublikujesz <strong>{{ count }}</strong> AED w zbiorze <strong>{{ up.organization }}</strong>{% if held %}, {{ held }} zostaje wstrzymanych{% endif %}. Dane trafią też automatycznie do zbioru ogólnopolskiego.</p>
+</div>
+<fieldset class="aed-options aed-block"><legend>Na jakiej licencji udostępniasz dane?</legend>
+{% for license in licenses %}<label class="aed-option"><input type="radio" name="licencja" value="{{ license.code }}"{% if forloop.first %} checked{% endif %}><strong>{{ license.name }} – {{ license.title }}</strong><span class="aed-small">{{ license.hint }}</span></label>
+{% endfor %}</fieldset>
+<div class="aed-block">
+<span class="aed-label">Oświadczenie</span>
+<label class="aed-consent"><input type="checkbox" name="zgoda" value="1" required><span>Organizacja ma prawo udostępnić te dane i odpowiada za ich poprawność i aktualność. Dane nie zawierają danych osobowych (np. prywatnych numerów telefonów). Zgadzam się na publikację w dane.gov.pl na wybranej licencji.</span></label>
+{% if others %}<label class="aed-consent"><input type="checkbox" name="zgoda_inni" value="1" required><span>Plik zawiera <strong>{{ others }}</strong> AED innych dysponentów ({{ others_orgs }} podmiotów). Mam ich zgodę lub podstawę prawną do publikacji tych danych i biorę za nie odpowiedzialność.</span></label>{% endif %}
+<p class="aed-small">Udział jest dobrowolny. Dane możesz w każdej chwili zaktualizować albo wycofać w panelu dostawcy.</p>
+</div>
+<div class="aed-foot"><a class="aed-btn sec" href="{% url 'admin:aed_sprawdzenie' up.pk %}">← Sprawdzenie</a><div class="aed-push"><button class="aed-btn" type="submit">Opublikuj w dane.gov.pl</button></div></div>
+</form>
+{% endblock %}

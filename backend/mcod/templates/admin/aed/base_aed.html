@@ -1,0 +1,14 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'aed/wizard.css' %}">
+{% endblock %}
+{% block extrahead %}{{ block.super }}
+<script src="{% static 'aed/wizard.js' %}" defer></script>
+{% endblock %}
+{% block content %}
+<div class="aed-wrap">
+<ol class="aed-steps" aria-label="Kroki">{% for s in steps %}<li class="{% if forloop.counter == step %}cur{% elif forloop.counter < step %}done{% endif %}"{% if forloop.counter == step %} aria-current="step"{% endif %}><span class="n">{% if forloop.counter < step %}✓{% else %}{{ forloop.counter }}{% endif %}</span>{{ s }}</li>{% endfor %}</ol>
+<div class="aed-sheet">{% block aed %}{% endblock %}</div>
+</div>
+{% endblock %}

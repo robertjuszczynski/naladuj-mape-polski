@@ -1,0 +1,35 @@
+{% extends "admin/aed/base_aed.html" %}
+{% load static %}
+{% block aed %}
+<div class="aed-head">
+<h2>Wgraj listę defibrylatorów</h2>
+<p>Plik może mieć dowolny układ kolumn. W następnym kroku dopasujemy je do wzorcowego zakresu danych i poprawimy typowe błędy.</p>
+</div>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+<div class="aed-block">
+{% if orgs|length == 1 %}
+<span class="aed-label">Publikujesz jako</span>
+<span class="aed-org">{{ orgs.0.title }}</span>
+<input type="hidden" name="organizacja" value="{{ orgs.0.pk }}">
+{% else %}
+<label class="aed-label" for="org">Organizacja, w imieniu której publikujesz</label>
+<select id="org" name="organizacja" required class="aed-select-narrow">{% for o in orgs %}<option value="{{ o.pk }}">{{ o.title }}</option>{% empty %}<option value="">Brak przypisanej organizacji</option>{% endfor %}</select>
+{% endif %}
+</div>
+<div class="aed-block">
+<span class="aed-label" id="plik-lbl">Plik z danymi</span>
+<div class="aed-drop" data-aed-drop>
+<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+<strong>Przeciągnij tu plik albo kliknij, aby go wybrać</strong>
+<span class="hint">CSV lub Excel (XLSX), do 10 MB · jeden wiersz = jeden defibrylator</span>
+<span class="file" data-aed-file-name aria-live="polite"></span>
+<input id="plik" type="file" name="plik" accept=".csv,.xlsx" required aria-labelledby="plik-lbl">
+</div>
+<div class="aed-help">Nie masz pliku?
+<a href="{% static 'aed/szablon-danych-aed.xlsx' %}">Szablon XLSX</a>
+<a href="{% static 'aed/szablon-danych-aed.csv' %}">Szablon CSV</a>
+<a href="{% static 'aed/wzorcowy-zakres-danych-aed.xlsx' %}">Wzorcowy zakres danych</a></div>
+</div>
+<div class="aed-foot"><div class="aed-push"><button class="aed-btn" type="submit">Wczytaj plik →</button></div></div>
+</form>
+{% endblock %}
