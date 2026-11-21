@@ -1,0 +1,8 @@
+id_aed,nazwa_obiektu,ulica,numer_budynku,kod_pocztowy,miejscowosc,szerokosc_geograficzna,dlugosc_geograficzna,dostepny_calodobowo,data_ostatniego_przegladu
+x1,Punkt bez współrzędnych,Szkolna,9,05-270,Marki,,,true,2026-01-15
+x2,Punkt w Krakowie,Rynek Główny,1,31-042,Kraków,50.0614,19.9366,true,
+x3,Punkt poza Polską (Berlin),Unter den Linden,1,05-270,Marki,52.5170,13.3889,true,
+x4,Zły kod pocztowy i data,Okólna,14,05270,Marki,52.3240,21.0982,tak,15.01.2026
+x5,Duplikat punktu A,Pomnikowa,21,05-270,Marki,52.3403,21.1136,false,
+x6,Duplikat punktu B,Pomnikowa,21,05-270,Marki,52.3403,21.1136,false,
+x7,Zamienione współrzędne,Kościuszki,4,05-270,Marki,21.1060,52.3300,true,

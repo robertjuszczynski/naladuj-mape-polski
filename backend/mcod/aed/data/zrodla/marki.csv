@@ -1,0 +1,8 @@
+id_aed,nazwa_obiektu,opis_lokalizacji,pietro,wewnatrz_budynku,cecha_adresu,ulica,numer_budynku,numer_lokalu,kod_pocztowy,miejscowosc,kod_teryt_gminy,kod_simc,szerokosc_geograficzna,dlugosc_geograficzna,dostep,dostepny_calodobowo,godziny_dostepnosci,sprawny,data_ostatniego_przegladu,data_waznosci_elektrod,data_waznosci_baterii,producent,model,mobilny,dysponent_nazwa,dysponent_telefon,zrodlo_danych,data_aktualizacji,uwagi
+marki-1,Urząd Miasta Marki,,,,al.,Piłsudskiego,95,,05-270,Marki,1434021,,52.326697,21.107557,,,,,,,,,,,Urząd Miasta Marki,,https://dane.gov.pl/pl/dataset/4955,2025-07-10,
+marki-2,Szkoła Podstawowa nr 1,,,,ul.,Okólna,14,,05-270,Marki,1434021,,52.323960,21.098185,,,,,,,,,,,Urząd Miasta Marki,,https://dane.gov.pl/pl/dataset/4955,2025-07-10,
+marki-3,Szkoła Podstawowa nr 2,,,,ul.,Szkolna,9,,05-270,Marki,1434021,,52.317014,21.104131,,,,,,,,,,,Urząd Miasta Marki,,https://dane.gov.pl/pl/dataset/4955,2025-07-10,
+marki-4,Szkoła Podstawowa nr 2,,,,ul.,Pomnikowa,21,,05-270,Marki,1434021,,52.340344,21.113589,,,,,,,,,,,Urząd Miasta Marki,,https://dane.gov.pl/pl/dataset/4955,2025-07-10,
+marki-5,Filia-Szkoła Podstawowa nr 3,,,,ul.,Duza,3,,05-270,Marki,1434021,,52.322235,21.105177,,,,,,,,,,,Urząd Miasta Marki,,https://dane.gov.pl/pl/dataset/4955,2025-07-10,
+marki-6,Zespół Szkół nr im. Jana Pawła II (liceum),,,,al.,Piłsudskiego,96,,05-270,Marki,1434021,,52.322235,21.105177,,,,,,,,,,,Urząd Miasta Marki,,https://dane.gov.pl/pl/dataset/4955,2025-07-10,
+marki-8,Komisariat Policji,,,,ul.,Sportowa,5,,05-270,Marki,1434021,,52.325445,21.108176,,,,,,,,,,,Urząd Miasta Marki,,https://dane.gov.pl/pl/dataset/4955,2025-07-10,

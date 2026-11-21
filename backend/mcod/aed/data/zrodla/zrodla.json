@@ -1,0 +1,52 @@
+[
+  {
+    "id": "warszawa",
+    "nazwa": "Lokalizacja defibrylatorów (AED)",
+    "wydawca": "Urząd m.st. Warszawy",
+    "licencja": "CC BY 4.0",
+    "kod_teryt_gminy": "1465011",
+    "url_zbioru": "https://dane.gov.pl/pl/dataset/39512",
+    "data_aktualizacji_zrodla": "2026-06-01",
+    "liczba": 708
+  },
+  {
+    "id": "legionowo",
+    "nazwa": "Wykaz defibrylatorów AED wraz z ich lokalizacją w Legionowie",
+    "wydawca": "Urząd Miasta Legionowo",
+    "licencja": "CC0 1.0",
+    "kod_teryt_gminy": "1408011",
+    "url_zbioru": "https://dane.gov.pl/pl/dataset/40593",
+    "data_aktualizacji_zrodla": "2026-09-14",
+    "liczba": 24
+  },
+  {
+    "id": "przemysl",
+    "nazwa": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+    "wydawca": "Urząd Miejski w Przemyślu",
+    "licencja": "CC0 1.0",
+    "kod_teryt_gminy": "1862011",
+    "url_zbioru": "https://dane.gov.pl/pl/dataset/4581",
+    "data_aktualizacji_zrodla": "2024-11-06",
+    "liczba": 21
+  },
+  {
+    "id": "krosno",
+    "nazwa": "Defibrylatory zlokalizowane w Mieście Krosno",
+    "wydawca": "Urząd Miasta Krosna",
+    "licencja": "CC0 1.0",
+    "kod_teryt_gminy": "1861011",
+    "url_zbioru": "https://dane.gov.pl/pl/dataset/3624",
+    "data_aktualizacji_zrodla": "2024-03-19",
+    "liczba": 21
+  },
+  {
+    "id": "marki",
+    "nazwa": "Defibrylatory zlokalizowane na terenie Miasta Marki",
+    "wydawca": "Urząd Miasta Marki",
+    "licencja": "CC BY 4.0",
+    "kod_teryt_gminy": "1434021",
+    "url_zbioru": "https://dane.gov.pl/pl/dataset/4955",
+    "data_aktualizacji_zrodla": "2025-07-10",
+    "liczba": 7
+  }
+]
