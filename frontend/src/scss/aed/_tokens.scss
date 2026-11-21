@@ -1,0 +1,75 @@
+@use 'sass:map';
+
+$contrast-modes: (
+  'black-white': (
+    bg: #000,
+    fg: #fff,
+  ),
+  'black-yellow': (
+    bg: #000,
+    fg: #ff0,
+  ),
+  'yellow-black': (
+    bg: #ff0,
+    fg: #000,
+  ),
+);
+
+@mixin tokens {
+  --aed-bg: #fff;
+  --aed-tint: #f7f4ee;
+  --aed-fg: #0b2545;
+  --aed-muted: #4a5a70;
+  --aed-line: #d5dde8;
+  --aed-field: #6b7889;
+  --aed-accent: #d62839;
+  --aed-accent-strong: #b81f2f;
+  --aed-on-accent: #fff;
+  --aed-deep: #0b2545;
+  --aed-on-deep: #fff;
+  --aed-on-deep-muted: #d9e1ec;
+  --aed-closed: #8a94a3;
+  --aed-unknown: #c98a1a;
+  --aed-display: 'AED Plex Condensed', 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  --aed-mono: 'AED Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --aed-brand: 'AED Manrope', 'Manrope', sans-serif;
+}
+
+// Tryby wysokiego kontrastu portalu (klasa na <body>) podmieniają tylko wartości tokenów.
+@mixin contrast-tokens {
+  @each $mode, $c in $contrast-modes {
+    $bg: map.get($c, bg);
+    $fg: map.get($c, fg);
+    :host-context(.#{$mode}) {
+      --aed-bg: #{$bg};
+      --aed-tint: #{$bg};
+      --aed-deep: #{$bg};
+      --aed-on-accent: #{$bg};
+      --aed-fg: #{$fg};
+      --aed-muted: #{$fg};
+      --aed-line: #{$fg};
+      --aed-field: #{$fg};
+      --aed-accent: #{$fg};
+      --aed-accent-strong: #{$fg};
+      --aed-on-deep: #{$fg};
+      --aed-on-deep-muted: #{$fg};
+      --aed-closed: #{$fg};
+      --aed-unknown: #{$fg};
+    }
+  }
+}
+
+@mixin high-contrast {
+  @each $mode, $c in $contrast-modes {
+    :host-context(.#{$mode}) & {
+      @content;
+    }
+  }
+}
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 3px solid var(--aed-accent);
+    outline-offset: 2px;
+  }
+}

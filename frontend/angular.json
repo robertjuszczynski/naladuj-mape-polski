@@ -26,6 +26,7 @@
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "src/styles.scss",
+              "src/scss/aed/fonts.scss",
               "node_modules/leaflet/dist/leaflet.css",
               "src/mcod-material-theme.scss",
               "node_modules/shepherd.js/dist/css/shepherd.css"
