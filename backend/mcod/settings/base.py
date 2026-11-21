@@ -290,6 +290,7 @@ HARVESTER_XML_VERSION_TO_SCHEMA_PATH = {
     "1.11": HARVESTER_DATA_DIR.path("xml_import_otwarte_dane_1_11.xsd").root,
     "1.12": HARVESTER_DATA_DIR.path("xml_import_otwarte_dane_1_12.xsd").root,
     "1.13": HARVESTER_DATA_DIR.path("xml_import_otwarte_dane_1_13.xsd").root,
+    "1.14": HARVESTER_DATA_DIR.path("xml_import_otwarte_dane_1_14.xsd").root,
 }
 
 HARVESTER_IMPORTERS = {
@@ -534,6 +535,7 @@ SUIT_CONFIG = {
             "models": [
                 {"model": "aed.aedupload", "label": "Dodaj dane o AED", "icon": "icon-upload"},
                 {"model": "aed.aedrecord", "label": "Rejestr AED", "icon": "icon-map-marker"},
+                {"model": "aed.aggregatedaedinfo", "label": "Wykaz zbiorczy AED", "icon": "icon-list"},
             ],
             "icon": "icon-heart",
         },
@@ -979,6 +981,7 @@ CELERY_TASK_ROUTES = {
     "mcod.submissions.tasks.generate_statistical_report_for_all_submissions_task": {"queue": "reports"},
     "mcod.resources.tasks.check_link_protocol": {"queue": "resources"},
     "mcod.resources.tasks.create_main_dga_resource_task": {"queue": "resources"},
+    "mcod.aed.tasks.build_aed_register_task": {"queue": "resources"},
     "mcod.resources.tasks.delete_es_resource_tabular_data_index": {"queue": "indexing_data"},
     "mcod.resources.tasks.delete_es_resource_tabular_data_indexes_for_organization": {"queue": "indexing_data"},
     "mcod.resources.tasks.entrypoint_process_resource_file_validation_task": {"queue": "resources"},
@@ -1755,6 +1758,9 @@ MAIN_DGA_DATASET_TAGS_NAMES = [
     "akt o zarządzaniu danymi",
     "chronione dane",
 ]
+
+MAIN_AED_DATASET_OWNER_ORGANIZATION_PK = env("MAIN_AED_DATASET_OWNER_ORGANIZATION_PK", default=None)
+MAIN_AED_REBUILD_COUNTDOWN_S = env.int("MAIN_AED_REBUILD_COUNTDOWN_S", default=30)
 
 PASSWORD_RESET_PATH = "/user/reset-password/%s/"
 EMAIL_VALIDATION_PATH = "/user/verify-email/%s/"

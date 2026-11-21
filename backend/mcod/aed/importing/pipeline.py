@@ -32,7 +32,7 @@ class ImportSource:
 class ImportPipeline:
     """Column matching -> standard records -> optional geocoding -> validation.
 
-    Used by the admin wizard and by the registry rebuild (AED-tagged datasets).
+    Used by the admin wizard and by the main register rebuild (resources flagged as the AED register).
     """
 
     def __init__(self, source, geocoder=None):

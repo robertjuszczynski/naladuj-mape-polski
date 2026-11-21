@@ -188,6 +188,11 @@ RESOURCE_FORCED_TYPE = (
     (RESOURCE_TYPE_API_CHANGE, RESOURCE_TYPE_API_CHANGE_LABEL),
     (RESOURCE_TYPE_FILE_CHANGE, RESOURCE_TYPE_FILE_CHANGE_LABEL),
 )
+# Aggregated registers ("wykazy zbiorcze"): resources flagged with a register code are read, matched to the
+# register standard and merged into one list published by the register owner, like the main DGA list.
+AGGREGATED_REGISTER_AED = "aed"
+AGGREGATED_REGISTERS = ((AGGREGATED_REGISTER_AED, "Wykaz defibrylatorów AED"),)
+
 RESOURCE_DATA_DATE_PERIODS = (
     ("daily", _("daily")),
     ("weekly", _("weekly")),
@@ -577,6 +582,17 @@ class Resource(ExtendedModel):
     automatic_data_date_end = models.DateField(verbose_name=_("Data date end date update"), blank=True, null=True)
     endless_data_date_update = models.BooleanField(verbose_name=_("Endless data date update"), default=False)
     contains_protected_data = models.BooleanField(verbose_name=_("Contains protected data list"), default=False)
+    aggregated_register = models.CharField(
+        verbose_name="Wykaz zbiorczy",
+        max_length=32,
+        blank=True,
+        default="",
+        choices=AGGREGATED_REGISTERS,
+        help_text=(
+            "Zasób oznaczony jako wykaz jest co noc odczytywany, dopasowywany do wzorcowego zakresu danych "
+            "i scalany z zasobami innych dostawców w jeden wykaz zbiorczy. Kolumny nie muszą mieć nazw ze wzoru."
+        ),
+    )
 
     def __str__(self):
         return self.title

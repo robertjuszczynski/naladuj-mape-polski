@@ -406,6 +406,7 @@ class ResourceAdmin(HistoryMixin, ModelAdmin):  # MRO matters here for unescape
                             *has_high_value_data_from_ec_list,
                             *has_research_data,
                             *contains_protected_data,
+                            "aggregated_register",
                             "status",
                             *special_signs,
                             "show_tabular_view",
@@ -530,6 +531,13 @@ class ResourceAdmin(HistoryMixin, ModelAdmin):  # MRO matters here for unescape
                         {
                             "classes": ("suit-tab", "suit-tab-general"),
                             "fields": ("contains_protected_data",),
+                        },
+                    ),
+                    (
+                        None,
+                        {
+                            "classes": ("suit-tab", "suit-tab-general"),
+                            "fields": ("aggregated_register",),
                         },
                     ),
                     (

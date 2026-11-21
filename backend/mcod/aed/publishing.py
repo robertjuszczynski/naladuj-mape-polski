@@ -6,12 +6,12 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
 
-from mcod.aed.constants import AED_TAG_NAMES, NATIONAL_FLAG, NATIONAL_KEY, PROFILE_KEY
+from mcod.aed.constants import AED_TAG_NAMES
 from mcod.aed.export import AedCsv
 from mcod.aed.profile import PROFILE_VERSION
 from mcod.categories.models import Category
 from mcod.datasets.models import Dataset
-from mcod.resources.models import Resource, ResourceFile
+from mcod.resources.models import AGGREGATED_REGISTER_AED, Resource, ResourceFile
 from mcod.tags.models import Tag
 
 ALLOWED_LICENSES = (Dataset.LICENSE_CC0, Dataset.LICENSE_CC_BY)
@@ -43,15 +43,20 @@ def license_name(code, default=""):
     return Dataset.LICENSE_CODE_TO_NAME.get(code, default)
 
 
-def aed_datasets(include_national=False):
-    queryset = Dataset.objects.filter(status="published", customfields__has_key=PROFILE_KEY)
-    if not include_national:
-        queryset = queryset.exclude(customfields__has_key=NATIONAL_KEY)
-    return queryset.select_related("organization")
+def register_resources():
+    """Published resources flagged as the AED register, whichever way they came: wizard, resource form or harvester."""
+    return (
+        Resource.objects.filter(aggregated_register=AGGREGATED_REGISTER_AED, status="published", dataset__status="published")
+        .select_related("dataset__organization")
+        .order_by("dataset__organization__title", "-created")
+    )
 
 
 def national_dataset():
-    return Dataset.objects.filter(customfields__has_key=NATIONAL_KEY, status="published").first()
+    from mcod.aed.models import AggregatedAedInfo
+
+    info = AggregatedAedInfo.current()
+    return info.main_dataset if info else None
 
 
 class DatasetPublisher:
@@ -67,16 +72,29 @@ class DatasetPublisher:
             len(records),
         )
         self.replace_resource(
-            dataset, AedCsv.to_csv(records), "Defibrylatory AED – %s (CSV)" % self.organization.title, description
+            dataset,
+            AedCsv.to_csv(records),
+            "Defibrylatory AED – %s (CSV)" % self.organization.title,
+            description,
+            register=AGGREGATED_REGISTER_AED,
         )
         return dataset
 
     def dataset_for(self, license_code, national=False):
-        queryset = Dataset.objects.filter(organization=self.organization, customfields__has_key=PROFILE_KEY)
+        """The organization's AED dataset (the one holding its register resource), created when missing."""
         if national:
-            dataset = queryset.filter(customfields__has_key=NATIONAL_KEY).first()
+            dataset = national_dataset()
         else:
-            dataset = queryset.exclude(customfields__has_key=NATIONAL_KEY).first()
+            dataset = (
+                Dataset.objects.filter(
+                    organization=self.organization,
+                    status="published",
+                    resources__aggregated_register=AGGREGATED_REGISTER_AED,
+                    resources__status="published",
+                )
+                .order_by("-modified")
+                .first()
+            )
         if dataset is None:
             return self._create_dataset(license_code, national)
         if dataset.license_chosen != license_code:
@@ -85,9 +103,6 @@ class DatasetPublisher:
         return dataset
 
     def _create_dataset(self, license_code, national):
-        custom = {PROFILE_KEY: PROFILE_VERSION}
-        if national:
-            custom[NATIONAL_KEY] = NATIONAL_FLAG
         title, notes = self._describe(national)
         category = self.health_category()
         dataset = Dataset.objects.create(
@@ -98,7 +113,6 @@ class DatasetPublisher:
             license_chosen=license_code,
             update_frequency="daily" if national else "monthly",
             status="published",
-            customfields=custom,
             created_by=self.user,
             modified_by=self.user,
         )
@@ -109,9 +123,9 @@ class DatasetPublisher:
     def _describe(self, national):
         if national:
             return (
-                "Defibrylatory AED w Polsce – zbiór ogólnopolski",
-                "Ogólnopolski zbiór lokalizacji i dostępności automatycznych defibrylatorów zewnętrznych (AED), "
-                "zestawiany automatycznie ze zbiorów instytucji publikowanych według wzorcowego zakresu danych AED %s. "
+                "Defibrylatory AED w Polsce – wykaz zbiorczy",
+                "Wykaz zbiorczy automatycznych defibrylatorów zewnętrznych (AED): portal co noc odczytuje zasoby dostawców "
+                "oznaczone jako wykaz AED, dopasowuje je do wzorcowego zakresu danych AED %s i scala w jedną listę. "
                 "Akcja „Naładuj mapę Polski.”" % PROFILE_VERSION,
             )
         title = self.organization.title
@@ -121,7 +135,7 @@ class DatasetPublisher:
             "Dane zebrane w ramach akcji „Naładuj mapę Polski.”" % (title, PROFILE_VERSION),
         )
 
-    def replace_resource(self, dataset, content, title, description):
+    def replace_resource(self, dataset, content, title, description, register=""):
         """Replace the dataset's CSV resource; the portal validates and indexes the new file itself."""
         for old in Resource.objects.filter(dataset=dataset, status="published"):
             old.delete()
@@ -137,6 +151,7 @@ class DatasetPublisher:
             modified_by=self.user,
             show_tabular_view=True,
             tabular_data_schema=AedCsv.table_schema(content),
+            aggregated_register=register,
         )
         name = "aed-%s-%s.csv" % (dataset.pk, timezone.now().strftime("%Y%m%d%H%M%S"))
         ResourceFile.objects.create(resource=resource, is_main=True, format="csv", file=ContentFile(content, name=name))

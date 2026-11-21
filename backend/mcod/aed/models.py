@@ -9,7 +9,7 @@ from mcod.aed.validation import coordinates
 
 
 class AedRecord(models.Model):
-    """Aggregated AED registry entry, rebuilt from institution datasets that carry the AED profile."""
+    """Aggregated AED registry entry, rebuilt from provider resources flagged as the AED register."""
 
     id_aed = models.CharField("Identyfikator AED", max_length=120, unique=True)
     dataset = models.ForeignKey(
@@ -122,3 +122,33 @@ class AedUpload(models.Model):
 
     def mark_published(self, dataset, license_name):
         self.status, self.license, self.dataset, self.published = UploadStatus.PUBLISHED, license_name, dataset, timezone.now()
+
+
+class AggregatedAedInfo(models.Model):
+    """The main AED register, like AggregatedDGAInfo: the merged resource and a report of every source read."""
+
+    created_at = models.DateTimeField("Utworzono", auto_now_add=True)
+    updated_at = models.DateTimeField("Ostatnie scalenie", auto_now=True)
+    dataset = models.ForeignKey(
+        "datasets.Dataset", on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="Zbiór wykazu zbiorczego"
+    )
+    resource = models.ForeignKey(
+        "resources.Resource", on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="Zasób wykazu zbiorczego"
+    )
+    sources = JSONField("Źródła", default=list)
+
+    class Meta:
+        verbose_name = "wykaz zbiorczy AED"
+        verbose_name_plural = "wykaz zbiorczy AED"
+
+    def __str__(self):
+        return "Wykaz zbiorczy AED (%s)" % timezone.localtime(self.updated_at).strftime("%Y-%m-%d %H:%M")
+
+    @classmethod
+    def current(cls):
+        return cls.objects.order_by("-pk").first()
+
+    @property
+    def main_dataset(self):
+        dataset = self.dataset
+        return dataset if dataset is not None and dataset.status == "published" and not dataset.is_removed else None

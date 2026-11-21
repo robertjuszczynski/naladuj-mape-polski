@@ -90,6 +90,11 @@ def get_beat_schedule(
             "options": default_options,
             "schedule": crontab(minute=30, hour=3),
         },
+        "aed_register_creation": {
+            "task": "mcod.aed.tasks.build_aed_register_task",
+            "options": default_options,
+            "schedule": crontab(minute=45, hour=3),
+        },
         "kibana-statistics": {
             "task": "mcod.counters.tasks.kibana_statistics",
             "options": default_options,

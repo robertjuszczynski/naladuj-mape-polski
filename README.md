@@ -2,7 +2,7 @@
 
 HackNation 2026, wyzwanie „Misja AED – dane na ratunek” (Departament Zarządzania Danymi, Ministerstwo Cyfryzacji).
 
-Fork otwartego kodu portalu dane.gov.pl (https://dane.gov.pl/source-code/, `backend_latest` i `frontend_latest` z 21.11.2026) z modułem, który zbiera dane o defibrylatorach AED od dostawców **wewnątrz portalu**: każdy dostawca publikuje własny zbiór według wzorcowego zakresu danych, a portal zestawia je w jeden ogólnopolski, otwarty zbiór.
+Fork otwartego kodu portalu dane.gov.pl (https://dane.gov.pl/source-code/, `backend_latest` i `frontend_latest` z 21.11.2026) z modułem, który zbiera dane o defibrylatorach AED od dostawców **wewnątrz portalu**: każdy dostawca publikuje własny zbiór według wzorcowego zakresu danych, a portal scala je w jeden wykaz zbiorczy.
 
 - Prototyp: https://178-250-46-63.sslip.io/pl/aed (wersja angielska: /en/aed)
 - Panel dostawcy: https://admin.178-250-46-63.sslip.io
@@ -16,7 +16,7 @@ Dostawcą może być każdy dysponent AED z numerem REGON i profilem dostawcy w 
 
 - **Wzorcowy zakres danych AED** (30 pól, wersja 0.2.0): `deliverables/wzorcowy-zakres-danych-aed.xlsx`. Minimum od dostawcy to 4 informacje: nazwa, adres, współrzędne (albo sam adres) i dostępność. Zgodny ze standardem technicznym portalu i jego regułami weryfikacji jakości; pola mają odpowiedniki w tagach OpenStreetMap i francuskiej bazie Géo'DAE.
 - **Kreator „Dodaj dane o AED” w panelu dostawcy** (`backend/mcod/aed/`): plik CSV/XLSX w dowolnym układzie, dopasowanie kolumn, automatyczne poprawki (zamienione współrzędne, adres w jednej kolumnie, przecinek dziesiętny, godziny zapisane tekstem), współrzędne z adresu (geokodowanie GUGiK), wstrzymanie rekordów, których nie da się poprawić, decyzja dostawcy przy duplikatach, licencja z listy portalu, publikacja jako natywny zbiór i pobranie poprawionego pliku.
-- **Zbiór ogólnopolski**: budowany automatycznie ze zbiorów dostawców (z kreatora i z tagiem „AED”), z listą źródeł i licencji, publikowany jako zbiór „Defibrylatory AED w Polsce – zbiór ogólnopolski” (CSV, widok tabeli, API).
+- **Wykaz zbiorczy AED w logice portalu** (wzorowany na wykazie chronionych danych DGA): zasób ma nowe pole „Wykaz zbiorczy” (`Resource.aggregated_register`), dostępne w zwykłym formularzu zasobu, w kreatorze i w harvesterze (CKAN: `aggregated_register`, XML: `aggregatedRegister` w schemacie 1.14). Zadanie Celery `build_aed_register_task` co noc i chwilę po zmianie oznaczonego zasobu odczytuje wszystkie takie zasoby (plik albo link, np. lista w BIP), dopasowuje kolumny do wzorcowego zakresu, poprawia typowe błędy i scala je w zasób „Defibrylatory AED w Polsce (CSV)” w zbiorze „Defibrylatory AED w Polsce – wykaz zbiorczy”. Raport źródeł (co odczytano, ile rekordów, co odpadło i dlaczego) jest w panelu: „Wykaz zbiorczy AED” (model `AggregatedAedInfo`, jak `AggregatedDGAInfo`). Kolejne wykazy dodaje się nową wartością pola i definicją wzorca.
 - **API**: `/aed`, `/aed/stats`, `/aed/{id}`, dostępność liczona na wskazaną godzinę (`?at=RRRR-MM-DDTGG:MM`).
 - **Frontend portalu**: pasek akcji na górze portalu, strona akcji z licznikiem „Ile mapy już naładowaliśmy?”, mapą i dostępnością w wybranym dniu i godzinie, strona AED ze zgłoszeniem problemu przez mechanizm uwag do zbioru, wersja PL/EN, tryby wysokiego kontrastu portalu.
 - **Kampania**: nazwa i hasło „Naładuj mapę Polski.”, logo i księga znaku w `deliverables/znak/`.
@@ -32,7 +32,7 @@ Zgodnie z README portalu (`backend/README.md`, docker compose). Konfiguracja ser
 ```
 python manage.py migrate aed
 AED_DEMO_PASSWORD=... python manage.py aed_seed   # dostawcy demonstracyjni i ich zbiory
-python manage.py aed_rebuild                      # zbiór ogólnopolski
+python manage.py aed_rebuild                      # scalenie wykazu zbiorczego od razu (normalnie co noc)
 ```
 
 Testy modułu: `pytest mcod/aed/tests`. Pliki do testów kreatora: `backend/mcod/aed/data/testowe/` (opis w README w tym katalogu).

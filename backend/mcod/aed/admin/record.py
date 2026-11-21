@@ -30,6 +30,6 @@ class AedRecordAdmin(StaffOnlyMixin, admin.ModelAdmin):
 
     def rebuild(self, request, queryset):
         count = RegistryBuilder(request.user).rebuild()
-        self.message_user(request, "Odbudowano rejestr zbiorczy: %d urządzeń" % count)
+        self.message_user(request, "Scalono wykaz zbiorczy: %d urządzeń" % count)
 
-    rebuild.short_description = "Odbuduj rejestr zbiorczy ze zbiorów instytucji"
+    rebuild.short_description = "Scal wykaz zbiorczy z zasobów dostawców"

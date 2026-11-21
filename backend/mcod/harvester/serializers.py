@@ -43,7 +43,7 @@ from mcod.resources.dga_utils import (
     validate_institution_type_for_contains_protected_data,
 )
 from mcod.resources.link_validation import download_file
-from mcod.resources.models import RESOURCE_DATA_DATE_PERIODS, Resource
+from mcod.resources.models import AGGREGATED_REGISTER_AED, RESOURCE_DATA_DATE_PERIODS, Resource
 
 logger = logging.getLogger("mcod")
 
@@ -256,6 +256,7 @@ class ResourceSchema(ResourceMixin, CKANPreProcessedSchema):
     )
     has_research_data = Bool(allow_none=True, missing=None)
     contains_protected_data = Bool(allow_none=True, missing=False)
+    aggregated_register = Str(validate=validate.OneOf(["", AGGREGATED_REGISTER_AED]), missing="")
     package_id = UUID()
     position = Int()
     resource_type = Str(allow_none=True)
@@ -278,6 +279,7 @@ class ResourceSchema(ResourceMixin, CKANPreProcessedSchema):
             "has_high_value_data_from_ec_list",
             "has_research_data",
             "contains_protected_data",
+            "aggregated_register",
         )
         unknown = EXCLUDE
 
@@ -434,6 +436,7 @@ class XMLResourceSchema(ResourceMixin, XMLPreProcessedSchema):
     has_high_value_data_from_ec_list = Bool(data_key="hasHighValueDataFromEuropeanCommissionList", allow_none=True, missing=None)
     has_research_data = Bool(data_key="hasResearchData", allow_none=True, missing=None)
     contains_protected_data = Bool(data_key="containsProtectedData", missing=False)
+    aggregated_register = Str(data_key="aggregatedRegister", validate=validate.OneOf(["", AGGREGATED_REGISTER_AED]), missing="")
     supplements = Nested(XMLSupplementSchema, many=True)
     is_auto_data_date = Bool(data_key="isAutoDataDate")
     data_date_update_period = Str(

@@ -81,12 +81,8 @@ NIGHT_HOUR = 3
 STATS_CACHE_KEY = "aed:stats:v2"
 STATS_CACHE_TTL_S = 300
 
-PROFILE_KEY = "aed_profile"
-NATIONAL_KEY = "aed_national_dataset"
-NATIONAL_FLAG = "true"
 NATIONAL_ORG_TITLE = "Departament Zarządzania Danymi – Ministerstwo Cyfryzacji"
 AED_TAG_NAMES = ("AED", "defibrylator", "Naładuj mapę Polski")
-FOREIGN_TAG_NAMES = ("aed", "defibrylator", "defibrylatory", "defibrylatory aed")
 
 # Municipalities per voivodeship (TERYT, GUS); the voivodeship code is the first two digits of a municipality code.
 VOIVODESHIPS = {
