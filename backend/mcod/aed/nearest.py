@@ -108,9 +108,10 @@ class AddressLocator:
 
 
 class NearestAed:
-    def __init__(self, records, when):
+    def __init__(self, records, when, reported=frozenset()):
         self.records = records
         self.when = when
+        self.reported = reported
 
     def find(self, lat, lon):
         """Up to OPEN_LIMIT open AED, plus closed and unknown ones that are nearer than the farthest open one."""
@@ -134,7 +135,7 @@ class NearestAed:
         data = record.data
         rounded = int(round(meters / DISTANCE_ROUNDING_M) * DISTANCE_ROUNDING_M)
         out = dict(
-            brief(record, self.when),
+            brief(record, self.when, self.reported),
             distance_m=rounded,
             walk_min=walk_minutes(meters),
             location=data.get("opis_lokalizacji", ""),

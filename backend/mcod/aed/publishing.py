@@ -72,13 +72,13 @@ class DatasetPublisher:
             len(records),
         )
         self.replace_resource(
-            dataset,
-            AedCsv.to_csv(records),
-            "Defibrylatory AED – %s (CSV)" % self.organization.title,
-            description,
-            register=AGGREGATED_REGISTER_AED,
+            dataset, AedCsv.to_csv(records), self.resource_title(), description, register=AGGREGATED_REGISTER_AED
         )
         return dataset
+
+    def resource_title(self):
+        """Title of the provider's own standard resource, the one the wizard, single adds and task fixes write to."""
+        return "Defibrylatory AED – %s (CSV)" % self.organization.title
 
     def dataset_for(self, license_code, national=False):
         """The organization's AED dataset (the one holding its register resource), created when missing."""
@@ -136,8 +136,8 @@ class DatasetPublisher:
         )
 
     def replace_resource(self, dataset, content, title, description, register=""):
-        """Replace the dataset's CSV resource; the portal validates and indexes the new file itself."""
-        for old in Resource.objects.filter(dataset=dataset, status="published"):
+        """Replace the resource with this title; other resources of the dataset (e.g. the provider's own file) stay."""
+        for old in Resource.objects.filter(dataset=dataset, status="published", title=title):
             old.delete()
         resource = Resource.objects.create(
             dataset=dataset,

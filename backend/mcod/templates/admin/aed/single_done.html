@@ -1,0 +1,8 @@
+{% extends "admin/aed/base_tool.html" %}
+{% block aed %}
+<div class="aed-head">
+<h2 class="aed-success"><span aria-hidden="true">✓</span>Dodano: {{ record.nazwa_obiektu }}</h2>
+<p>AED trafił do zasobu „Defibrylatory AED – {{ organization.title }} (CSV)” i do wykazu zbiorczego. Na mapie portalu pojawi się za chwilę.{% if record.data_waznosci_elektrod or record.data_ostatniego_przegladu or record.data_waznosci_baterii %} Przed terminem przeglądu, elektrod lub baterii dostaniesz e-mail i zadanie w „Zadaniach”.{% endif %}</p>
+</div>
+<div class="aed-foot"><a class="aed-btn sec" href="{% url 'admin:aed_aedtask_changelist' %}">Zadania</a><div class="aed-push"><a class="aed-btn" href="{% url 'admin:aed_single' %}">Dodaj kolejny AED</a></div></div>
+{% endblock %}

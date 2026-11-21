@@ -1,0 +1,12 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'aed/wizard.css' %}">
+{% block toolstyle %}{% endblock %}
+{% endblock %}
+{% block extrahead %}{{ block.super }}{% block toolscript %}{% endblock %}{% endblock %}
+{% block content %}
+<div class="aed-wrap aed-tool">
+<div class="aed-sheet">{% block aed %}{% endblock %}</div>
+</div>
+{% endblock %}

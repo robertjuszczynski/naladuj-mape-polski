@@ -26,6 +26,7 @@ routes = [
     ("/aed/stats", aed_views.AedStatsView()),
     ("/aed/nearest", aed_views.AedNearestView()),
     ("/aed/{id}", aed_views.AedDetailView()),
+    ("/aed/{id}/report", aed_views.AedReportView()),
     # Tools & utilities
     ("/search", search_views.SearchView()),
     ("/sparql/{token:uuid}", search_views.SparqlDownloadView()),

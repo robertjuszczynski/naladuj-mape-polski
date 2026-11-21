@@ -1,13 +1,23 @@
 from django.core.cache import cache
 
 from mcod.aed.availability import availability_at
-from mcod.aed.constants import MUNICIPALITY_CODE_LENGTH, STATS_CACHE_KEY, STATS_CACHE_TTL_S, VOIVODESHIPS
-from mcod.aed.models import AedRecord
+from mcod.aed.constants import MUNICIPALITY_CODE_LENGTH, STATS_CACHE_KEY, STATS_CACHE_TTL_S, VOIVODESHIPS, TaskKind, TaskStatus
+from mcod.aed.models import AedRecord, AedTask
+from mcod.aed.planner import REPORTS_SHOWN_ON_MAP, record_warnings
 from mcod.aed.profile import format_address
 from mcod.aed.publishing import national_dataset
 
 
-def brief(record, when):
+def reported_ids():
+    """AEDs with an open citizen report of a problem a bystander should know about."""
+    return set(
+        AedTask.objects.filter(kind=TaskKind.REPORT, status=TaskStatus.OPEN, report_type__in=REPORTS_SHOWN_ON_MAP).values_list(
+            "id_aed", flat=True
+        )
+    )
+
+
+def brief(record, when, reported=frozenset()):
     data = record.data
     return {
         "id": record.id_aed,
@@ -23,12 +33,13 @@ def brief(record, when):
         "operational": data.get("sprawny", ""),
         "institution": record.organization.title,
         "dataset_id": record.dataset_id,
+        "warnings": record_warnings(data, record.id_aed in reported),
     }
 
 
 def detail(record, when):
     return dict(
-        brief(record, when),
+        brief(record, when, reported_ids()),
         fields=record.data,
         fixes=record.fixes,
         issues=record.issues,

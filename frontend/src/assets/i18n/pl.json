@@ -1836,6 +1836,14 @@
       "Locating": "Ustalam lokalizację…",
       "MyLocation": "Twoja lokalizacja",
       "GeoDenied": "Nie udało się ustalić lokalizacji. Zezwól na nią w przeglądarce albo wpisz adres."
+    },
+    "CtaSingle": "Dodaj AED w minutę",
+    "CtaFile": "Wgraj plik (wiele AED)",
+    "Warning": {
+      "inspection_overdue": "Przegląd po terminie",
+      "electrodes_expired": "Elektrody po terminie",
+      "battery_expired": "Bateria po terminie",
+      "reported": "Zgłoszono problem – czeka na sprawdzenie"
     }
   }
 }

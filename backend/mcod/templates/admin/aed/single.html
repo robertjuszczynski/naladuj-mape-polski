@@ -1,0 +1,56 @@
+{% extends "admin/aed/base_tool.html" %}
+{% load static %}
+{% block toolstyle %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
+{% block toolscript %}<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<script src="{% static 'aed/single.js' %}" defer></script>{% endblock %}
+{% block aed %}
+<div class="aed-head">
+<h2>Dodaj jeden AED</h2>
+<p>Stań przy defibrylatorze i wypełnij cztery krótkie kroki. Bez pliku, bez szablonu – zajmie to około minuty. Masz wiele AED? <a href="{% url 'admin:aed_upload' %}">Wgraj plik</a>.</p>
+</div>
+<form method="post" class="aed-single" data-locate-url="{% url 'admin:aed_locate' %}">{% csrf_token %}
+{% if organizations|length == 1 %}<input type="hidden" name="organization" value="{{ organizations.0.pk }}"><p class="aed-small">Dodajesz jako <strong>{{ organizations.0.title }}</strong></p>
+{% else %}<label class="aed-label" for="organization">Instytucja</label>
+<select id="organization" name="organization" required class="aed-select-narrow">{% for o in organizations %}<option value="{{ o.pk }}"{% if values.organization == o.pk|stringformat:"s" %} selected{% endif %}>{{ o.title }}</option>{% endfor %}</select>{% endif %}
+
+<fieldset class="aed-step"><legend><span>1</span>Gdzie jest?</legend>
+<button type="button" class="aed-btn aed-btn--wide" data-locate>Jestem przy AED – użyj mojej lokalizacji</button>
+<p class="aed-small" data-locate-status aria-live="polite">Możesz też kliknąć miejsce na mapie albo przesunąć pinezkę.</p>
+<div class="aed-pinmap" data-map role="region" aria-label="Mapa: miejsce AED"></div>
+<input type="hidden" name="lat" value="{{ values.lat|default:'' }}" data-lat><input type="hidden" name="lon" value="{{ values.lon|default:'' }}" data-lon>
+<label class="aed-label" for="nazwa_obiektu">Nazwa miejsca</label>
+<input id="nazwa_obiektu" name="nazwa_obiektu" required value="{{ values.nazwa_obiektu|default:'' }}" placeholder="np. Urząd Miasta Marki">
+<div class="aed-grid2">
+<label>Ulica<input name="ulica" value="{{ values.ulica|default:'' }}" data-field="ulica" autocomplete="address-line1"></label>
+<label>Numer<input name="numer_budynku" value="{{ values.numer_budynku|default:'' }}" data-field="numer_budynku"></label>
+<label>Kod pocztowy<input name="kod_pocztowy" value="{{ values.kod_pocztowy|default:'' }}" data-field="kod_pocztowy" inputmode="numeric"></label>
+<label>Miejscowość<input name="miejscowosc" value="{{ values.miejscowosc|default:'' }}" data-field="miejscowosc"></label>
+</div>
+</fieldset>
+
+<fieldset class="aed-step"><legend><span>2</span>Kiedy jest dostępny?</legend>
+<div class="aed-chips">
+<label><input type="radio" name="hours_mode" value="always"{% if values.hours_mode == "always" %} checked{% endif %}><span>Całą dobę</span></label>
+<label><input type="radio" name="hours_mode" value="workdays"{% if values.hours_mode == "workdays" %} checked{% endif %}><span>pn–pt 8–16</span></label>
+<label><input type="radio" name="hours_mode" value="other"{% if values.hours_mode == "other" %} checked{% endif %}><span>Inne godziny</span></label>
+</div>
+<input name="hours_text" value="{{ values.hours_text|default:'' }}" placeholder="np. pn–pt 7–18, sob. 9–14" aria-label="Inne godziny" data-hours-text>
+</fieldset>
+
+<fieldset class="aed-step"><legend><span>3</span>Jak go znaleźć?</legend>
+<input name="opis_lokalizacji" value="{{ values.opis_lokalizacji|default:'' }}" placeholder="np. parter, przy portierni" aria-label="Opis miejsca">
+<p class="aed-small">Daty z naklejki na AED – przypomnimy Ci e-mailem przed terminem:</p>
+<div class="aed-grid3">
+<label>Ostatni przegląd<input type="date" name="data_ostatniego_przegladu" value="{{ values.data_ostatniego_przegladu|default:'' }}"></label>
+<label>Elektrody ważne do<input type="date" name="data_waznosci_elektrod" value="{{ values.data_waznosci_elektrod|default:'' }}"></label>
+<label>Bateria ważna do<input type="date" name="data_waznosci_baterii" value="{{ values.data_waznosci_baterii|default:'' }}"></label>
+</div>
+</fieldset>
+
+<fieldset class="aed-step"><legend><span>4</span>Publikuj</legend>
+<div class="aed-chips">{% for license in licenses %}<label><input type="radio" name="license" value="{{ license.code }}"{% if values.license == license.code|stringformat:"s" or not values.license and forloop.first %} checked{% endif %}><span>{{ license.name }} – {{ license.title }}</span></label>{% endfor %}</div>
+<label class="aed-consent"><input type="checkbox" name="consent" value="1" required{% if values.consent %} checked{% endif %}><span>Mamy prawo udostępnić te dane i odpowiadamy za ich aktualność. Nie zawierają danych osobowych.</span></label>
+</fieldset>
+<div class="aed-foot"><div class="aed-push"><button class="aed-btn" type="submit">Opublikuj AED</button></div></div>
+</form>
+{% endblock %}

@@ -201,3 +201,14 @@
     color: var(--aed-accent);
   }
 }
+
+:host .aed-warning {
+  display: inline-block;
+  margin: 4px 6px 0 0;
+  padding: 1px 9px;
+  border-left: 3px solid var(--aed-accent);
+  background: var(--aed-tint);
+  color: var(--aed-fg);
+  font-size: 0.85rem;
+  font-weight: 700;
+}

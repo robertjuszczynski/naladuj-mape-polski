@@ -1,0 +1,47 @@
+{% extends "admin/aed/base_tool.html" %}
+{% block aed %}
+<div class="aed-head">
+<h2>Zadania{% if total %} <span class="aed-count">{{ total }}</span>{% endif %}</h2>
+<p>Terminy przeglądów, brakujące dane i zgłoszenia obywateli dla Twoich AED. Każda poprawka od razu trafia do Twojego zbioru, wykazu zbiorczego i na mapę.</p>
+</div>
+<div class="aed-foot aed-foot--top">{% if kind %}<a class="aed-btn sec sm" href="{% url 'admin:aed_aedtask_changelist' %}">← Wszystkie zadania</a>{% endif %}<a class="aed-btn sec sm" href="{% url 'admin:aed_single' %}">+ Dodaj jeden AED</a>
+<form method="post" action="{% url 'admin:aed_task_remind' %}" class="aed-push">{% csrf_token %}<button class="aed-btn sec sm">Wyślij przypomnienie e-mail teraz</button></form></div>
+{% if last_mail %}<details class="aed-mail" open><summary>Podgląd wysłanego e-maila</summary>{% for to, subject, body in last_mail %}<p class="aed-small">Do: {{ to|join:", " }}</p><p><strong>{{ subject }}</strong></p><pre>{{ body }}</pre>{% endfor %}</details>{% endif %}
+{% for group in groups %}
+<section class="aed-taskgroup">
+<h3>{{ group.label }} <span class="aed-count">{{ group.count }}</span></h3>
+<ul class="aed-tasks">
+{% for t in group.tasks %}
+<li>
+<div class="aed-task__what">
+<strong>{{ t.aed_name|default:t.id_aed }}</strong>
+<span class="aed-small">{{ t.organization }}</span>
+{% if t.due_date %}<span class="aed-due{% if t.due_date < today %} late{% endif %}">{% if t.due_date < today %}po terminie od {{ t.due_date|date:"d.m.Y" }}{% else %}termin {{ t.due_date|date:"d.m.Y" }}{% endif %}</span>{% endif %}
+{% if t.kind == "report" %}<span class="aed-due late">{% for code, label in report_labels.items %}{% if code == t.report_type %}{{ label }}{% endif %}{% endfor %}</span>{% if t.comment %}<span class="aed-small">„{{ t.comment }}”</span>{% endif %}{% endif %}
+</div>
+<form method="post" action="{% url 'admin:aed_task_resolve' t.pk %}" class="aed-task__act">{% csrf_token %}<input type="hidden" name="kind" value="{{ kind }}">
+{% if t.kind == "inspection" or t.kind == "electrodes" or t.kind == "battery" %}
+<label class="aed-small">{% if t.kind == "inspection" %}Data przeglądu{% else %}Nowa data ważności{% endif %}<input type="date" name="date"></label>
+<button class="aed-btn sm" name="action" value="date">Zrobione</button>
+<button class="aed-btn sec sm" name="action" value="faulty">Oznacz jako niesprawny</button>
+{% elif t.kind == "missing_hours" %}
+<span class="aed-chips sm"><label><input type="radio" name="hours_mode" value="always"><span>Całą dobę</span></label><label><input type="radio" name="hours_mode" value="workdays"><span>pn–pt 8–16</span></label><label><input type="radio" name="hours_mode" value="other" checked><span>Inne</span></label></span>
+<input name="hours_text" placeholder="np. pn–pt 7–15" aria-label="Godziny dostępności">
+<button class="aed-btn sm" name="action" value="hours">Zapisz</button>
+{% elif t.kind == "missing_location" %}
+<input name="location" placeholder="np. parter, przy portierni" aria-label="Opis miejsca">
+<button class="aed-btn sm" name="action" value="location">Zapisz</button>
+{% else %}
+<button class="aed-btn sm" name="action" value="confirm">Potwierdzam{% if t.report_type == "not_working" or t.report_type == "missing" %} – oznacz jako niesprawny{% endif %}</button>
+<button class="aed-btn sec sm" name="action" value="dismiss">Zgłoszenie błędne</button>
+{% endif %}
+</form>
+</li>
+{% endfor %}
+</ul>
+{% if not kind and group.count > preview %}<p><a href="?kind={{ group.kind }}">Pokaż wszystkie ({{ group.count }})</a></p>{% endif %}
+</section>
+{% empty %}
+<p class="aed-quality">✓ Nie masz zadań. Wszystkie AED mają aktualne dane.</p>
+{% endfor %}
+{% endblock %}

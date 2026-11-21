@@ -533,7 +533,9 @@ SUIT_CONFIG = {
         {
             "label": "Defibrylatory AED",
             "models": [
-                {"model": "aed.aedupload", "label": "Dodaj dane o AED", "icon": "icon-upload"},
+                {"url": "/aed/aedtask/single/", "label": "Dodaj jeden AED", "icon": "icon-plus"},
+                {"model": "aed.aedupload", "label": "Wgraj plik z AED", "icon": "icon-upload"},
+                {"model": "aed.aedtask", "label": "Zadania", "icon": "icon-check"},
                 {"model": "aed.aedrecord", "label": "Rejestr AED", "icon": "icon-map-marker"},
                 {"model": "aed.aggregatedaedinfo", "label": "Wykaz zbiorczy AED", "icon": "icon-list"},
             ],
@@ -982,6 +984,7 @@ CELERY_TASK_ROUTES = {
     "mcod.resources.tasks.check_link_protocol": {"queue": "resources"},
     "mcod.resources.tasks.create_main_dga_resource_task": {"queue": "resources"},
     "mcod.aed.tasks.build_aed_register_task": {"queue": "resources"},
+    "mcod.aed.tasks.send_aed_task_reminders": {"queue": "notifications"},
     "mcod.resources.tasks.delete_es_resource_tabular_data_index": {"queue": "indexing_data"},
     "mcod.resources.tasks.delete_es_resource_tabular_data_indexes_for_organization": {"queue": "indexing_data"},
     "mcod.resources.tasks.entrypoint_process_resource_file_validation_task": {"queue": "resources"},
@@ -2335,6 +2338,8 @@ CSP_IMG_SRC = env.list(
         "data:",  # Base64 encoded images (e.g. dynamic charts, small icons in CSS)
         MATOMO_URL,  # Matomo Image Tracker (invisible tracking pixel for users without JS)
         BASE_URL,
+        "https://tile.openstreetmap.org",  # map tiles in the AED provider forms
+        UNPKG_URL,  # Leaflet marker icons in the AED provider forms
     ],
 )
 

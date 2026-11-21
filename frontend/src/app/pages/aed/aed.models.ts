@@ -10,6 +10,7 @@ export interface AedBrief {
   lon: number;
   availability: AedAvailability;
   institution: string;
+  warnings: string[];
 }
 
 export interface AedFix {

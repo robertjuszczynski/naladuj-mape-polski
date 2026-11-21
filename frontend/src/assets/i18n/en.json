@@ -1833,6 +1833,14 @@
       "Locating": "Finding your location…",
       "MyLocation": "Your location",
       "GeoDenied": "Could not get your location. Allow it in the browser or type the address."
+    },
+    "CtaSingle": "Add an AED in a minute",
+    "CtaFile": "Upload a file (many AEDs)",
+    "Warning": {
+      "inspection_overdue": "Inspection overdue",
+      "electrodes_expired": "Electrodes expired",
+      "battery_expired": "Battery expired",
+      "reported": "Problem reported – awaiting check"
     }
   }
 }

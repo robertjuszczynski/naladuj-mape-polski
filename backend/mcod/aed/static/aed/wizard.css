@@ -625,3 +625,205 @@
     margin: 0 6px;
   }
 }
+
+/* Provider tools: "Dodaj jeden AED" and "Zadania" */
+.aed-wrap input[type="date"] {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  margin-top: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-input);
+  border-radius: 6px;
+  background: var(--white);
+  font-size: 14px;
+  color: var(--text);
+}
+.aed-tool .aed-sheet {
+  max-width: 760px;
+}
+.aed-step {
+  margin: 0 0 20px;
+  padding: 18px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.aed-step legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 0 12px;
+  color: var(--navy);
+  font-size: 17px;
+  font-weight: 700;
+}
+.aed-step legend span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: var(--white);
+  font-size: 14px;
+}
+.aed-step label {
+  display: block;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 600;
+}
+.aed-step label input {
+  margin-top: 4px;
+  font-weight: 400;
+}
+.aed-step > input,
+.aed-step > label {
+  margin-top: 10px;
+}
+.aed-btn--wide {
+  width: 100%;
+  min-height: 52px;
+  font-size: 16px;
+  white-space: normal;
+}
+.aed-pinmap {
+  height: 260px;
+  margin: 8px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.aed-grid2,
+.aed-grid3 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.aed-grid3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.aed-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.aed-chips label {
+  margin: 0;
+}
+.aed-chips input {
+  position: absolute;
+  opacity: 0;
+}
+.aed-chips span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 2px solid var(--border-button);
+  border-radius: 999px;
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.aed-chips input:checked + span {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: var(--white);
+}
+.aed-chips input:focus-visible + span {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.aed-chips.sm span {
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+.aed-count {
+  display: inline-flex;
+  min-width: 26px;
+  justify-content: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--navy);
+  color: var(--white);
+  font-size: 13px;
+  vertical-align: middle;
+}
+.aed-taskgroup {
+  margin: 0 0 24px;
+}
+.aed-taskgroup h3 {
+  margin: 0 0 8px;
+  color: var(--navy);
+  font-size: 16px;
+}
+.aed-tasks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+.aed-tasks li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.aed-task__what {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.aed-task__act {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.aed-task__act input[name="hours_text"],
+.aed-task__act input[name="location"] {
+  width: 200px;
+}
+.aed-due {
+  color: var(--warn);
+  font-size: 13px;
+  font-weight: 700;
+}
+.aed-due.late {
+  color: var(--bad);
+}
+@media (max-width: 640px) {
+  .aed-grid2,
+  .aed-grid3,
+  .aed-tasks li {
+    grid-template-columns: 1fr;
+  }
+  .aed-task__act {
+    justify-content: flex-start;
+  }
+}
+.aed-wrap .aed-foot.aed-foot--top {
+  margin: 0 0 20px;
+  padding-top: 0;
+  border-top: 0;
+}
+.aed-mail {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+}
+.aed-mail pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  color: var(--navy);
+}

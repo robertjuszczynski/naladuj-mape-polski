@@ -1,0 +1,230 @@
+"""Provider tools beside the file wizard: "Dodaj jeden AED" (a phone-friendly form) and the "Zadania" inbox."""
+
+import requests
+from django.contrib import admin, messages
+from django.core.cache import cache
+from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import path, reverse
+from django.utils import timezone
+
+from mcod.aed.admin.base import StaffOnlyMixin, user_organizations
+from mcod.aed.constants import GEOCODE_TIMEOUT_S, RecordStatus, ReportType, TaskKind, TaskStatus
+from mcod.aed.importing.address import AddressParser
+from mcod.aed.importing.geocoder import GugikGeocoder
+from mcod.aed.importing.mapper import normalize_value
+from mcod.aed.importing.pipeline import ImportSource
+from mcod.aed.models import AedRecord, AedTask
+from mcod.aed.opening_hours import ALWAYS_OPEN
+from mcod.aed.provider import ProviderResource
+from mcod.aed.publishing import license_from_form, license_options
+from mcod.aed.reminders import send_reminders
+from mcod.aed.validation import RecordChecker
+
+WORKDAY_HOURS = "Mo-Fr 08:00-16:00"
+HOURS_PRESETS = {"always": ALWAYS_OPEN, "workdays": WORKDAY_HOURS}
+SINGLE_SOURCE = "Formularz „Dodaj jeden AED”, %s"
+DATE_FIELDS = ("data_ostatniego_przegladu", "data_waznosci_elektrod", "data_waznosci_baterii")
+TEXT_FIELDS = ("nazwa_obiektu", "opis_lokalizacji", "pietro", "ulica", "numer_budynku", "kod_pocztowy", "miejscowosc")
+GROUP_PREVIEW = 10
+LAST_MAIL_KEY = "aed:lastmail:%s"
+LAST_MAIL_TTL_S = 600
+REVERSE_URL = "https://services.gugik.gov.pl/uug/"
+
+
+def set_hours(record, mode, text):
+    """Hours from the preset buttons or free Polish text ("pn–pt 7–15, sob. 9–13")."""
+    spec = HOURS_PRESETS.get(mode)
+    if spec is None:
+        spec, _ = normalize_value("godziny_dostepnosci", text)
+    record["godziny_dostepnosci"] = spec
+    record["dostepny_calodobowo"] = "true" if spec == ALWAYS_OPEN else "false"
+
+
+@admin.register(AedTask)
+class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return self.has_module_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_urls(self):
+        view = self.admin_site.admin_view
+        return [
+            path("single/", view(self.single_view), name="aed_single"),
+            path("single/locate/", view(self.locate_view), name="aed_locate"),
+            path("<int:pk>/resolve/", view(self.resolve_view), name="aed_task_resolve"),
+            path("remind/", view(self.remind_view), name="aed_task_remind"),
+        ] + super().get_urls()
+
+    def render(self, request, template, **context):
+        base = dict(self.admin_site.each_context(request), opts=self.model._meta)
+        return render(request, "admin/aed/%s.html" % template, dict(base, **context))
+
+    # Zadania
+
+    def changelist_view(self, request, extra_context=None):
+        tasks = self.get_queryset(request).filter(status=TaskStatus.OPEN).select_related("organization")
+        kind = request.GET.get("kind", "")
+        groups = []
+        for code, label in TaskKind.CHOICES:
+            items = tasks.filter(kind=code)
+            count = items.count()
+            if count and (not kind or kind == code):
+                groups.append({"kind": code, "label": label, "count": count, "tasks": items if kind else items[:GROUP_PREVIEW]})
+        return self.render(
+            request,
+            "tasks",
+            title="Zadania",
+            groups=groups,
+            total=tasks.count(),
+            kind=kind,
+            preview=GROUP_PREVIEW,
+            today=timezone.localdate(),
+            report_labels=ReportType.LABELS,
+            last_mail=cache.get(LAST_MAIL_KEY % request.user.pk),
+        )
+
+    def remind_view(self, request):
+        if request.method == "POST":
+            sent = send_reminders(user_organizations(request.user), only_new=False)
+            if sent:
+                cache.set(LAST_MAIL_KEY % request.user.pk, sent, LAST_MAIL_TTL_S)
+                messages.success(request, "Wysłano przypomnienie e-mail (%d) do osób z Twojej instytucji." % len(sent))
+            else:
+                messages.info(request, "Brak otwartych zadań albo adresów e-mail – nic nie wysłano.")
+        return redirect("admin:aed_aedtask_changelist")
+
+    def resolve_view(self, request, pk):
+        task = get_object_or_404(self.get_queryset(request), pk=pk, status=TaskStatus.OPEN)
+        if request.method != "POST":
+            return redirect("admin:aed_aedtask_changelist")
+        action = request.POST.get("action", "")
+        if action == "dismiss":
+            task.close(TaskStatus.DISMISSED)
+            messages.info(request, "Zgłoszenie oznaczone jako błędne.")
+        else:
+            record = AedRecord.objects.filter(id_aed=task.id_aed, organization=task.organization).first()
+            if record is None:
+                task.close(TaskStatus.DISMISSED)
+                messages.warning(request, "Tego AED nie ma już w wykazie – zadanie zamknięte.")
+            elif self._apply(request, task, dict(record.data), action):
+                task.close()
+                messages.success(request, "Zapisano. Mapa i wykaz zbiorczy odświeżą się za chwilę.")
+        url = reverse("admin:aed_aedtask_changelist")
+        kind = request.POST.get("kind", "")
+        return redirect("%s?kind=%s" % (url, kind) if kind else url)
+
+    def _apply(self, request, task, data, action):
+        if action == "date":
+            value = request.POST.get("date", "")
+            if not value:
+                messages.error(request, "Podaj datę.")
+                return False
+            data[TaskKind.DATE_FIELDS[task.kind]] = value
+        elif action == "faulty":
+            data["sprawny"] = "false"
+        elif action == "hours":
+            set_hours(data, request.POST.get("hours_mode", ""), request.POST.get("hours_text", ""))
+            if not data["godziny_dostepnosci"]:
+                messages.error(request, "Nie rozpoznano godzin – wpisz np. „pn–pt 8–16”.")
+                return False
+        elif action == "location":
+            data["opis_lokalizacji"] = request.POST.get("location", "").strip()
+        elif action != "confirm":
+            raise Http404
+        if action == "confirm" and task.report_type in (ReportType.NOT_WORKING, ReportType.MISSING):
+            data["sprawny"] = "false"
+        if action != "confirm" or task.report_type in (ReportType.NOT_WORKING, ReportType.MISSING):
+            data["data_aktualizacji"] = timezone.localdate().isoformat()
+            ProviderResource(task.organization, request.user).upsert(data)
+        return True
+
+    # Dodaj jeden AED
+
+    def single_view(self, request):
+        organizations = user_organizations(request.user)
+        values = {"hours_mode": "always", "license": "", "organization": ""}
+        if request.method == "POST":
+            values = request.POST.dict()
+            organization = organizations.filter(pk=values.get("organization")).first()
+            record, errors = self._single_record(organization, values)
+            if not errors:
+                ProviderResource(organization, request.user).upsert(record, license_from_form(values.get("license", "")))
+                return self.render(request, "single_done", title="Dodaj jeden AED", record=record, organization=organization)
+            for error in errors:
+                messages.error(request, error)
+        return self.render(
+            request,
+            "single",
+            title="Dodaj jeden AED",
+            organizations=organizations,
+            values=values,
+            licenses=license_options(),
+        )
+
+    def _single_record(self, organization, values):
+        errors = []
+        if organization is None:
+            errors.append("Wybierz instytucję.")
+        if not values.get("consent"):
+            errors.append("Zaznacz oświadczenie o prawie do udostępnienia danych.")
+        if not (values.get("nazwa_obiektu") or "").strip():
+            errors.append("Podaj nazwę miejsca, np. „Urząd Miasta Marki”.")
+        if errors:
+            return None, errors
+        today = timezone.localdate().isoformat()
+        source = ImportSource.for_organization(organization, SINGLE_SOURCE % organization.title, today)
+        provider = ProviderResource(organization, None)
+        record = dict(source.defaults(), id_aed=provider.new_id(), sprawny="true", dostep="publiczny")
+        for name in TEXT_FIELDS + DATE_FIELDS:
+            if (values.get(name) or "").strip():
+                record[name], _ = normalize_value(name, values[name])
+        record["cecha_adresu"], record["ulica"], _ = AddressParser.split_street(record.get("ulica", ""))
+        set_hours(record, values.get("hours_mode"), values.get("hours_text", ""))
+        if not record["godziny_dostepnosci"]:
+            return None, ["Nie rozpoznano godzin – wybierz przycisk albo wpisz np. „pn–pt 8–16, sob. 9–14”."]
+        self._place(record, values)
+        if not record.get("szerokosc_geograficzna"):
+            return None, ["Nie mamy lokalizacji – kliknij „Jestem przy AED” albo podaj adres."]
+        checked = RecordChecker().check_all([record])[0]
+        if checked["status"] in RecordStatus.BLOCKED:
+            return None, [i["message"] for i in checked["issues"]] or ["Sprawdź lokalizację."]
+        return checked["record"], []
+
+    @staticmethod
+    def _place(record, values):
+        lat, lon = (values.get("lat") or "").strip(), (values.get("lon") or "").strip()
+        if lat and lon:
+            record["szerokosc_geograficzna"], _ = normalize_value("szerokosc_geograficzna", lat)
+            record["dlugosc_geograficzna"], _ = normalize_value("dlugosc_geograficzna", lon)
+            return
+        hit = GugikGeocoder(cache=cache).geocode(GugikGeocoder.query_for(record))
+        if hit:
+            record["szerokosc_geograficzna"], record["dlugosc_geograficzna"] = hit["lat"], hit["lon"]
+
+    def locate_view(self, request):
+        """Address of the point from the phone's location (GUGiK reverse geocoding), to prefill the form."""
+        try:
+            lat, lon = float(request.GET["lat"]), float(request.GET["lon"])
+        except (KeyError, ValueError):
+            return JsonResponse({"error": "Brak lokalizacji"}, status=400)
+        params = {"request": "GetAddressReverse", "location": "POINT(%f %f)" % (lon, lat), "srid": "4326"}
+        try:
+            found = (requests.get(REVERSE_URL, params=params, timeout=GEOCODE_TIMEOUT_S * 2).json().get("results") or {}).get("1")
+        except (requests.RequestException, ValueError):
+            found = None
+        if not found:
+            return JsonResponse({})
+        return JsonResponse(
+            {
+                "ulica": found.get("street") or "",
+                "numer_budynku": found.get("number") or "",
+                "kod_pocztowy": found.get("code") or "",
+                "miejscowosc": found.get("city") or "",
+            }
+        )

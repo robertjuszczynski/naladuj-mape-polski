@@ -16,6 +16,7 @@ import {
   AED_ROUTE,
   AED_SCOPE_PATH,
   AED_TEMPLATE_PATH,
+  AED_SINGLE_PATH,
   AED_WIZARD_PATH,
 } from './aed.constants';
 import { AedAvailability, AedBrief, AedIncidentPoint, AedNearest } from './aed.models';
@@ -56,6 +57,7 @@ export class AedPageComponent implements OnInit {
   readonly days = [0, 1, 2, 3, 4, 5, 6];
   readonly stats$ = this.aed.stats$;
   readonly wizardUrl = this.aed.adminUrl(AED_WIZARD_PATH);
+  readonly singleUrl = this.aed.adminUrl(AED_SINGLE_PATH);
   readonly templateUrl = this.aed.adminUrl(AED_TEMPLATE_PATH);
   readonly scopeUrl = this.aed.adminUrl(AED_SCOPE_PATH);
 

@@ -23,17 +23,18 @@ export function readableHours(spec: string | undefined, lang: string): string {
       return null;
     }
     const [, dayPart, ranges] = match;
-    const dayText = dayPart && dayPart !== 'Mo-Su'
-      ? dayPart
-          .split(',')
-          .map((part) =>
-            part
-              .split('-')
-              .map((d) => days[d] ?? d)
-              .join('–'),
-          )
-          .join(', ')
-      : words.daily;
+    const dayText =
+      dayPart && dayPart !== 'Mo-Su'
+        ? dayPart
+            .split(',')
+            .map((part) =>
+              part
+                .split('-')
+                .map((d) => days[d] ?? d)
+                .join('–'),
+            )
+            .join(', ')
+        : words.daily;
     const hours = /^(off|closed)$/.test(ranges)
       ? words.closed
       : ranges

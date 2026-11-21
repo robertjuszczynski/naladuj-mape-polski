@@ -3,7 +3,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
 
-from mcod.aed.constants import RecordStatus, UploadStatus
+from mcod.aed.constants import RecordStatus, TaskKind, TaskStatus, UploadStatus
 from mcod.aed.review import UploadReview
 from mcod.aed.validation import coordinates
 
@@ -152,3 +152,33 @@ class AggregatedAedInfo(models.Model):
     def main_dataset(self):
         dataset = self.dataset
         return dataset if dataset is not None and dataset.status == "published" and not dataset.is_removed else None
+
+
+class AedTask(models.Model):
+    """Something a provider should do about one of its AEDs: a due date, missing data or a citizen report."""
+
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="aed_tasks", verbose_name="Instytucja"
+    )
+    id_aed = models.CharField("Identyfikator AED", max_length=120, db_index=True)
+    aed_name = models.CharField("AED", max_length=500, blank=True)
+    kind = models.CharField("Rodzaj", max_length=20, choices=TaskKind.CHOICES)
+    due_date = models.DateField("Termin", null=True, blank=True)
+    report_type = models.CharField("Typ zgłoszenia", max_length=20, blank=True)
+    comment = models.TextField("Opis", blank=True)
+    status = models.CharField("Stan", max_length=20, choices=TaskStatus.CHOICES, default=TaskStatus.OPEN)
+    created = models.DateTimeField("Utworzono", auto_now_add=True)
+    resolved = models.DateTimeField("Zamknięto", null=True, blank=True)
+    notified = models.DateTimeField("Przypomnienie wysłane", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "zadanie AED"
+        verbose_name_plural = "zadania AED"
+        ordering = ("due_date", "-created")
+
+    def __str__(self):
+        return "%s – %s" % (self.get_kind_display(), self.aed_name or self.id_aed)
+
+    def close(self, status=TaskStatus.DONE):
+        self.status, self.resolved = status, timezone.now()
+        self.save(update_fields=["status", "resolved"])

@@ -10,6 +10,7 @@
           <span class="aed-tag" [attr.data-a]="aed.availability">{{
             'Aed.Avail.' + aed.availability | translate
           }}</span>
+          <span class="aed-warning" *ngFor="let w of aed.warnings">{{ 'Aed.Warning.' + w | translate }}</span>
         </header>
         <div class="aed-detail__grid">
           <div>

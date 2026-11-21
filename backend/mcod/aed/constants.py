@@ -55,6 +55,62 @@ class Availability:
     FAULTY = "faulty"
 
 
+class TaskKind:
+    INSPECTION = "inspection"
+    ELECTRODES = "electrodes"
+    BATTERY = "battery"
+    MISSING_HOURS = "missing_hours"
+    MISSING_LOCATION = "missing_location"
+    REPORT = "report"
+
+    DATE_FIELDS = {
+        INSPECTION: "data_ostatniego_przegladu",
+        ELECTRODES: "data_waznosci_elektrod",
+        BATTERY: "data_waznosci_baterii",
+    }
+    CHOICES = (
+        (INSPECTION, "Przegląd"),
+        (ELECTRODES, "Elektrody"),
+        (BATTERY, "Bateria"),
+        (MISSING_HOURS, "Brak godzin dostępności"),
+        (MISSING_LOCATION, "Brak opisu miejsca"),
+        (REPORT, "Zgłoszenie obywatela"),
+    )
+
+
+class TaskStatus:
+    OPEN = "open"
+    DONE = "done"
+    DISMISSED = "dismissed"
+
+    CHOICES = ((OPEN, "Do zrobienia"), (DONE, "Zrobione"), (DISMISSED, "Odrzucone"))
+
+
+class ReportType:
+    """The report options of the AED page."""
+
+    NOT_WORKING = "not_working"
+    CLOSED = "inaccessible"
+    MISSING = "no_device"
+    WRONG_LOCATION = "wrong_location"
+    OTHER = "other"
+
+    LABELS = {
+        NOT_WORKING: "AED nie działa lub jest uszkodzony",
+        CLOSED: "AED jest zamknięty lub niedostępny",
+        MISSING: "Nie ma tu urządzenia",
+        WRONG_LOCATION: "Zła lokalizacja na mapie",
+        OTHER: "Inny problem",
+    }
+
+
+class RecordWarning:
+    INSPECTION_OVERDUE = "inspection_overdue"
+    ELECTRODES_EXPIRED = "electrodes_expired"
+    BATTERY_EXPIRED = "battery_expired"
+    REPORTED = "reported"
+
+
 class UploadStatus:
     DRAFT = "draft"
     PUBLISHED = "published"
@@ -77,6 +133,11 @@ BOUNDARY_TOLERANCE_M = 1000
 DUPLICATE_COORDINATE_DECIMALS = 5
 QUALITY_EXAMPLES = 5
 NIGHT_HOUR = 3
+
+TASK_LEAD_DAYS = 30
+INSPECTION_INTERVAL_DAYS = 365
+REPORT_RATE_LIMIT = 10
+REPORT_RATE_WINDOW_S = 3600
 
 STATS_CACHE_KEY = "aed:stats:v2"
 STATS_CACHE_TTL_S = 300

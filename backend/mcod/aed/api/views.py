@@ -6,14 +6,16 @@ from django.core.cache import cache
 from django.db.models import Q
 from django.utils import timezone
 
-from mcod.aed.api.serializers import AedStats, brief, detail
+from mcod.aed.api.serializers import AedStats, brief, detail, reported_ids
 from mcod.aed.availability import night_of
+from mcod.aed.constants import REPORT_RATE_LIMIT, REPORT_RATE_WINDOW_S, ReportType, TaskKind
 from mcod.aed.importing.geocoder import GugikGeocoder
-from mcod.aed.models import AedRecord
+from mcod.aed.models import AedRecord, AedTask
 from mcod.aed.nearest import MAX_DISTANCE_M, SEARCH_RADIUS_DEG, AddressLocator, NearestAed
 
 NIGHT_PARAM = "night"
 MIN_NEARBY_RECORDS = 20
+REPORT_COMMENT_MAX = 2000
 ADDRESS_TIMEOUT_S = 8
 
 
@@ -44,7 +46,8 @@ class AedListView:
         query = (request.get_param("q") or "").strip()
         if query:
             queryset = queryset.filter(Q(nazwa_obiektu__icontains=query) | Q(miejscowosc__icontains=query))
-        data = [brief(r, when) for r in queryset]
+        reported = reported_ids()
+        data = [brief(r, when, reported) for r in queryset]
         send_json(response, {"meta": {"count": len(data), "at": when.isoformat()}, "data": data})
 
 
@@ -70,7 +73,7 @@ class AedNearestView:
         records = self.records_near(point["lat"], point["lon"])
         payload = {
             "meta": {"at": when.isoformat(), "point": point, "radius_km": MAX_DISTANCE_M // 1000},
-            "data": NearestAed(records, when).find(point["lat"], point["lon"]),
+            "data": NearestAed(records, when, reported_ids()).find(point["lat"], point["lon"]),
         }
         send_json(response, payload)
 
@@ -98,3 +101,35 @@ class AedNearestView:
             )
         )
         return nearby if len(nearby) >= MIN_NEARBY_RECORDS else list(queryset)
+
+
+class AedReportView:
+    """A citizen report from the AED page; it becomes a task for the provider and a warning on the map."""
+
+    def on_post(self, request, response, id, *args, **kwargs):
+        record = AedRecord.objects.filter(id_aed=id).first()
+        if record is None:
+            raise falcon.HTTPNotFound(title="Nie ma takiego AED")
+        payload = request.get_media() or {}
+        report_type = payload.get("type")
+        if report_type not in ReportType.LABELS:
+            raise falcon.HTTPBadRequest(title="Nieznany typ zgłoszenia")
+        self._limit(request)
+        AedTask.objects.create(
+            organization_id=record.organization_id,
+            id_aed=record.id_aed,
+            aed_name=record.nazwa_obiektu,
+            kind=TaskKind.REPORT,
+            report_type=report_type,
+            comment=(payload.get("comment") or "")[:REPORT_COMMENT_MAX],
+        )
+        send_json(response, {"data": {"status": "received"}})
+        response.status = falcon.HTTP_201
+
+    @staticmethod
+    def _limit(request):
+        key = "aed:report:%s" % (request.access_route[0] if request.access_route else request.remote_addr)
+        count = cache.get_or_set(key, 0, REPORT_RATE_WINDOW_S)
+        if count >= REPORT_RATE_LIMIT:
+            raise falcon.HTTPTooManyRequests(title="Za dużo zgłoszeń, spróbuj później")
+        cache.incr(key)

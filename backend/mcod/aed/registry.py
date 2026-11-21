@@ -17,6 +17,7 @@ from mcod.aed.importing.geocoder import GugikGeocoder
 from mcod.aed.importing.pipeline import ImportPipeline, ImportSource
 from mcod.aed.importing.reader import TabularReader, UploadError
 from mcod.aed.models import AedRecord, AggregatedAedInfo
+from mcod.aed.planner import TaskPlanner
 from mcod.aed.profile import FIELD_NAMES
 from mcod.aed.publishing import DatasetPublisher, license_name, register_resources
 from mcod.datasets.models import Dataset
@@ -88,7 +89,7 @@ class RegistryBuilder:
 
     def rebuild(self):
         collected, licenses, report = {}, {}, []
-        for resource in register_resources():
+        for resource in sorted(register_resources(), key=self._is_original_file):
             report.append(self._read_source(resource, collected, licenses))
         with transaction.atomic():
             AedRecord.objects.all().delete()
@@ -99,8 +100,14 @@ class RegistryBuilder:
         records = [result["record"] for _, result in collected.values()]
         self._publish_main(records, licenses, report)
         cache.delete(STATS_CACHE_KEY)
+        TaskPlanner().sync()
         logger.info("Wykaz zbiorczy AED: %d urządzeń z %d zasobów", len(records), len(report))
         return len(records)
+
+    @staticmethod
+    def _is_original_file(resource):
+        """The provider's standard resource goes first, so single adds and task fixes win over its original files."""
+        return resource.title != DatasetPublisher(resource.dataset.organization, None).resource_title()
 
     def _read_source(self, resource, collected, licenses):
         dataset = resource.dataset

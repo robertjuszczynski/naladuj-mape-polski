@@ -95,6 +95,11 @@ def get_beat_schedule(
             "options": default_options,
             "schedule": crontab(minute=45, hour=3),
         },
+        "aed_task_reminders": {
+            "task": "mcod.aed.tasks.send_aed_task_reminders",
+            "options": default_options,
+            "schedule": crontab(minute=0, hour=6),
+        },
         "kibana-statistics": {
             "task": "mcod.counters.tasks.kibana_statistics",
             "options": default_options,

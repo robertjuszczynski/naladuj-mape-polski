@@ -44,6 +44,11 @@ export class AedService {
     return this.http.get<ApiResponse<AedDetail>>(`${this.base}/${encodeURIComponent(id)}`).pipe(map((r) => r.data));
   }
 
+  /** Citizen report: becomes a task in the provider's "Zadania" and a warning on the map. */
+  report(id: string, type: string, comment: string): Observable<unknown> {
+    return this.http.post(`${this.base}/${encodeURIComponent(id)}/report`, { type, comment });
+  }
+
   reportIssue(datasetId: number, comment: string): Observable<unknown> {
     return this.http.post(`/api/1.4/datasets/${datasetId}/comments`, {
       data: { type: 'comment', attributes: { comment } },

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LocalizeRouterPipe } from '@gilsdav/ngx-translate-router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { EMPTY, catchError, map, switchMap } from 'rxjs';
+import { EMPTY, catchError, map, of, switchMap } from 'rxjs';
 
 import { AED_ROUTE } from './aed.constants';
 import { AedBrief, AedDetail } from './aed.models';
@@ -93,7 +93,11 @@ export class AedDetailComponent {
       text: this.reportText ? ` ${this.reportText}` : '',
     });
     this.sending.set(true);
-    this.service.reportIssue(aed.dataset.id, comment).subscribe({
+    this.service
+      .reportIssue(aed.dataset.id, comment)
+      .pipe(catchError(() => of(null)))
+      .subscribe();
+    this.service.report(aed.id, this.reportType, this.reportText).subscribe({
       next: () => {
         this.sent.set(true);
         this.reportError.set('');

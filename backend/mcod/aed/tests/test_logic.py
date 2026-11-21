@@ -153,3 +153,22 @@ def test_changes_are_counted_per_field():
     summary = summarize(rows)
     assert summary["fields"] == 4 and summary["records"] == 2
     assert dict(summary["by_field"]) == {"Współrzędne": 2, "Godziny dostępności": 1, "Inne": 1}
+
+
+def test_planner_opens_tasks_for_due_dates_and_missing_data():
+    import datetime
+
+    from mcod.aed.planner import TaskPlanner, record_warnings
+
+    today = datetime.date(2026, 11, 22)
+    data = {
+        "data_ostatniego_przegladu": "2025-12-01",
+        "data_waznosci_elektrod": "2026-11-01",
+        "data_waznosci_baterii": "2030-01-01",
+        "dostepny_calodobowo": "false",
+    }
+    wanted = dict(TaskPlanner(today).wanted(data))
+    assert wanted["inspection"] == datetime.date(2026, 12, 1)
+    assert wanted["electrodes"] == datetime.date(2026, 11, 1)
+    assert "battery" not in wanted and "missing_hours" in wanted and "missing_location" in wanted
+    assert record_warnings(data, reported=True, today=today) == ["electrodes_expired", "reported"]

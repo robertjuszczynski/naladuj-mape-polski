@@ -16,8 +16,8 @@ from mcod.aed.importing.pipeline import ImportPipeline, ImportSource
 from mcod.aed.importing.reader import UploadError, UploadValidator
 from mcod.aed.models import AedUpload
 from mcod.aed.profile import FIELDS, PROFILE_VERSION
-from mcod.aed.publishing import DatasetPublisher, license_from_form, license_name, license_options
-from mcod.aed.registry import RegistryBuilder
+from mcod.aed.provider import ProviderResource
+from mcod.aed.publishing import license_from_form, license_name, license_options
 from mcod.aed.review import FILTER_AUTO, FILTER_BLOCKED, FILTER_PENDING
 from mcod.aed.validation import PortalQualityCheck
 
@@ -233,8 +233,7 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
     @transaction.atomic
     def _publish(request, upload, records):
         license_code = license_from_form(request.POST.get("license", ""))
-        dataset = DatasetPublisher(upload.organization, request.user).publish(records, license_code)
-        RegistryBuilder.rebuild_on_commit()
+        dataset = ProviderResource(upload.organization, request.user).replace_upload(records, license_code)
         upload.mark_published(dataset, license_name(license_code))
         upload.save()
 
