@@ -1,0 +1,48 @@
+import { DOCUMENT } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Inject, Injectable } from '@angular/core';
+import { Observable, map, shareReplay } from 'rxjs';
+
+import { AedBrief, AedDetail, AedStats } from './aed.models';
+
+interface ApiResponse<T> {
+  data: T;
+}
+
+@Injectable({ providedIn: 'root' })
+export class AedService {
+  private readonly base = '/api/aed';
+
+  readonly stats$: Observable<AedStats> = this.http.get<ApiResponse<AedStats>>(`${this.base}/stats`).pipe(
+    map((r) => r.data),
+    shareReplay(1),
+  );
+
+  constructor(
+    private readonly http: HttpClient,
+    @Inject(DOCUMENT) private readonly document: Document,
+  ) {}
+
+  list(at?: string): Observable<AedBrief[]> {
+    return this.http.get<ApiResponse<AedBrief[]>>(this.base, { params: at ? { at } : {} }).pipe(map((r) => r.data));
+  }
+
+  detail(id: string): Observable<AedDetail> {
+    return this.http.get<ApiResponse<AedDetail>>(`${this.base}/${encodeURIComponent(id)}`).pipe(map((r) => r.data));
+  }
+
+  reportIssue(datasetId: number, comment: string): Observable<unknown> {
+    return this.http.post(`/api/1.4/datasets/${datasetId}/comments`, {
+      data: { type: 'comment', attributes: { comment } },
+    });
+  }
+
+  /** Panel dostawcy działa w subdomenie admin. tego samego portalu. */
+  adminUrl(path: string): string {
+    const location = this.document.defaultView?.location;
+    if (!location) {
+      return path;
+    }
+    return `${location.protocol}//admin.${location.host.replace(/^www\./, '')}${path}`;
+  }
+}

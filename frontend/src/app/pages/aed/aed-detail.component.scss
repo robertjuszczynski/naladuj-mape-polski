@@ -1,0 +1,114 @@
+@use 'aed/base';
+
+.aed-detail-page {
+  padding: 32px 0 56px;
+}
+.aed-back {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+.aed-detail {
+  &__head {
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--aed-fg);
+  }
+  &__title {
+    margin: 0 0 8px;
+    font-family: var(--aed-display);
+    font-size: clamp(1.9rem, 3.6vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+  &__h2 {
+    margin: 0 0 12px;
+    font-family: var(--aed-display);
+    font-size: clamp(1.5rem, 2.4vw, 1.9rem);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  &__addr {
+    margin: 0 0 12px;
+    color: var(--aed-muted);
+    font-size: 1.1rem;
+  }
+  &__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 32px;
+  }
+  &__map {
+    height: 380px;
+    overflow: hidden;
+    border: 1px solid var(--aed-line);
+    border-radius: 12px;
+
+    app-aed-map {
+      height: 100%;
+    }
+  }
+  dl {
+    display: grid;
+    grid-template-columns: minmax(150px, 230px) 1fr;
+    margin: 0 0 20px;
+    border-top: 1px solid var(--aed-line);
+
+    dt,
+    dd {
+      margin: 0;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--aed-line);
+    }
+    dt {
+      padding-right: 16px;
+      color: var(--aed-muted);
+      font-weight: 400;
+    }
+  }
+  details {
+    margin-top: 12px;
+
+    summary {
+      font-weight: 700;
+      cursor: pointer;
+    }
+    ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--aed-muted);
+    }
+  }
+}
+.aed-report {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 2px solid var(--aed-fg);
+
+  .aed-group,
+  .aed-field {
+    max-width: 640px;
+  }
+  textarea {
+    min-height: 96px;
+  }
+  &__ok {
+    padding: 14px 0;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: 860px) {
+  .aed-detail__grid {
+    grid-template-columns: 1fr;
+  }
+  .aed-detail dl {
+    grid-template-columns: 1fr;
+
+    dt {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+  }
+}

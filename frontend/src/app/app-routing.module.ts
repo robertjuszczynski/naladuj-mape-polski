@@ -47,6 +47,11 @@ const routes: Routes = [
       { path: '', component: HomeComponent },
       { path: '!resource/!:id', redirectTo: '/embed/resource/:id', pathMatch: 'full' },
       { path: '!sitemap', component: SitemapComponent },
+      {
+        path: '!aed',
+        data: { breadcrumbs: { translationKey: 'Breadcrumbs.AedMap' } },
+        loadChildren: () => import('./pages/aed/aed.routes').then((m) => m.AED_ROUTES),
+      },
 
       {
         path: '!dataset',

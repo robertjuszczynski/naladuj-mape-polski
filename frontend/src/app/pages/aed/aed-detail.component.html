@@ -1,0 +1,70 @@
+<div class="aed-detail-page">
+  <div class="container aed-detail">
+    <a class="aed-back" [routerLink]="route | localize">{{ 'Aed.Back' | translate }}</a>
+    <p class="aed-error" role="alert" *ngIf="loadError()">{{ 'Aed.NotFound' | translate }}</p>
+    <ng-container *ngIf="vm$ | async as vm">
+      <ng-container *ngIf="vm.aed as aed">
+        <header class="aed-detail__head">
+          <h1 class="aed-detail__title">{{ aed.nazwa_obiektu || ('Aed.DefaultName' | translate) }}</h1>
+          <p class="aed-detail__addr">{{ aed.adres }}</p>
+          <span class="aed-tag" [attr.data-a]="aed.dostepnosc">{{ 'Aed.Avail.' + aed.dostepnosc | translate }}</span>
+        </header>
+        <div class="aed-detail__grid">
+          <div>
+            <h2 class="aed-detail__h2">{{ 'Aed.DeviceData' | translate }}</h2>
+            <dl>
+              <ng-container *ngFor="let f of shown">
+                <dt>{{ 'Aed.Field.' + f | translate }}</dt>
+                <dd>{{ value(aed.dane[f]) || ('Aed.NoInfo' | translate) }}</dd>
+              </ng-container>
+            </dl>
+            <p class="aed-muted">
+              {{ 'Aed.Source' | translate }}
+              <a [routerLink]="['/!dataset', aed.zbior.id + ',' + aed.zbior.slug] | localize">{{ aed.zbior.tytul }}</a>
+              ({{ aed.instytucja }}).
+            </p>
+            <details *ngIf="aed.poprawki.length">
+              <summary>{{ 'Aed.AutoFixes' | translate }} ({{ aed.poprawki.length }})</summary>
+              <ul>
+                <li *ngFor="let f of aed.poprawki">{{ f.message }}: {{ f.before }} → {{ f.after }}</li>
+              </ul>
+            </details>
+          </div>
+          <div class="aed-detail__map">
+            <app-aed-map
+              [points]="vm.points"
+              [center]="vm.center"
+              [zoom]="17"
+              [label]="'Aed.Location' | translate"></app-aed-map>
+          </div>
+        </div>
+
+        <section class="aed-report" aria-labelledby="aed-report-title">
+          <h2 id="aed-report-title" class="aed-detail__h2">{{ 'Aed.ReportTitle' | translate }}</h2>
+          <p class="aed-report__ok" role="status" *ngIf="sent()">{{ 'Aed.ReportSent' | translate }}</p>
+          <form *ngIf="!sent()" (ngSubmit)="submit(aed)">
+            <fieldset class="aed-group">
+              <legend>{{ 'Aed.ReportWhat' | translate }}</legend>
+              <label class="aed-option" *ngFor="let t of reportTypes">
+                <input type="radio" name="typ" [value]="t" [(ngModel)]="reportType" />
+                <span>{{ 'Aed.Report.' + t | translate }}</span>
+              </label>
+            </fieldset>
+            <label class="aed-field">
+              {{ 'Aed.ReportDesc' | translate }}
+              <textarea
+                name="opis"
+                rows="3"
+                maxlength="1000"
+                [(ngModel)]="reportText"
+                aria-describedby="aed-report-hint"></textarea>
+            </label>
+            <p id="aed-report-hint" class="aed-muted">{{ 'Aed.ReportHint' | translate }}</p>
+            <p class="aed-error" role="alert" *ngIf="reportError()">{{ reportError() | translate }}</p>
+            <button class="aed-btn" type="submit" [disabled]="sending()">{{ 'Aed.ReportSend' | translate }}</button>
+          </form>
+        </section>
+      </ng-container>
+    </ng-container>
+  </div>
+</div>
