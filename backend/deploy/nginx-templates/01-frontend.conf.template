@@ -1,0 +1,123 @@
+server {
+    listen       80;
+    server_name  _;
+    return       301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl;
+  listen [::]:443 ssl;
+  server_name ${MCOD_DOMAIN};
+  charset utf-8;
+  client_max_body_size 500M;
+  access_log /var/log/nginx/access.log;
+  error_log /var/log/nginx/error.log;
+  ssl_certificate /etc/letsencrypt/live/portal/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/portal/privkey.pem;
+
+  location /api/ {
+    proxy_pass ${MCOD_NGINX_API}/;
+    proxy_set_header Host api.${MCOD_DOMAIN};
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+  }
+
+  location /cms/ {
+    proxy_pass ${MCOD_NGINX_CMS}/;
+    proxy_set_header Host cms.${MCOD_DOMAIN};
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+  }
+
+  location / {
+    proxy_pass ${MCOD_NGINX_FRONTEND};
+    proxy_pass_header Server;
+    proxy_set_header Host $host;
+    proxy_set_header X-Scheme https;
+    proxy_set_header X-Url-Scheme https;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-Host $server_name;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto https;
+  }
+
+  location ~* /sitemap.+\.xml\.gz$ {
+      root /usr/share/nginx/html/sitemap;
+      if (-f $document_root/.maintenance) {
+            return 503;
+      }
+      try_files /latest/$uri =404;
+      add_header Content-Type application/xml;
+      add_header Content-Encoding gzip;
+      }
+
+  location ~ .(ws|ws/)$ {
+    proxy_pass ${MCOD_NGINX_WS};
+
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+
+    proxy_redirect off;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Host $server_name;
+  }
+
+  location /static/xml {
+    alias /usr/share/nginx/html/xml;
+  }
+
+  location /static {
+    alias /usr/share/nginx/html/statics;
+  }
+
+  location /media/showcases/ {
+    alias /usr/share/nginx/html/media/showcases/;
+    add_header Content-Disposition 'attachment' always;
+    add_header Content-Security-Policy "default-src 'none'; script-src 'none'; sandbox" always;
+    add_header X-Content-Type-Options nosniff always;
+  }
+
+  location /media/academy/ {
+    alias /usr/share/nginx/html/media/academy/;
+    add_header Content-Disposition 'attachment' always;
+    add_header Content-Security-Policy "default-src 'none'; script-src 'none'; sandbox" always;
+    add_header X-Content-Type-Options nosniff always;
+  }
+
+  # Meeting files must be authorized and forced as downloads by Django
+  # instead of being rendered directly from public /media.
+  location /media/meetings/ {
+    proxy_pass ${MCOD_NGINX_ADMIN};
+    proxy_pass_header Server;
+    proxy_set_header Host $host;
+    proxy_set_header X-Scheme https;
+    proxy_set_header X-Url-Scheme https;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-Host $server_name;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto https;
+  }
+
+  location /media {
+    alias /usr/share/nginx/html/media;
+  }
+
+  location /pn-apps {
+    proxy_pass ${MCOD_NGINX_PN_APPS};
+    proxy_pass_header Server;
+    proxy_set_header Host $host;
+
+    proxy_set_header X-Scheme https;
+    proxy_set_header X-Url-Scheme https;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-Host $server_name;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto https;
+  }
+
+}

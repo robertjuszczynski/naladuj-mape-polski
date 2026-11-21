@@ -1,2 +1,6 @@
 .DS_Store
 node_modules/
+backend/deploy/htpasswd
+backend/.env
+backend/mcod/settings/local.py
+.credentials.local
