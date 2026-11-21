@@ -1,0 +1,31 @@
+pole,nazwa,typ,wymagalnosc,opis,przyklad,dozwolone_wartosci,regula_weryfikacji_jakosci_dane_gov_pl,tag_osm,pole_geodae,minimum_instytucji,kto_wypelnia
+id_aed,Identyfikator AED,tekst,obowiązkowe,Stały identyfikator urządzenia nadany przez dysponenta. Nie zmienia się przy aktualizacji danych.,aed-1434021-0001,,,,gid,automatycznie,kreator – nadaje kreator (prefiks z kodu TERYT)
+nazwa_obiektu,Nazwa obiektu,tekst,obowiązkowe,"Nazwa budynku lub miejsca, w którym znajduje się AED.",Urząd Miasta Marki,,,,nom,TAK,instytucja – Nazwa budynku lub miejsca
+opis_lokalizacji,Opis lokalizacji,tekst,zalecane,Gdzie dokładnie w obiekcie wisi AED.,"Parter, przy wejściu głównym, obok portierni",,,defibrillator:location,acc_complt,,"instytucja, jeśli ma dane"
+pietro,Piętro,liczba całkowita,opcjonalne,"Kondygnacja, na której znajduje się AED. 0 to parter, liczby ujemne to podziemie.",0,,Pole numeryczne,level,acc_etg,,"instytucja, jeśli ma dane"
+wewnatrz_budynku,Wewnątrz budynku,true/false,zalecane,"true, jeśli AED jest wewnątrz budynku; false, jeśli na zewnątrz (np. w szafce na elewacji).",true,,Pole wartości logicznych,indoor,acc,,"instytucja, jeśli ma dane"
+cecha_adresu,Cecha adresu,cecha adresu (lista TERYT),zalecane,"Rodzaj ulicy według TERYT, w osobnej kolumnie (reguła „Cecha adresu” w weryfikacji jakości portalu): ul., al., pl., skwer, bulw., rondo, park, rynek, szosa, droga, os., ogród, wyspa, wyb. albo inne.",al.,ul.|al.|pl.|skwer|bulw.|rondo|park|rynek|szosa|droga|os.|ogród|wyspa|wyb.|inne,Cecha adresu,,,,"instytucja, jeśli ma dane"
+ulica,Ulica,tekst,zalecane,"Nazwa ulicy lub placu bez cechy. Puste, jeśli miejscowość nie ma ulic.",Józefa Piłsudskiego,,,addr:street,adr_voie,TAK,"instytucja – Adres – może być w jednej kolumnie, kreator rozdzieli go na ulicę, numer, kod i miejscowość"
+numer_budynku,Numer budynku,tekst,zalecane,Numer porządkowy budynku.,95,,,addr:housenumber,adr_num,TAK,instytucja – jw. (część adresu)
+numer_lokalu,Numer lokalu,tekst,opcjonalne,"Numer lokalu, jeśli AED jest w lokalu wewnątrz budynku.",,,,,,,"instytucja, jeśli ma dane"
+kod_pocztowy,Kod pocztowy,kod pocztowy 00-000,zalecane,Kod pocztowy w formacie 00-000.,05-270,,Kod PNA,addr:postcode,com_cp,,"instytucja, jeśli ma dane"
+miejscowosc,Miejscowość,tekst,zalecane,Nazwa miejscowości.,Marki,,,addr:city,com_nom,TAK,instytucja – jw. (część adresu)
+kod_teryt_gminy,Kod TERYT gminy,"kod TERYT (7 cyfr, tekst)",obowiązkowe,"7-cyfrowy kod gminy z rejestru TERC (GUS). Zapisywany jako tekst, żeby nie zgubić zera na początku.",1434021,,,,com_insee,automatycznie,kreator – z danych instytucji w portalu
+kod_simc,Kod SIMC miejscowości,"kod SIMC (7 cyfr, tekst)",opcjonalne,7-cyfrowy identyfikator miejscowości z rejestru SIMC (GUS).,,,,,,,"instytucja, jeśli ma dane"
+szerokosc_geograficzna,Szerokość geograficzna,liczba dziesiętna,obowiązkowe,"Szerokość geograficzna w stopniach dziesiętnych (WGS84), kropka jako separator. Dla Polski od 49 do 55.",52.326697,,Pole numeryczne,,lat_coor1,TAK,instytucja – Współrzędne – kreator wykrywa zamienioną kolejność
+dlugosc_geograficzna,Długość geograficzna,liczba dziesiętna,obowiązkowe,"Długość geograficzna w stopniach dziesiętnych (WGS84), kropka jako separator. Dla Polski od 14 do 24,2.",21.107557,,Pole numeryczne,,long_coor1,TAK,instytucja – jw.
+dostep,Dostęp,lista wartości,zalecane,publiczny – każdy może podejść; ograniczony – np. tylko w godzinach pracy lub po zgłoszeniu w recepcji; prywatny – tylko dla pracowników lub mieszkańców.,publiczny,publiczny|ograniczony|prywatny,,access,acc_lib,,"instytucja, jeśli ma dane"
+dostepny_calodobowo,Dostępny całodobowo,true/false,obowiązkowe,"true, jeśli AED jest dostępny 24 godziny na dobę, 7 dni w tygodniu.",false,,Pole wartości logicznych,,disp_j,TAK,instytucja – Czy AED jest dostępny 24/7
+godziny_dostepnosci,Godziny dostępności,godziny (format opening_hours),zalecane,"Godziny dostępności w formacie opening_hours (OpenStreetMap). Wymagane, gdy dostepny_calodobowo = false.",Mo-Fr 08:00-16:00,,,opening_hours,disp_h,TAK,instytucja – Gdy AED nie jest całodobowy – kreator zamienia tekst „pn–pt 8–16” na opening_hours
+sprawny,Sprawny,true/false,zalecane,"true, jeśli według dysponenta urządzenie działa i jest gotowe do użycia.",true,,Pole wartości logicznych,,etat_fonct,,"instytucja, jeśli ma dane"
+data_ostatniego_przegladu,Data ostatniego przeglądu,data RRRR-MM-DD,zalecane,Data ostatniego przeglądu technicznego w formacie RRRR-MM-DD.,2026-05-14,,Data,check_date,dermnt,,"instytucja, jeśli ma dane"
+data_waznosci_elektrod,Data ważności elektrod,data RRRR-MM-DD,opcjonalne,Termin ważności elektrod w formacie RRRR-MM-DD.,2028-03-01,,Data,,dtpr_lcad,,"instytucja, jeśli ma dane"
+data_waznosci_baterii,Data ważności baterii,data RRRR-MM-DD,opcjonalne,Termin ważności baterii w formacie RRRR-MM-DD.,2029-01-01,,Data,,dtpr_bat,,"instytucja, jeśli ma dane"
+producent,Producent,tekst,opcjonalne,Producent urządzenia.,Philips,,,manufacturer,fab_rais,,"instytucja, jeśli ma dane"
+model,Model,tekst,opcjonalne,Model urządzenia.,HeartStart FRx,,,model,modele,,"instytucja, jeśli ma dane"
+mobilny,Urządzenie mobilne,true/false,opcjonalne,"true, jeśli AED jest w pojeździe (np. tramwaj, karetka) i nie ma stałej lokalizacji.",false,,Pole wartości logicznych,,,,"instytucja, jeśli ma dane"
+dysponent_nazwa,Dysponent,tekst,obowiązkowe,Nazwa instytucji lub firmy odpowiedzialnej za urządzenie.,Urząd Miasta Marki,,,operator,expt_rais,automatycznie,kreator – z konta instytucji w portalu
+dysponent_telefon,Telefon dysponenta,telefon (9 cyfr),zalecane,"Telefon instytucji (nie osoby prywatnej) jako 9 cyfr, bez spacji. Dopuszczalny prefiks +48.",221234567,,Numer telefonu,phone,expt_tel1,,"instytucja, jeśli ma dane"
+zrodlo_danych,Źródło danych,tekst,obowiązkowe,Skąd pochodzi rekord: nazwa zbioru lub adres URL zasobu u dysponenta.,https://dane.gov.pl/pl/dataset/4955,,,,,automatycznie,kreator – wpisuje kreator
+data_aktualizacji,Data aktualizacji,data RRRR-MM-DD,obowiązkowe,Data ostatniej weryfikacji rekordu przez dysponenta w formacie RRRR-MM-DD.,2026-11-21,,Data,,date_maj,automatycznie,kreator – data publikacji
+uwagi,Uwagi,tekst,opcjonalne,"Dodatkowe informacje, np. „klucz w recepcji”.",,,,,,,"instytucja, jeśli ma dane"
