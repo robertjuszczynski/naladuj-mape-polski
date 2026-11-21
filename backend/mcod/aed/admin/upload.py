@@ -2,6 +2,7 @@ from django.contrib import admin, messages
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
 from django.utils import timezone
@@ -15,11 +16,20 @@ from mcod.aed.importing.pipeline import ImportPipeline, ImportSource
 from mcod.aed.importing.reader import UploadError, UploadValidator
 from mcod.aed.models import AedUpload
 from mcod.aed.profile import FIELDS, PROFILE_VERSION
-from mcod.aed.publishing import DatasetPublisher, license_from_form, license_name, license_options
+from mcod.aed.publishing import (DatasetPublisher, license_from_form,
+                                 license_name, license_options)
 from mcod.aed.registry import RegistryBuilder
 from mcod.aed.validation import PortalQualityCheck
 
 STEPS = ["Plik", "Kolumny", "Sprawdzenie", "Licencja", "Gotowe"]
+LEGACY_STEPS = {
+    "wgraj": "admin:aed_upload",
+    "kolumny": "admin:aed_columns",
+    "sprawdzenie": "admin:aed_review",
+    "licencja": "admin:aed_license",
+    "gotowe": "admin:aed_done",
+    "pobierz": "admin:aed_download",
+}
 
 
 @admin.register(AedUpload)
@@ -47,7 +57,17 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
             path("<int:pk>/license/", view(self.step_license), name="aed_license"),
             path("<int:pk>/done/", view(self.step_done), name="aed_done"),
             path("<int:pk>/download/", view(self.download_fixed), name="aed_download"),
+            path("wgraj/", view(self.legacy_redirect)),
+            path("<int:pk>/<str:legacy>/", view(self.legacy_redirect)),
+            path("<int:pk>/<str:legacy>/change/", view(self.legacy_redirect)),
         ] + super().get_urls()
+
+    def legacy_redirect(self, request, pk=None, legacy="wgraj"):
+        """Wizard steps were first published under Polish paths; old links and open tabs land on the new ones."""
+        name = LEGACY_STEPS.get(legacy)
+        if name is None:
+            raise Http404
+        return redirect(name, pk) if pk is not None else redirect(name)
 
     def add_view(self, request, form_url="", extra_context=None):
         return redirect("admin:aed_upload")
