@@ -35,7 +35,7 @@ $contrast-modes: (
   --aed-brand: 'AED Manrope', 'Manrope', sans-serif;
 }
 
-// Tryby wysokiego kontrastu portalu (klasa na <body>) podmieniają tylko wartości tokenów.
+// The portal high-contrast modes (class on <body>) only swap token values.
 @mixin contrast-tokens {
   @each $mode, $c in $contrast-modes {
     $bg: map.get($c, bg);

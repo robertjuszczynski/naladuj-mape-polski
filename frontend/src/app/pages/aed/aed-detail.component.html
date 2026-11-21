@@ -5,9 +5,11 @@
     <ng-container *ngIf="vm$ | async as vm">
       <ng-container *ngIf="vm.aed as aed">
         <header class="aed-detail__head">
-          <h1 class="aed-detail__title">{{ aed.nazwa_obiektu || ('Aed.DefaultName' | translate) }}</h1>
-          <p class="aed-detail__addr">{{ aed.adres }}</p>
-          <span class="aed-tag" [attr.data-a]="aed.dostepnosc">{{ 'Aed.Avail.' + aed.dostepnosc | translate }}</span>
+          <h1 class="aed-detail__title">{{ aed.name || ('Aed.DefaultName' | translate) }}</h1>
+          <p class="aed-detail__addr">{{ aed.address }}</p>
+          <span class="aed-tag" [attr.data-a]="aed.availability">{{
+            'Aed.Avail.' + aed.availability | translate
+          }}</span>
         </header>
         <div class="aed-detail__grid">
           <div>
@@ -15,18 +17,20 @@
             <dl>
               <ng-container *ngFor="let f of shown">
                 <dt>{{ 'Aed.Field.' + f | translate }}</dt>
-                <dd>{{ value(aed.dane[f]) || ('Aed.NoInfo' | translate) }}</dd>
+                <dd>{{ value(aed.fields[f]) || ('Aed.NoInfo' | translate) }}</dd>
               </ng-container>
             </dl>
             <p class="aed-muted">
               {{ 'Aed.Source' | translate }}
-              <a [routerLink]="['/!dataset', aed.zbior.id + ',' + aed.zbior.slug] | localize">{{ aed.zbior.tytul }}</a>
-              ({{ aed.instytucja }}).
+              <a [routerLink]="['/!dataset', aed.dataset.id + ',' + aed.dataset.slug] | localize">{{
+                aed.dataset.title
+              }}</a>
+              ({{ aed.institution }}).
             </p>
-            <details *ngIf="aed.poprawki.length">
-              <summary>{{ 'Aed.AutoFixes' | translate }} ({{ aed.poprawki.length }})</summary>
+            <details *ngIf="aed.fixes.length">
+              <summary>{{ 'Aed.AutoFixes' | translate }} ({{ aed.fixes.length }})</summary>
               <ul>
-                <li *ngFor="let f of aed.poprawki">{{ f.message }}: {{ f.before }} → {{ f.after }}</li>
+                <li *ngFor="let f of aed.fixes">{{ f.message }}: {{ f.before }} → {{ f.after }}</li>
               </ul>
             </details>
           </div>
@@ -46,14 +50,14 @@
             <fieldset class="aed-group">
               <legend>{{ 'Aed.ReportWhat' | translate }}</legend>
               <label class="aed-option" *ngFor="let t of reportTypes">
-                <input type="radio" name="typ" [value]="t" [(ngModel)]="reportType" />
+                <input type="radio" name="type" [value]="t" [(ngModel)]="reportType" />
                 <span>{{ 'Aed.Report.' + t | translate }}</span>
               </label>
             </fieldset>
             <label class="aed-field">
               {{ 'Aed.ReportDesc' | translate }}
               <textarea
-                name="opis"
+                name="description"
                 rows="3"
                 maxlength="1000"
                 [(ngModel)]="reportText"

@@ -174,13 +174,13 @@
     0 0 0 1.5px var(--aed-bg),
     0 0 0 2.5px var(--aed-field);
 
-  &[data-a='zamkniete'] {
+  &[data-a='closed'] {
     background: var(--aed-closed);
   }
-  &[data-a='nieznane'] {
+  &[data-a='unknown'] {
     background: var(--aed-unknown);
   }
-  &[data-a='niesprawny'] {
+  &[data-a='faulty'] {
     background: var(--aed-accent);
   }
 }
@@ -194,10 +194,10 @@
   font-size: 0.8rem;
   font-weight: 600;
 
-  &[data-a='zamkniete'] {
+  &[data-a='closed'] {
     color: var(--aed-muted);
   }
-  &[data-a='niesprawny'] {
+  &[data-a='faulty'] {
     color: var(--aed-accent);
   }
 }

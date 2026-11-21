@@ -4,12 +4,12 @@ export type AedAvailability = (typeof AED_AVAILABILITY_ORDER)[number];
 
 export interface AedBrief {
   id: string;
-  nazwa_obiektu: string;
-  adres: string;
+  name: string;
+  address: string;
   lat: number;
   lon: number;
-  dostepnosc: AedAvailability;
-  instytucja: string;
+  availability: AedAvailability;
+  institution: string;
 }
 
 export interface AedFix {
@@ -19,23 +19,23 @@ export interface AedFix {
 }
 
 export interface AedDetail extends AedBrief {
-  dane: Record<string, string>;
-  poprawki: AedFix[];
-  zbior: { id: number; tytul: string; slug: string };
+  fields: Record<string, string>;
+  fixes: AedFix[];
+  dataset: { id: number; title: string; slug: string };
 }
 
-export interface AedProvinceCharge {
-  kod: string;
-  nazwa: string;
-  gminy: number;
-  razem: number;
-  procent: number;
+export interface AedProvinceCoverage {
+  code: string;
+  name: string;
+  municipalities: number;
+  total: number;
+  percent: number;
 }
 
 export interface AedStats {
-  liczba_aed: number;
-  liczba_instytucji: number;
-  dostepnosc: { teraz: Partial<Record<AedAvailability, number>> };
-  zbior_ogolnopolski: { id: number; slug: string; tytul: string } | null;
-  naladowanie: { gminy: number; gminy_razem: number; procent: number; wojewodztwa: AedProvinceCharge[] };
+  aed_count: number;
+  institution_count: number;
+  availability: { now: Partial<Record<AedAvailability, number>> };
+  national_dataset: { id: number; slug: string; title: string } | null;
+  coverage: { municipalities: number; municipalities_total: number; percent: number; provinces: AedProvinceCoverage[] };
 }

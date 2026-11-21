@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 import { AED_OUTLINE, AED_PULSE, AED_VIEWBOX } from '@app/pages/aed/aed-geometry';
 
-/** Sygnet akcji: kontur Polski i puls. Kolory z --aed-mark-outline i --aed-mark-pulse. */
+/** Campaign mark: outline of Poland and a pulse. Colors from --aed-mark-outline and --aed-mark-pulse. */
 @Component({
   selector: 'app-aed-mark',
   standalone: true,

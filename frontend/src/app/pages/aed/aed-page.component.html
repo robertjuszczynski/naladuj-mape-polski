@@ -19,15 +19,15 @@
   <ng-container *ngIf="vm.stats as stats">
     <section class="container aed-stats" [attr.aria-label]="'Aed.StatsLabel' | translate">
       <div class="aed-stat">
-        <strong>{{ stats.liczba_aed | aedNumber: vm.lang }}</strong>
+        <strong>{{ stats.aed_count | aedNumber: vm.lang }}</strong>
         <span>{{ 'Aed.StatTotal' | translate }}</span>
       </div>
       <div class="aed-stat">
-        <strong>{{ stats.liczba_instytucji }}</strong>
+        <strong>{{ stats.institution_count }}</strong>
         <span>{{ 'Aed.StatInstitutions' | translate }}</span>
       </div>
       <div class="aed-stat aed-stat--accent">
-        <strong>{{ stats.dostepnosc.teraz.otwarte || 0 }} {{ 'Aed.Of' | translate }} {{ stats.liczba_aed }}</strong>
+        <strong>{{ stats.availability.now.open || 0 }} {{ 'Aed.Of' | translate }} {{ stats.aed_count }}</strong>
         <span>{{ 'Aed.StatNow' | translate }}</span>
       </div>
     </section>
@@ -40,22 +40,22 @@
         </div>
         <div class="aed-charge__total">
           <div class="aed-battery aed-battery--big" aria-hidden="true">
-            <i [style.width.%]="stats.naladowanie.procent < 1 ? 1.5 : stats.naladowanie.procent"></i>
+            <i [style.width.%]="stats.coverage.percent < 1 ? 1.5 : stats.coverage.percent"></i>
           </div>
-          <strong>{{ stats.naladowanie.procent | aedNumber: vm.lang : 1 }}%</strong>
+          <strong>{{ stats.coverage.percent | aedNumber: vm.lang : 1 }}%</strong>
           <span
-            >{{ stats.naladowanie.gminy }} {{ 'Aed.Of' | translate }}
-            {{ stats.naladowanie.gminy_razem | aedNumber: vm.lang }} {{ 'Aed.Municipalities' | translate }}</span
+            >{{ stats.coverage.municipalities }} {{ 'Aed.Of' | translate }}
+            {{ stats.coverage.municipalities_total | aedNumber: vm.lang }} {{ 'Aed.Municipalities' | translate }}</span
           >
         </div>
       </div>
       <ul class="aed-charge__grid">
-        <li *ngFor="let w of stats.naladowanie.wojewodztwa" [class.on]="w.gminy > 0">
-          <span class="aed-charge__name">{{ w.nazwa }}</span>
+        <li *ngFor="let w of stats.coverage.provinces" [class.on]="w.municipalities > 0">
+          <span class="aed-charge__name">{{ w.name }}</span>
           <span class="aed-battery" aria-hidden="true"
-            ><i [style.width.%]="w.gminy > 0 ? (w.procent < 4 ? 4 : w.procent) : 0"></i
+            ><i [style.width.%]="w.municipalities > 0 ? (w.percent < 4 ? 4 : w.percent) : 0"></i
           ></span>
-          <span class="aed-charge__n">{{ w.gminy }}/{{ w.razem }}</span>
+          <span class="aed-charge__n">{{ w.municipalities }}/{{ w.total }}</span>
         </li>
       </ul>
       <p class="aed-muted aed-charge__cta">
@@ -68,7 +68,7 @@
     <h2 id="aed-map-title">{{ 'Aed.MapTitle' | translate }}</h2>
     <p class="aed-muted">
       {{ 'Aed.MapLead' | translate }}
-      <a *ngIf="vm.stats?.zbior_ogolnopolski as z" [routerLink]="['/!dataset', z.id + ',' + z.slug] | localize">{{
+      <a *ngIf="vm.stats?.national_dataset as z" [routerLink]="['/!dataset', z.id + ',' + z.slug] | localize">{{
         'Aed.CtaDownload' | translate
       }}</a>
     </p>
@@ -115,7 +115,7 @@
               ><span class="aed-spinner" aria-hidden="true"></span>{{ 'Aed.Loading' | translate }}</span
             >
             <ng-template #summary>
-              {{ 'Aed.Available' | translate }}: {{ counts().otwarte }} {{ 'Aed.Of' | translate }}
+              {{ 'Aed.Available' | translate }}: {{ counts().open }} {{ 'Aed.Of' | translate }}
               {{ points().length }} ({{
                 mode === 'now' ? ('Aed.NowLower' | translate) : ('Aed.Days.' + day | translate) + ', ' + hourLabel
               }})
@@ -147,11 +147,13 @@
           [attr.aria-label]="'Aed.ListLabel' | translate">
           <li *ngFor="let p of visible()">
             <a [routerLink]="[route, p.id] | localize" class="aed-list__item">
-              <span class="aed-dot" [attr.data-a]="p.dostepnosc" aria-hidden="true"></span>
+              <span class="aed-dot" [attr.data-a]="p.availability" aria-hidden="true"></span>
               <span class="aed-list__text">
-                <strong>{{ p.nazwa_obiektu || 'AED' }}</strong>
-                <span class="aed-muted">{{ p.adres }}</span>
-                <span class="aed-tag" [attr.data-a]="p.dostepnosc">{{ 'Aed.Avail.' + p.dostepnosc | translate }}</span>
+                <strong>{{ p.name || 'AED' }}</strong>
+                <span class="aed-muted">{{ p.address }}</span>
+                <span class="aed-tag" [attr.data-a]="p.availability">{{
+                  'Aed.Avail.' + p.availability | translate
+                }}</span>
               </span>
             </a>
             <button type="button" class="aed-link" (click)="locate(p)">{{ 'Aed.ShowOnMap' | translate }}</button>
@@ -177,45 +179,29 @@
 
   <section class="aed-how" aria-labelledby="aed-how-title">
     <div class="container">
-      <div class="aed-how__grid">
-        <div>
-          <h2 id="aed-how-title">{{ 'Aed.HowTitle' | translate }}</h2>
-          <p class="aed-muted aed-how__lead">{{ 'Aed.HowLead' | translate }}</p>
-          <ol class="aed-steps">
-            <li>
-              <strong>{{ 'Aed.How1Title' | translate }}</strong> {{ 'Aed.How1' | translate }}
-            </li>
-            <li>
-              <strong>{{ 'Aed.How2Title' | translate }}</strong> {{ 'Aed.How2' | translate }}
-            </li>
-            <li>
-              <strong>{{ 'Aed.How3Title' | translate }}</strong> {{ 'Aed.How3' | translate }}
-            </li>
-            <li>
-              <strong>{{ 'Aed.How4Title' | translate }}</strong> {{ 'Aed.How4' | translate }}
-            </li>
-          </ol>
-          <p class="aed-how__note">{{ 'Aed.GminaNote' | translate }}</p>
-          <p class="aed-how__actions">
-            <a class="aed-btn" [href]="wizardUrl">{{ 'Aed.AddData' | translate }}</a>
-            <a class="aed-link" [href]="templateUrl">{{ 'Aed.Template' | translate }}</a>
-            <a class="aed-link" [href]="scopeUrl">{{ 'Aed.Scope' | translate }}</a>
-          </p>
-        </div>
-        <div class="aed-how__figure" aria-hidden="true">
-          <svg class="aed-cell" viewBox="0 0 240 130">
-            <rect class="aed-cell__case" x="5" y="5" width="206" height="120" rx="14" />
-            <rect class="aed-cell__tip" x="215" y="43" width="16" height="44" rx="5" />
-            <rect
-              class="aed-cell__charge"
-              x="17"
-              y="17"
-              height="96"
-              rx="6"
-              [attr.width]="batteryWidth(vm.stats?.naladowanie?.procent ?? 0)" />
-            <polyline class="aed-cell__pulse" points="26,65 78,65 92,28 108,102 122,65 196,65" />
-          </svg>
-        </div>
+      <div>
+        <h2 id="aed-how-title">{{ 'Aed.HowTitle' | translate }}</h2>
+        <p class="aed-muted aed-how__lead">{{ 'Aed.HowLead' | translate }}</p>
+        <ol class="aed-steps">
+          <li>
+            <strong>{{ 'Aed.How1Title' | translate }}</strong> {{ 'Aed.How1' | translate }}
+          </li>
+          <li>
+            <strong>{{ 'Aed.How2Title' | translate }}</strong> {{ 'Aed.How2' | translate }}
+          </li>
+          <li>
+            <strong>{{ 'Aed.How3Title' | translate }}</strong> {{ 'Aed.How3' | translate }}
+          </li>
+          <li>
+            <strong>{{ 'Aed.How4Title' | translate }}</strong> {{ 'Aed.How4' | translate }}
+          </li>
+        </ol>
+        <p class="aed-how__note">{{ 'Aed.GminaNote' | translate }}</p>
+        <p class="aed-how__actions">
+          <a class="aed-btn" [href]="wizardUrl">{{ 'Aed.AddData' | translate }}</a>
+          <a class="aed-link" [href]="templateUrl">{{ 'Aed.Template' | translate }}</a>
+          <a class="aed-link" [href]="scopeUrl">{{ 'Aed.Scope' | translate }}</a>
+        </p>
       </div>
       <div class="aed-provider">
         <div>

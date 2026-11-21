@@ -37,7 +37,7 @@ export class AedService {
     });
   }
 
-  /** Panel dostawcy działa w subdomenie admin. tego samego portalu. */
+  /** The provider panel runs on the admin. subdomain of the same portal. */
   adminUrl(path: string): string {
     const location = this.document.defaultView?.location;
     if (!location) {

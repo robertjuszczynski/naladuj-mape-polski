@@ -26,10 +26,10 @@ const POLAND_CENTER: Leaflet.LatLngTuple = [52.1, 19.4];
 const POLAND_ZOOM = 6;
 const CLUSTER_SPAN: Leaflet.LatLngTuple = [0.3, 0.45];
 const COLOR_TOKENS: Record<AedAvailability, string> = {
-  otwarte: '--aed-fg',
-  zamkniete: '--aed-closed',
-  nieznane: '--aed-unknown',
-  niesprawny: '--aed-accent',
+  open: '--aed-fg',
+  closed: '--aed-closed',
+  unknown: '--aed-unknown',
+  faulty: '--aed-accent',
 };
 
 @Component({
@@ -119,15 +119,15 @@ export class AedMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         continue;
       }
       coords.push([p.lat, p.lon]);
-      const open = p.dostepnosc === 'otwarte';
+      const open = p.availability === 'open';
       this.L.circleMarker([p.lat, p.lon], {
         radius: open ? 7 : 5,
         color: ring,
         weight: 1.5,
-        fillColor: color(p.dostepnosc),
+        fillColor: color(p.availability),
         fillOpacity: 0.95,
       })
-        .bindTooltip(`${p.nazwa_obiektu} – ${this.translate.instant('Aed.Avail.' + p.dostepnosc)}`)
+        .bindTooltip(`${p.name} – ${this.translate.instant('Aed.Avail.' + p.availability)}`)
         .on('click', () => this.zone.run(() => this.selected.emit(p)))
         .addTo(this.layer);
     }
@@ -141,7 +141,7 @@ export class AedMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     return !!previous && !!this.center && previous[0] === this.center[0] && previous[1] === this.center[1];
   }
 
-  /** Pierwszy widok: skupisko wokół mediany punktów, jeśli obejmuje większość danych. */
+  /** Initial view: the cluster around the median point, if it holds most of the data. */
   private densestCluster(coords: Leaflet.LatLngTuple[]): Leaflet.LatLngTuple[] {
     const median = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
     const lat = median(coords.map((c) => c[0]));

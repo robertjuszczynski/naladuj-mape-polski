@@ -25,7 +25,7 @@ const SHOWN_FIELDS = [
   'kod_teryt_gminy',
   'data_aktualizacji',
 ];
-const REPORT_TYPES = ['nie_dziala', 'zamkniety', 'brak_urzadzenia', 'zla_lokalizacja', 'inne'];
+const REPORT_TYPES = ['not_working', 'inaccessible', 'no_device', 'wrong_location', 'other'];
 
 @Component({
   selector: 'app-aed-detail',
@@ -82,13 +82,13 @@ export class AedDetailComponent {
     }
     const comment = this.translate.instant('Aed.ReportComment', {
       id: aed.id,
-      name: aed.nazwa_obiektu,
-      address: aed.adres,
+      name: aed.name,
+      address: aed.address,
       problem: this.translate.instant('Aed.Report.' + this.reportType),
       text: this.reportText ? ` ${this.reportText}` : '',
     });
     this.sending.set(true);
-    this.service.reportIssue(aed.zbior.id, comment).subscribe({
+    this.service.reportIssue(aed.dataset.id, comment).subscribe({
       next: () => {
         this.sent.set(true);
         this.reportError.set('');

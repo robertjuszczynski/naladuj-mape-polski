@@ -7,7 +7,7 @@
       <span *ngIf="stats$ | async as stats">
         {{
           'Aed.BannerCount'
-            | translate: { n: (stats.liczba_aed | aedNumber: translate.currentLang), m: stats.liczba_instytucji }
+            | translate: { n: (stats.aed_count | aedNumber: translate.currentLang), m: stats.institution_count }
         }}
       </span>
     </p>

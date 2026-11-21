@@ -25,9 +25,6 @@ import { AedNumberPipe } from './aed-number.pipe';
 
 type TimeMode = 'now' | 'chosen';
 
-const BATTERY_INNER_WIDTH = 182;
-const BATTERY_MIN_PERCENT = 3;
-
 @Component({
   selector: 'app-aed-page',
   standalone: true,
@@ -61,10 +58,10 @@ export class AedPageComponent implements OnInit {
   readonly error = signal('');
   readonly query = signal('');
   readonly show = signal<Record<AedAvailability, boolean>>({
-    otwarte: true,
-    zamkniete: true,
-    nieznane: true,
-    niesprawny: true,
+    open: true,
+    closed: true,
+    unknown: true,
+    faulty: true,
   });
   readonly limit = signal(AED_PAGE_SIZE);
   readonly focus = signal<LatLngTuple | null>(null);
@@ -74,8 +71,8 @@ export class AedPageComponent implements OnInit {
   hour = new Date().getHours();
 
   readonly counts = computed(() => {
-    const result = { otwarte: 0, zamkniete: 0, nieznane: 0, niesprawny: 0 } as Record<AedAvailability, number>;
-    this.points().forEach((p) => result[p.dostepnosc]++);
+    const result = { open: 0, closed: 0, unknown: 0, faulty: 0 } as Record<AedAvailability, number>;
+    this.points().forEach((p) => result[p.availability]++);
     return result;
   });
 
@@ -84,9 +81,9 @@ export class AedPageComponent implements OnInit {
     const show = this.show();
     return this.points()
       .filter(
-        (p) => show[p.dostepnosc] && (!q || `${p.nazwa_obiektu} ${p.adres} ${p.instytucja}`.toLowerCase().includes(q)),
+        (p) => show[p.availability] && (!q || `${p.name} ${p.address} ${p.institution}`.toLowerCase().includes(q)),
       )
-      .sort((a, b) => this.order.indexOf(a.dostepnosc) - this.order.indexOf(b.dostepnosc));
+      .sort((a, b) => this.order.indexOf(a.availability) - this.order.indexOf(b.availability));
   });
 
   readonly visible = computed(() => this.filtered().slice(0, this.limit()));
@@ -105,10 +102,6 @@ export class AedPageComponent implements OnInit {
 
   get hourLabel(): string {
     return String(this.hour).padStart(2, '0') + ':00';
-  }
-
-  batteryWidth(percent: number): number {
-    return (BATTERY_INNER_WIDTH * Math.max(percent, BATTERY_MIN_PERCENT)) / 100;
   }
 
   load(): void {
@@ -145,7 +138,7 @@ export class AedPageComponent implements OnInit {
     this.document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  /** Najbliższy wybrany dzień tygodnia o wybranej godzinie, w formacie API: RRRR-MM-DDTGG:MM. */
+  /** The next chosen weekday at the chosen hour, in the API format YYYY-MM-DDTHH:MM. */
   private chosenMoment(): string {
     const now = new Date();
     const date = new Date(now);

@@ -1757,10 +1757,10 @@
     "NotFound": "Nie znaleziono takiego AED.",
     "ErrList": "Nie udało się pobrać danych o AED.",
     "Avail": {
-      "otwarte": "Dostępny",
-      "zamkniete": "Zamknięty o tej porze",
-      "nieznane": "Dostępność nieznana",
-      "niesprawny": "Zgłoszony jako niesprawny"
+      "open": "Dostępny",
+      "closed": "Zamknięty o tej porze",
+      "unknown": "Dostępność nieznana",
+      "faulty": "Zgłoszony jako niesprawny"
     },
     "Days": {
       "0": "poniedziałek",
@@ -1786,11 +1786,11 @@
       "data_aktualizacji": "Data aktualizacji"
     },
     "Report": {
-      "nie_dziala": "Urządzenie nie działa lub jest uszkodzone",
-      "zamkniety": "AED jest zamknięty lub niedostępny",
-      "brak_urzadzenia": "Nie ma tu urządzenia",
-      "zla_lokalizacja": "Zła lokalizacja na mapie",
-      "inne": "Inny problem"
+      "not_working": "Urządzenie nie działa lub jest uszkodzone",
+      "inaccessible": "AED jest zamknięty lub niedostępny",
+      "no_device": "Nie ma tu urządzenia",
+      "wrong_location": "Zła lokalizacja na mapie",
+      "other": "Inny problem"
     },
     "ChargeTitle": "Ile mapy już naładowaliśmy?",
     "ChargeLead": "Odsetek gmin, w których jest już choć jeden AED w otwartych danych – niezależnie od tego, czy udostępniła je gmina, szkoła, szpital czy firma.",

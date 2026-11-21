@@ -1754,10 +1754,10 @@
     "NotFound": "AED not found.",
     "ErrList": "Could not load AED data.",
     "Avail": {
-      "otwarte": "Accessible",
-      "zamkniete": "Closed at this time",
-      "nieznane": "Accessibility unknown",
-      "niesprawny": "Reported as faulty"
+      "open": "Accessible",
+      "closed": "Closed at this time",
+      "unknown": "Accessibility unknown",
+      "faulty": "Reported as faulty"
     },
     "Days": {
       "0": "Monday",
@@ -1783,11 +1783,11 @@
       "data_aktualizacji": "Last updated"
     },
     "Report": {
-      "nie_dziala": "The device does not work or is damaged",
-      "zamkniety": "The AED is locked or inaccessible",
-      "brak_urzadzenia": "There is no device here",
-      "zla_lokalizacja": "Wrong location on the map",
-      "inne": "Other problem"
+      "not_working": "The device does not work or is damaged",
+      "inaccessible": "The AED is locked or inaccessible",
+      "no_device": "There is no device here",
+      "wrong_location": "Wrong location on the map",
+      "other": "Other problem"
     },
     "ChargeTitle": "How much of the map is charged?",
     "ChargeLead": "Share of municipalities with at least one AED in open data – whether it was shared by the municipality, a school, a hospital or a company.",
