@@ -1,4 +1,5 @@
 from mcod.academy import views as academy_views
+from mcod.aed.api import views as aed_views
 from mcod.core.api.utils import views as core_views
 from mcod.core.api.views import MetricsResource
 from mcod.datasets import views as dataset_views
@@ -20,6 +21,10 @@ from mcod.users import views as user_views
 from mcod.watchers import views as watcher_views
 
 routes = [
+    # Defibrylatory AED (Naładuj mapę Polski)
+    ("/aed", aed_views.AedListView()),
+    ("/aed/stats", aed_views.AedStatsView()),
+    ("/aed/{id}", aed_views.AedDetailView()),
     # Tools & utilities
     ("/search", search_views.SearchView()),
     ("/sparql/{token:uuid}", search_views.SparqlDownloadView()),

@@ -146,6 +146,7 @@ INSTALLED_APPS = [
     "mcod.alerts",
     "mcod.watchers",
     "mcod.suggestions",
+    "mcod.aed",
     "mcod.newsletter",
     "mcod.harvester",
     "mcod.cms",
@@ -528,6 +529,14 @@ SUIT_CONFIG = {
     "MENU_OPEN_FIRST_CHILD": True,  # Default True
     "MENU_EXCLUDE": ("auth.group",),
     "MENU": [
+        {
+            "label": "Defibrylatory AED",
+            "models": [
+                {"model": "aed.aedupload", "label": "Dodaj dane o AED", "icon": "icon-upload"},
+                {"model": "aed.aedrecord", "label": "Rejestr AED", "icon": "icon-map-marker"},
+            ],
+            "icon": "icon-heart",
+        },
         {
             "label": "Dane",
             "models": [
