@@ -46,10 +46,9 @@ https://178-250-46-63.sslip.io/pl/aed
 
 ## Instrukcje jak otworzyć projekt i jak przez niego przejść
 
-Prototyp działa w przeglądarce, bez instalacji. To fork otwartego kodu dane.gov.pl z obsługą danych o AED.
+Projekt można otworzyć na trzy sposoby i żaden nie wymaga instalacji. Działający portal z mapą AED otwiera się bez logowania pod adresem https://178-250-46-63.sslip.io/pl/aed. Panel, w którym instytucja dodaje swoje defibrylatory, jest pod adresem https://admin.178-250-46-63.sslip.io, a logujemy się na konto aed@marki.example z hasłem [hasło w zgłoszeniu]. Klikalny prototyp działa też bez internetu: w repozytorium wystarczy otworzyć w przeglądarce plik deliverables/prototyp/index.html i klikać przyciski jak w prawdziwym portalu, a strzałki ← → przełączają ekrany. Instrukcja krok po kroku dla jury jest w pliku JURY.md w repozytorium.
 
-Strona akcji (bez logowania): https://178-250-46-63.sslip.io/pl/aed
-Panel dostawcy: https://admin.178-250-46-63.sslip.io, konto aed@marki.example, hasło: [WPISZ HASŁO]
+Uwaga: zalecamy sprawdzanie na domenie (dwa pierwsze adresy). Tylko tam wszystko działa naprawdę: wyszukiwanie dowolnego adresu, najbliższy AED o wybranej porze, wgrywanie własnego pliku i zapisywanie zmian. Klikalny prototyp to wersja zapasowa na wypadek, gdy domena się nie otworzy. Jest uproszczony: pokazuje zrzuty ekranów z 22.11.2026 i przygotowane ścieżki, nie zapisuje danych.
 
 Ścieżka urzędnika (ok. 3 minuty):
 1. Pobierz prawdziwy plik Marek z dane.gov.pl: https://api.dane.gov.pl/media/resources/20250710/Defibrylator_GminaMiastoMarki_1.csv (ten sam plik jest w repozytorium: backend/mcod/aed/data/testowe/04-marki-oryginal-z-dane-gov-pl.csv).
