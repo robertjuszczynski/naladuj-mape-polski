@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Naładuj mapę Polski – wideo</title>
+<style>
+@font-face { font-family: "Manrope"; font-weight: 200 800; src: url("../assets/fonts/manrope-latin-wght-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+2000-206F; }
+@font-face { font-family: "Manrope"; font-weight: 200 800; src: url("../assets/fonts/manrope-latin-ext-wght-normal.woff2") format("woff2"); unicode-range: U+0100-02BA, U+1E00-1EFF; }
+@font-face { font-family: "Plex Mono"; font-weight: 500; src: url("../assets/fonts/ibm-plex-mono-latin-500.woff2") format("woff2"); }
+:root { --navy: #0B2545; --navy-deep: #051427; --red: #D62839; --red-soft: #ff5a68; --cream: #F7F4EE; --paper: #FFFDF9; --muted: rgba(11,37,69,.64); }
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--navy-deep); font-family: "Manrope", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+.scene { position: absolute; inset: 0; opacity: 0; display: none; }
+.dark { background: radial-gradient(ellipse at 50% 42%, #0f2f57 0%, var(--navy) 40%, var(--navy-deep) 100%); color: var(--cream); }
+.light { background: var(--cream); color: var(--navy); }
+
+.frame { position: absolute; left: 200px; top: 34px; width: 1520px; border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 40px 80px -30px rgba(11,37,69,.5), 0 0 0 1px rgba(11,37,69,.1); }
+.frame .bar { height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 18px; background: #eceef2; border-bottom: 1px solid rgba(11,37,69,.08); }
+.frame .bar i { width: 12px; height: 12px; border-radius: 50%; background: #c9ced6; }
+.frame .bar span { margin-left: 14px; font: 500 16px/1 "Plex Mono", monospace; color: #66707e; }
+.frame .view { position: relative; width: 1520px; height: 855px; overflow: hidden; background: #fff; }
+.frame .view img { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.hl { position: absolute; border: 4px solid var(--red); border-radius: 12px; box-shadow: 0 10px 24px -10px rgba(214,40,57,.6); opacity: 0; }
+.note { position: absolute; background: var(--red); color: #fff; font: 800 30px/1.15 "Manrope", sans-serif; padding: 18px 26px; border-radius: 14px; box-shadow: 0 18px 34px -16px rgba(11,37,69,.6); opacity: 0; white-space: nowrap; }
+
+.sub { z-index: 10; position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); max-width: 1500px; text-align: center; font: 700 38px/1.3 "Manrope", sans-serif; color: #fff; background: rgba(5,20,39,.86); padding: 14px 30px; border-radius: 14px; opacity: 0; text-wrap: balance; }
+
+/* hak – układ jak na slajdzie pitchu */
+.hookwrap { position: absolute; inset: 0; padding: 150px 120px 0; }
+.scene-big { font: 800 112px/1 "Manrope", sans-serif; letter-spacing: -.035em; margin: 0 0 52px; opacity: 0; }
+.scene-line { font: 500 44px/1.3 "Manrope", sans-serif; color: rgba(247,244,238,.82); margin: 0 0 18px; max-width: 1150px; opacity: 0; }
+.scene-q { font: 800 132px/1 "Manrope", sans-serif; letter-spacing: -.035em; color: var(--red-soft); margin: 40px 0 0; opacity: 0; }
+.scene-fact { position: absolute; left: 120px; right: 120px; bottom: 110px; margin: 0; font: 600 34px/1.35 "Manrope", sans-serif; color: var(--cream); opacity: 0; }
+.timer { position: absolute; right: 120px; top: 150px; text-align: right; }
+.timer b { display: block; font: 500 150px/1 "Plex Mono", monospace; letter-spacing: -.05em; color: var(--cream); font-variant-numeric: tabular-nums; }
+.timer span { display: block; margin-top: 14px; font: 500 22px/1 "Plex Mono", monospace; letter-spacing: .12em; text-transform: uppercase; color: rgba(247,244,238,.62); }
+
+/* arabia */
+.world { position: absolute; inset: 0; width: 100%; height: 100%; }
+.world .c { fill: rgba(247,244,238,.07); stroke: rgba(247,244,238,.16); stroke-width: 1; }
+.world .c.pl { fill: rgba(247,244,238,.34); }
+.world .c.sa { fill: rgba(214,40,57,.3); }
+.world .route { fill: none; stroke: var(--red-soft); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 2 15; }
+.world .lbl { font: 700 32px/1 "Manrope", sans-serif; fill: var(--cream); }
+.world .lbl.red { fill: var(--red-soft); }
+.arabia-title { position: absolute; left: 160px; top: 150px; max-width: 760px; font: 800 72px/1.06 "Manrope", sans-serif; letter-spacing: -.025em; opacity: 0; }
+.arabia-km { position: absolute; left: 160px; top: 430px; font: 500 120px/1 "Plex Mono", monospace; letter-spacing: -.05em; color: var(--red-soft); opacity: 0; }
+.arabia-km small { font-size: 48px; }
+
+/* rozwiązanie */
+.sol { display: grid; place-items: center; align-content: center; gap: 70px; }
+.sol img { height: 150px; opacity: 0; }
+.sol .steps { display: grid; grid-template-columns: repeat(3, 440px); gap: 50px; }
+.sol .steps div { border-top: 2px solid rgba(247,244,238,.28); padding-top: 26px; opacity: 0; }
+.sol .steps b { display: block; font: 500 32px/1 "Plex Mono", monospace; color: var(--red-soft); margin-bottom: 16px; }
+.sol .steps span { font: 800 38px/1.15 "Manrope", sans-serif; }
+
+/* koniec */
+.end { display: grid; place-items: center; align-content: center; gap: 50px; text-align: center; }
+.end img { height: 420px; opacity: 0; }
+.end p { margin: 0; font: 700 44px/1.25 "Manrope", sans-serif; opacity: 0; }
+.end .tag { font: 500 28px/1 "Plex Mono", monospace; color: var(--red-soft); opacity: 0; }
+#black { z-index: 20; position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <section class="scene dark" data-id="hak">
+    <div class="hookwrap">
+      <p class="scene-big" id="h0">Ktoś upada.</p>
+      <p class="scene-line" id="h1">Nie oddycha. Jedna osoba dzwoni na 112, druga uciska klatkę piersiową.</p>
+      <p class="scene-line" id="h2">Ty biegniesz po defibrylator.</p>
+      <p class="scene-q" id="h3">Gdzie on jest?</p>
+    </div>
+    <div class="timer"><b id="timer">0:00</b><span>od upadku</span></div>
+    <p class="scene-fact" id="h4">Defibrylacja w ciągu 3–5 minut daje 50–70% szans na przeżycie.</p>
+  </section>
+  <section class="scene light" data-id="portal" data-screen></section>
+  <section class="scene dark" data-id="arabia">
+    <svg class="world" id="world" viewBox="0 0 1920 1080"></svg>
+    <div class="arabia-title" id="arTitle">Urząd Miasta Marki według oficjalnego pliku</div>
+    <div class="arabia-km" id="arKm">4 382<small> km</small></div>
+  </section>
+  <section class="scene dark" data-id="rozwiazanie">
+    <div class="sol" style="position:absolute;inset:0">
+      <img id="solLogo" src="../assets/naladuj-mape-polski_poziomy_negatyw.svg" alt="">
+      <div class="steps">
+        <div><b>1</b><span>Instytucja wgrywa swój plik</span></div>
+        <div><b>2</b><span>Portal poprawia i łączy dane</span></div>
+        <div><b>3</b><span>Każdy widzi najbliższy otwarty AED</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="scene light" data-id="plik" data-screen></section>
+  <section class="scene light" data-id="sprawdzenie" data-screen></section>
+  <section class="scene light" data-id="publikacja" data-screen></section>
+  <section class="scene light" data-id="jeden" data-screen></section>
+  <section class="scene light" data-id="zadania" data-screen></section>
+  <section class="scene light" data-id="wykaz" data-screen></section>
+  <section class="scene light" data-id="potwierdzenie" data-screen></section>
+  <section class="scene light" data-id="najblizszy" data-screen></section>
+  <section class="scene light" data-id="zgloszenie" data-screen></section>
+  <section class="scene dark" data-id="koniec">
+    <div class="end" style="position:absolute;inset:0">
+      <img id="endLogo" src="../assets/naladuj-mape-polski_pionowy_negatyw.svg" alt="">
+      <p id="endTxt">Udostępnij dane o swoim AED w dane.gov.pl.</p>
+      <div class="tag" id="endTag">#NaładujMapęPolski</div>
+    </div>
+  </section>
+  <div class="sub" id="sub"></div>
+  <div id="black"></div>
+</div>
+<script>
+const SCRIPT = /*SCRIPT*/;
+const DUR = /*DURATIONS*/;
+const BOX = /*BOXES*/;
+const WORLD = /*WORLD*/;
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const ease = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const out = p => 1 - Math.pow(1 - p, 3);
+const fade = (t, a, d = .4) => clamp((t - a) / d);
+
+const LEAD = .35, TAIL = .55, XF = .45, END_HOLD = 2.4;
+let cursor = 0;
+const SEG = SCRIPT.map((s, i) => {
+  const d = DUR[s.id] ?? s.tts.length / 15;
+  const start = cursor, vo = start + LEAD, end = vo + d + (i === SCRIPT.length - 1 ? END_HOLD : s.id === 'hak' ? 2.4 : TAIL);
+  cursor = end;
+  return { ...s, d, start, vo, end };
+});
+const TOTAL = cursor;
+window.__duration = TOTAL;
+window.__segments = SEG.map(s => ({ id: s.id, vo: s.vo, d: s.d }));
+
+const k3 = { ...BOX['v-k3'].boxes, stats: [257, 365, 1046, 75] };
+const SCREENS = {
+  portal: { url: 'dane.gov.pl · wyszukiwanie „defibrylator”', keys: [
+    { at: 0, img: 'przed.jpg', w: 1600, rect: [0, 0, 1600] },
+    { at: .35, rect: [90, 420, 760], hl: [138, 512, 330, 38], note: '4 zbiory na cały kraj' } ] },
+  plik: { url: 'Panel dostawcy · Dodaj dane o AED', keys: [
+    { at: 0, img: 'k1.jpg', w: 1440, rect: [0, 0, 1440] },
+    { at: .18, rect: [180, 150, 1180], hl: BOX['v-k1'].boxes.drop },
+    { at: .42, img: 'k1b.jpg', hl: BOX['v-k1'].boxes.btn },
+    { at: .58, img: 'k2.jpg', rect: [180, 170, 1180], hl: BOX['v-k2'].boxes.table, note: 'Kolumny rozpoznane same' } ] },
+  sprawdzenie: { url: 'Panel dostawcy · Sprawdzenie danych', keys: [
+    { at: 0, img: 'k3.jpg', w: 1440, rect: [180, 300, 1180], hl: [257, 365, 1046, 112], note: '15 pól poprawionych automatycznie' },
+    { at: .36, rect: [200, 520, 1000], hl: k3.coords, note: 'Marki wracają z Arabii' },
+    { at: .7, rect: [200, 1080, 1000], hl: k3.dup, note: 'Czeka na decyzję urzędnika' } ] },
+  publikacja: { url: 'Panel dostawcy · Licencja i publikacja', keys: [
+    { at: 0, img: 'k4.jpg', w: 1440, rect: [180, 250, 1180], hl: BOX['v-k4'].boxes.lic },
+    { at: .4, rect: [380, 380, 1000], hl: BOX['v-k4'].boxes.pub },
+    { at: .66, img: 'kreator-5.jpg', w: 1440, rect: [100, 0, 1340], hl: null, note: 'Opublikowane' } ] },
+  jeden: { url: 'Panel dostawcy · Dodaj jeden AED', keys: [
+    { at: 0, img: 'jeden.jpg', w: 1440, rect: [120, 150, 1250], hl: [262, 430, 1036, 450], note: 'Adres z podpowiedziami i mapa' },
+    { at: .55, rect: [200, 1180, 1100], hl: [1162, 1722, 136, 38], note: 'Bez pliku i szablonu' } ] },
+  zadania: { url: 'Panel dostawcy · Do sprawdzenia', keys: [
+    { at: 0, img: 'zadania.jpg', w: 1440, rect: [150, 120, 1250], hl: [262, 200, 760, 67] },
+    { at: .4, rect: [200, 150, 1100], hl: [1098, 202, 200, 31], note: 'Przypomnienie e-mailem' },
+    { at: .7, rect: [200, 300, 1100], hl: [262, 383, 1036, 67], note: 'Brak godzin? Uzupełnij jednym kliknięciem' } ] },
+  wykaz: { url: 'dane.gov.pl · Defibrylatory AED w Polsce – wykaz zbiorczy', keys: [
+    { at: 0, img: 'zbior-a.jpg', w: 1180, rect: [0, 0, 1180] },
+    { at: .22, rect: [20, 0, 1000], hl: [64, 30, 820, 62] },
+    { at: .55, img: 'zbior-b.jpg', w: 1440, rect: [200, 270, 1100], hl: [350, 444, 1004, 106], note: 'Jeden zbiór: CSV, JSON-LD i API' } ] },
+  potwierdzenie: { url: 'Panel gminy · AED do potwierdzenia', keys: [
+    { at: 0, img: 'potw.jpg', w: 1440, rect: [150, 120, 1250], hl: BOX['v-potw'].boxes.stats, note: '796 AED ze źródeł zewnętrznych' },
+    { at: .5, rect: [240, 300, 1080], hl: [255, 420, 1050, 110], note: 'Źródło i licencja przy każdym AED' },
+    { at: .75, rect: [300, 330, 1000], hl: BOX['v-potw'].boxes.buttons, note: 'Gmina decyduje' } ] },
+  najblizszy: { url: 'dane.gov.pl/pl/aed · Najbliższy dostępny AED', keys: [
+    { at: 0, img: 'nearest.jpg', w: 1440, rect: [40, 840, 1360] },
+    { at: .42, rect: [30, 1380, 960], hl: BOX['v-nearest'].boxes.first, note: 'Opis dla dyspozytora 112' } ] },
+  zgloszenie: { url: 'dane.gov.pl/pl/aed · strona AED', keys: [
+    { at: 0, img: 'aed.jpg', w: 1440, rect: [30, 380, 1380], hl: BOX['v-aed'].boxes.head },
+    { at: .35, rect: [40, 1180, 1120], hl: BOX['v-aed'].boxes.report, note: 'Zgłoszenie trafia do instytucji' } ] }
+};
+
+const VIEW_W = 1520, VIEW_H = 855;
+document.querySelectorAll('[data-screen]').forEach(sec => {
+  const cfg = SCREENS[sec.dataset.id];
+  sec.innerHTML = `<div class="frame"><div class="bar"><i></i><i></i><i></i><span>${cfg.url}</span></div><div class="view"><img alt=""><img alt=""><div class="hl"></div><div class="note"></div></div></div>`;
+  const imgs = new Set(cfg.keys.map(k => k.img).filter(Boolean));
+  let last = null;
+  cfg.keys.forEach(k => { if (k.img) last = k.img; else k.img = last; });
+  let w = null; cfg.keys.forEach(k => { if (k.w) w = k.w; else k.w = w; });
+  let r = null; cfg.keys.forEach(k => { if (k.rect) r = k.rect; else k.rect = r; });
+  cfg.el = { imgs: sec.querySelectorAll('img'), hl: sec.querySelector('.hl'), note: sec.querySelector('.note') };
+  cfg.urls = [...imgs];
+});
+
+function camera(cfg, p) {
+  const ks = cfg.keys;
+  let i = 0; while (i < ks.length - 1 && p >= ks[i + 1].at) i++;
+  const a = ks[i], b = ks[i + 1];
+  const MOVE = .16;
+  let rect = a.rect;
+  if (b) { const q = ease(clamp((p - b.at + MOVE) / MOVE)); rect = a.rect.map((v, j) => lerp(v, b.rect[j], q)); if (q > 0 && b.img !== a.img) {} }
+  const prevKey = ks[i - 1];
+  const sinceKey = p - a.at;
+  return { rect, key: a, prevKey, sinceKey, next: b };
+}
+
+function renderScreen(cfg, p, segDur) {
+  const { rect, key, prevKey, sinceKey } = camera(cfg, p);
+  const s = VIEW_W / rect[2];
+  const [imgA, imgB] = cfg.el.imgs;
+  const src = '../wideo/assets/' + key.img;
+  if (imgA.dataset.src !== src) { imgA.src = src; imgA.dataset.src = src; }
+  imgA.style.width = key.w + 'px';
+  imgA.style.transform = `scale(${s}) translate(${-rect[0]}px, ${-rect[1]}px)`;
+  const xf = prevKey && prevKey.img !== key.img ? clamp(sinceKey * segDur / .35) : 1;
+  if (xf < 1) {
+    const psrc = '../wideo/assets/' + prevKey.img;
+    if (imgB.dataset.src !== psrc) { imgB.src = psrc; imgB.dataset.src = psrc; }
+    imgB.style.width = prevKey.w + 'px';
+    imgB.style.transform = imgA.style.transform;
+    imgB.style.opacity = 1; imgA.style.opacity = xf; imgB.style.zIndex = 0; imgA.style.zIndex = 1;
+  } else { imgB.style.opacity = 0; imgA.style.opacity = 1; }
+  const hl = key.hl, el = cfg.el.hl;
+  const appear = clamp((sinceKey * segDur - .55) / .3);
+  if (hl) {
+    const pad = 8;
+    el.style.left = ((hl[0] - rect[0]) * s - pad) + 'px';
+    el.style.top = ((hl[1] - rect[1]) * s - pad) + 'px';
+    el.style.width = (hl[2] * s + pad * 2) + 'px';
+    el.style.height = (hl[3] * s + pad * 2) + 'px';
+    el.style.opacity = appear;
+  } else el.style.opacity = 0;
+  const n = cfg.el.note;
+  if (key.note) {
+    n.textContent = key.note;
+    const nw = n.offsetWidth || 400, nh = n.offsetHeight || 66;
+    let x, y;
+    if (hl) { x = (hl[0] - rect[0]) * s + hl[2] * s - nw + 8; y = (hl[1] - rect[1]) * s + hl[3] * s + 22; if (y + nh > VIEW_H - 20) y = (hl[1] - rect[1]) * s - nh - 22; }
+    else { x = VIEW_W - nw - 40; y = 40; }
+    n.style.left = clamp(x, 24, VIEW_W - nw - 24) + 'px';
+    n.style.top = clamp(y, 24, VIEW_H - nh - 24) + 'px';
+    const na = clamp((sinceKey * segDur - .8) / .3);
+    n.style.opacity = na; n.style.transform = `translateY(${(1 - out(na)) * 14}px)`;
+  } else n.style.opacity = 0;
+}
+
+const HOOK = [
+  { id: 'h0', w: 'Ktoś upada.' },
+  { id: 'h1', w: 'Nie oddycha. Jedna osoba dzwoni na sto dwanaście, druga zaczyna uciskać.' },
+  { id: 'h2', w: 'A ty biegniesz po defibrylator.' },
+  { id: 'h3', w: 'Tylko... gdzie on jest?' }
+];
+(function () {
+  const total = HOOK.reduce((a, h) => a + h.w.length, 0); let acc = 0;
+  HOOK.forEach(h => { h.at = acc / total; acc += h.w.length; });
+})();
+
+(function world() {
+  const svg = document.getElementById('world');
+  const [mx, my] = WORLD.marki, [dx, dy] = WORLD.desert;
+  const cx = (mx + dx) / 2 + 160, cy = (my + dy) / 2 - 60;
+  svg.innerHTML = WORLD.paths + `<path id="route" class="route" d="M${mx} ${my} Q${cx} ${cy} ${dx} ${dy}"/>` +
+    `<circle cx="${mx}" cy="${my}" r="13" fill="#0B2545" stroke="#F7F4EE" stroke-width="5"/><text class="lbl" x="${mx + 28}" y="${my - 18}">Marki</text>` +
+    `<circle id="halo" cx="${dx}" cy="${dy}" r="16" fill="none" stroke="#ff5a68" stroke-width="3"/><circle id="pinD" cx="${dx}" cy="${dy}" r="17" fill="#D62839" stroke="#fff" stroke-width="5"/>`;
+  const route = document.getElementById('route');
+  window.__routeLen = route.getTotalLength();
+})();
+
+function chunks(text) {
+  const parts = text.match(/.+?[.?!](?=\s|$)["”]?\s*|.+$/g) || [text];
+  const outp = []; let cur = '';
+  for (const p of parts) { if ((cur + p).length > 95 && cur) { outp.push(cur.trim()); cur = p; } else cur += p; }
+  if (cur.trim()) outp.push(cur.trim());
+  return outp;
+}
+SEG.forEach(s => { s.chunks = chunks(s.caption); const tot = s.chunks.reduce((a, c) => a + c.length, 0); let acc = 0; s.chunkAt = s.chunks.map(c => { const a = acc / tot; acc += c.length; return a; }); });
+
+const scenes = Object.fromEntries([...document.querySelectorAll('.scene')].map(s => [s.dataset.id, s]));
+const subEl = document.getElementById('sub');
+
+function render(t) {
+  for (const s of SEG) {
+    const el = scenes[s.id];
+    const visible = t >= s.start && t < s.end + XF;
+    el.style.display = visible ? 'block' : 'none';
+    if (!visible) continue;
+    el.style.opacity = s.start === 0 ? 1 : fade(t, s.start, XF);
+    el.style.zIndex = t < s.end ? 2 : 1;
+    const local = t - s.start, len = s.end - s.start, p = clamp(local / len);
+    if (s.id === 'hak') {
+      const vp = clamp((t - s.vo) / s.d);
+      HOOK.forEach(h => { const el2 = document.getElementById(h.id); const a2 = clamp((t - s.vo - h.at * s.d + .05) / .35); el2.style.opacity = a2; el2.style.transform = `translateY(${(1 - out(a2)) * 18}px)`; });
+      const f = fade(t, s.vo + s.d + .1, .45); const fe = document.getElementById('h4'); fe.style.opacity = f; fe.style.transform = `translateY(${(1 - out(f)) * 18}px)`;
+      const sec = Math.max(0, Math.floor(local));
+      document.getElementById('timer').textContent = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+    } else if (s.id === 'arabia') {
+      const a = clamp((t - s.start - .3) / 2.2);
+      const route = document.getElementById('route');
+      const L = window.__routeLen;
+      route.style.strokeDasharray = `2 15`;
+      route.style.clipPath = 'none';
+      route.setAttribute('stroke-dashoffset', 0);
+      route.style.opacity = 1;
+      route.setAttribute('d', route.getAttribute('d'));
+      route.style.strokeDasharray = `${L * ease(a)} ${L}`;
+      const pin = clamp((a - .95) / .05);
+      document.getElementById('pinD').setAttribute('opacity', pin);
+      const h = ((t - s.start - 2.6) % 1.6 + 1.6) % 1.6 / 1.6;
+      const halo = document.getElementById('halo');
+      halo.setAttribute('r', 16 + 60 * out(h)); halo.setAttribute('opacity', pin * (1 - h));
+      document.getElementById('arTitle').style.opacity = fade(t, s.start + .5, .5);
+      const km = fade(t, s.start + 2.4, .5);
+      const kmEl = document.getElementById('arKm'); kmEl.style.opacity = km; kmEl.style.transform = `translateY(${(1 - out(km)) * 20}px)`;
+    } else if (s.id === 'rozwiazanie') {
+      document.getElementById('solLogo').style.opacity = fade(t, s.start + .2, .6);
+      el.querySelectorAll('.steps div').forEach((d, i) => { const a = fade(t, s.vo + s.d * (.35 + i * .17), .45); d.style.opacity = a; d.style.transform = `translateY(${(1 - out(a)) * 20}px)`; });
+    } else if (s.id === 'koniec') {
+      const a = fade(t, s.start + .2, .7);
+      const lg = document.getElementById('endLogo'); lg.style.opacity = a; lg.style.transform = `scale(${.96 + .04 * out(a)})`;
+      document.getElementById('endTxt').style.opacity = fade(t, s.vo + s.d * .55, .5);
+      document.getElementById('endTag').style.opacity = fade(t, s.vo + s.d * .75, .5);
+    } else if (SCREENS[s.id]) {
+      renderScreen(SCREENS[s.id], p, len);
+    }
+  }
+  let txt = '', so = 0;
+  for (const s of SEG) {
+    if (s.id !== 'hak' && t >= s.vo - .05 && t < s.vo + s.d + .25) {
+      const vp = clamp((t - s.vo) / s.d);
+      let i = 0; while (i < s.chunkAt.length - 1 && vp >= s.chunkAt[i + 1]) i++;
+      txt = s.chunks[i]; so = Math.min(fade(t, s.vo - .05, .2), 1 - fade(t, s.vo + s.d + .05, .2));
+    }
+  }
+  if (subEl.textContent !== txt) subEl.textContent = txt;
+  subEl.style.opacity = txt ? so : 0;
+  document.getElementById('black').style.opacity = fade(t, TOTAL - 1.0, 1.0);
+}
+window.__render = render;
+const params = new URLSearchParams(location.search);
+if (!params.has('capture')) {
+  let t0 = null;
+  const loop = now => { if (t0 === null) t0 = now; const t = (now - t0) / 1000; render(t % TOTAL); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+} else render(0);
+</script>
+</body>
+</html>

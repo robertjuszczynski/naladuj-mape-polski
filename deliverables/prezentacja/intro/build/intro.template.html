@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naładuj mapę Polski – intro</title>
+<style>
+  :root { --navy: #0B2545; --navy-deep: #051427; --red: #D62839; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--navy-deep); cursor: none; }
+  body { background: radial-gradient(ellipse at 50% 45%, #0f2f57 0%, var(--navy) 38%, var(--navy-deep) 100%); }
+  svg#stage { position: fixed; inset: 0; width: 100vw; height: 100vh; overflow: visible; }
+  .grain { position: fixed; inset: -50%; pointer-events: none; opacity: .07; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .hint { position: fixed; left: 0; right: 0; bottom: 28px; text-align: center; font: 500 14px/1.4 system-ui, sans-serif;
+    color: rgba(255,255,255,.35); letter-spacing: .04em; transition: opacity .4s; }
+  .started .hint { opacity: 0; }
+  .clean .hint { display: none; }
+</style>
+</head>
+<body>
+<svg id="stage" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <radialGradient id="glowGrad">
+      <stop offset="0" stop-color="#D62839" stop-opacity=".55"/>
+      <stop offset=".45" stop-color="#D62839" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#D62839" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="tipGrad">
+      <stop offset="0" stop-color="#fff" stop-opacity="1"/>
+      <stop offset=".35" stop-color="#fff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blurSoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter>
+    <filter id="blurWide" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+  </defs>
+  <circle id="glow" r="900" fill="url(#glowGrad)" opacity="0"/>
+  <g id="fadeWrap">
+    <g id="logo">
+      <g id="rings"></g>
+      <g id="beatWrap">
+        <g id="syg">
+          <g id="dots"></g>
+          <path id="contourGlow" fill="none" stroke="#fff" stroke-width="6.8" stroke-linecap="round" stroke-linejoin="round" filter="url(#blurSoft)" opacity="0"/>
+          <path id="contour" fill="none" stroke="#fff" stroke-width="6.8" stroke-linecap="round" stroke-linejoin="round" pathLength="100"/>
+          <path id="pulseGlow" fill="none" stroke="#ff3b4e" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" filter="url(#blurWide)" opacity="0"/>
+          <path id="pulse" fill="none" stroke="#D62839" stroke-width="6.8" stroke-linecap="round" stroke-linejoin="round" pathLength="100"/>
+          <circle id="tip" r="9" fill="url(#tipGrad)" opacity="0"/>
+        </g>
+      </g>
+      <g id="word"></g>
+    </g>
+  </g>
+</svg>
+<div class="grain"></div>
+<div class="hint">Spacja / klik – start · R – od nowa · F – pełny ekran · M – dźwięk</div>
+<audio id="sfx" src="intro.wav" preload="auto"></audio>
+<script>
+const LOGO = /*LOGO_DATA*/;
+const NS = 'http://www.w3.org/2000/svg';
+const $ = id => document.getElementById(id);
+
+const T = {
+  blink: 0.12, drawA: [0.55, 1.75], drawP: [1.75, 2.15],
+  beats: [2.45, 3.35], dub: 0.22,
+  zoom: [4.1, 4.95], dotsOut: [4.05, 4.6], words: 4.72, period: 5.5,
+  soft: 6.05, fade: [6.95, 8.15], end: 8.6
+};
+const SYG_OFF = LOGO.sygOffset;
+const SYG_CENTER = [SYG_OFF[0] + 63.28, SYG_OFF[1] + 50];
+const ORIGIN = [SYG_OFF[0] + 84, SYG_OFF[1] + 57.3];
+const VIEW_A = { cx: SYG_CENTER[0], cy: SYG_CENTER[1], s: 7.2 };
+const VIEW_B = { cx: LOGO.center[0], cy: LOGO.center[1] + 2, s: 4.05 };
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const prog = (t, [a, b]) => clamp((t - a) / (b - a));
+const easeInOutSine = p => -(Math.cos(Math.PI * p) - 1) / 2;
+const easeInOutCubic = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const easeOutCubic = p => 1 - Math.pow(1 - p, 3);
+const easeOutExpo = p => p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+const easeOutBack = p => { const c = 2.2; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const bump = (t, c, rise, fall) => { const x = t - c; return Math.exp(-Math.pow(x / (x < 0 ? rise : fall), 2)); };
+
+const contour = $('contour'), pulse = $('pulse'), tip = $('tip');
+contour.setAttribute('d', LOGO.contour); $('contourGlow').setAttribute('d', LOGO.contour);
+pulse.setAttribute('d', LOGO.pulse); $('pulseGlow').setAttribute('d', LOGO.pulse);
+$('syg').setAttribute('transform', `translate(${SYG_OFF[0]} ${SYG_OFF[1]})`);
+const lenA = contour.getTotalLength(), lenP = pulse.getTotalLength();
+const startPt = contour.getPointAtLength(0);
+
+const glyphs = LOGO.glyphs.map((g, i) => {
+  const wrap = document.createElementNS(NS, 'g');
+  const p = document.createElementNS(NS, 'path');
+  p.setAttribute('transform', g.transform);
+  p.setAttribute('d', g.d);
+  p.setAttribute('fill', g.fill.toUpperCase() === '#D62839' ? '#D62839' : '#FFFFFF');
+  wrap.appendChild(p);
+  $('word').appendChild(wrap);
+  return { wrap, path: p, isPeriod: g.fill.toUpperCase() === '#D62839', i };
+});
+const period = glyphs.find(g => g.isPeriod);
+const letters = glyphs.filter(g => !g.isPeriod);
+let periodBox = null;
+
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const poly = LOGO.contour.match(/-?\d+(\.\d+)?/g).map(Number).reduce((a, v, i) => (i % 2 ? a[a.length - 1].push(v) : a.push([v]), a), []);
+function inside([x, y]) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
+function edgeDist([x, y]) { let m = Infinity; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [ax, ay] = poly[j], [bx, by] = poly[i]; const dx = bx - ax, dy = by - ay; const u = clamp(((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)); m = Math.min(m, Math.hypot(x - ax - u * dx, y - ay - u * dy)); } return m; }
+const rnd = mulberry32(2026);
+const dotPts = [];
+for (let tries = 0; tries < 20000 && dotPts.length < 120; tries++) {
+  const p = [13 + rnd() * 68, 18 + rnd() * 64];
+  if (!inside(p) || edgeDist(p) < 6.2) continue;
+  if (dotPts.some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 4.6)) continue;
+  dotPts.push(p);
+}
+const dotOrigin = [80, 57];
+const dots = dotPts.map(p => {
+  const c = document.createElementNS(NS, 'circle');
+  c.setAttribute('cx', p[0]); c.setAttribute('cy', p[1]); c.setAttribute('r', 1.15);
+  $('dots').appendChild(c);
+  const d = Math.hypot(p[0] - dotOrigin[0], p[1] - dotOrigin[1]);
+  return { el: c, delay: d * 0.0045, wave: rnd() < 0.5 ? 0 : 1, red: rnd() < 0.18 };
+});
+
+const ringEvents = [];
+T.beats.forEach(b => { ringEvents.push({ t: b, k: 1 }); ringEvents.push({ t: b + T.dub, k: 0.6 }); });
+const rings = ringEvents.map(() => {
+  const c = document.createElementNS(NS, 'circle');
+  c.setAttribute('fill', 'none'); c.setAttribute('stroke', '#D62839');
+  c.setAttribute('cx', ORIGIN[0]); c.setAttribute('cy', ORIGIN[1]);
+  $('rings').appendChild(c);
+  return c;
+});
+
+function beatAmount(t) {
+  let k = 0;
+  for (const b of T.beats) k += 0.11 * bump(t, b, 0.04, 0.12) + 0.065 * bump(t, b + T.dub, 0.04, 0.13);
+  return k;
+}
+
+function render(t) {
+  const zp = easeInOutCubic(prog(t, T.zoom));
+  const fp = easeInOutSine(prog(t, T.fade));
+  const v = {
+    cx: lerp(VIEW_A.cx, VIEW_B.cx, zp),
+    cy: lerp(VIEW_A.cy, VIEW_B.cy, zp),
+    s: VIEW_A.s * Math.pow(VIEW_B.s / VIEW_A.s, zp) * (1 + 0.05 * fp)
+  };
+  $('logo').setAttribute('transform', `translate(960 540) scale(${v.s}) translate(${-v.cx} ${-v.cy})`);
+  $('fadeWrap').setAttribute('opacity', 1 - fp);
+
+  const beat = beatAmount(t);
+  const k = 1 + beat;
+  $('beatWrap').setAttribute('transform', `translate(${SYG_CENTER[0]} ${SYG_CENTER[1]}) scale(${k}) translate(${-SYG_CENTER[0]} ${-SYG_CENTER[1]})`);
+
+  const pa = easeInOutSine(prog(t, T.drawA));
+  const pp = (p => 1 - Math.pow(1 - p, 2.4))(prog(t, T.drawP));
+  contour.style.strokeDasharray = '100 100';
+  contour.style.strokeDashoffset = 100 - 100 * pa;
+  contour.style.opacity = t < T.drawA[0] ? 0 : 1;
+  pulse.style.strokeDasharray = '100 100';
+  pulse.style.strokeDashoffset = 100 - 100 * pp;
+  pulse.style.opacity = t < T.drawP[0] ? 0 : 1;
+
+  let tipPt = startPt, tipO = 0, tipR = 9;
+  if (t < T.drawA[0]) {
+    const b = t - T.blink;
+    tipO = b < 0 ? 0 : (b < 0.12 ? b / 0.12 : 0.55 + 0.45 * Math.cos((b - 0.12) * 14));
+  } else if (t < T.drawP[1] + 0.25) {
+    if (t < T.drawP[0]) tipPt = contour.getPointAtLength(lenA * pa);
+    else tipPt = pulse.getPointAtLength(lenP * pp);
+    tipO = t < T.drawP[1] ? 1 : 1 - (t - T.drawP[1]) / 0.25;
+    if (t >= T.drawP[0]) tipR = 9 + 10 * bump(t, T.drawP[1], 0.05, 0.12);
+  }
+  tip.setAttribute('cx', tipPt.x); tip.setAttribute('cy', tipPt.y);
+  tip.setAttribute('r', tipR); tip.setAttribute('opacity', clamp(tipO));
+
+  const zap = bump(t, T.drawP[1], 0.03, 0.18);
+  const pulseGlow = t < T.drawP[0] ? 0 : clamp(0.28 + zap * 0.8 + beat * 7);
+  $('pulseGlow').setAttribute('opacity', pulseGlow);
+  $('pulseGlow').style.strokeDasharray = '100 100';
+  $('pulseGlow').setAttribute('pathLength', 100);
+  $('pulseGlow').style.strokeDashoffset = 100 - 100 * pp;
+  $('contourGlow').setAttribute('opacity', t < T.drawA[1] ? 0 : clamp(beat * 3.2));
+
+  const dotsFade = 1 - easeInOutSine(prog(t, T.dotsOut));
+  for (const d of dots) {
+    let level = 0, flash = 0;
+    T.beats.forEach((b, i) => {
+      const ti = b + d.delay;
+      if (t < ti) return;
+      const age = t - ti;
+      flash = Math.max(flash, Math.exp(-age / 0.16));
+      if (i >= d.wave) level = Math.max(level, 0.62 * clamp(age / 0.08));
+    });
+    const lit = d.wave === 0 || t >= T.beats[1] + d.delay;
+    const o = (lit ? level : 0) + (lit ? flash * 0.5 : 0);
+    d.el.setAttribute('opacity', clamp(o) * dotsFade);
+    d.el.setAttribute('r', 1.15 + 1.4 * (lit ? flash : 0));
+    d.el.setAttribute('fill', d.red && flash < 0.5 ? '#ff5a68' : '#ffffff');
+  }
+
+  ringEvents.forEach((e, i) => {
+    const age = t - e.t, c = rings[i];
+    if (age < 0 || age > 1.25) { c.setAttribute('opacity', 0); return; }
+    const p = age / 1.25;
+    c.setAttribute('r', 8 + 230 * easeOutCubic(p) * (0.55 + 0.45 * e.k));
+    c.setAttribute('stroke-width', (2.6 * (1 - p) + 0.2) * (0.6 + 0.4 * e.k));
+    c.setAttribute('opacity', 0.6 * Math.pow(1 - p, 1.6) * e.k);
+  });
+
+  const gx = 960 + v.s * (ORIGIN[0] - v.cx), gy = 540 + v.s * (ORIGIN[1] - v.cy);
+  const glow = $('glow');
+  glow.setAttribute('cx', gx); glow.setAttribute('cy', gy);
+  const base = t < T.drawP[0] ? 0 : 0.35 * clamp((t - T.drawP[0]) / 0.6);
+  glow.setAttribute('opacity', clamp(base + zap * 0.5 + beat * 5) * (1 - fp));
+  glow.setAttribute('r', 700 + beat * 1800);
+
+  letters.forEach((g, i) => {
+    const p = easeOutExpo(prog(t, [T.words + i * 0.045, T.words + i * 0.045 + 0.85]));
+    g.wrap.setAttribute('transform', `translate(0 ${(1 - p) * 16})`);
+    g.wrap.setAttribute('opacity', clamp(p * 1.4));
+  });
+  if (period) {
+    if (!periodBox) { period.wrap.removeAttribute('transform'); periodBox = period.wrap.getBBox(); }
+    const cx = periodBox.x + periodBox.width / 2, cy = periodBox.y + periodBox.height / 2;
+    const p = prog(t, [T.period, T.period + 0.5]);
+    const sc = p <= 0 ? 0 : easeOutBack(p);
+    period.wrap.setAttribute('transform', `translate(${cx} ${cy}) scale(${Math.max(sc, 0.0001)}) translate(${-cx} ${-cy})`);
+    period.wrap.setAttribute('opacity', p > 0 ? 1 : 0);
+  }
+}
+
+window.__render = render;
+window.__duration = T.end;
+
+const params = new URLSearchParams(location.search);
+if (params.has('clean') || params.has('capture')) document.body.classList.add('clean');
+const sfx = $('sfx');
+let muted = params.has('mute'), t0 = null, raf = 0;
+
+function start() {
+  document.body.classList.add('started');
+  cancelAnimationFrame(raf);
+  if (!muted) { try { sfx.currentTime = 0; sfx.play().catch(() => {}); } catch (e) {} }
+  t0 = null;
+  const loop = now => {
+    if (t0 === null) t0 = now;
+    const t = (now - t0) / 1000;
+    render(t);
+    if (t < T.end) raf = requestAnimationFrame(loop);
+    else { window.dispatchEvent(new Event('intro:end')); if (window.parent !== window) window.parent.postMessage('intro:end', '*'); }
+  };
+  raf = requestAnimationFrame(loop);
+}
+
+render(params.has('t') ? Number(params.get('t')) : 0);
+if (params.has('embed')) {
+  muted = true;
+  document.body.classList.add('clean');
+  addEventListener('message', e => {
+    const m = e.data || {};
+    if (m.type === 'start') start();
+    else if (m.type === 'seek') { cancelAnimationFrame(raf); render(m.t); }
+  });
+} else if (!params.has('capture')) {
+  addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); if (!document.body.classList.contains('started')) start(); }
+    else if (e.key === 'r' || e.key === 'R') start();
+    else if (e.key === 'f' || e.key === 'F') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+    else if (e.key === 'm' || e.key === 'M') { muted = !muted; if (muted) sfx.pause(); }
+  });
+  addEventListener('click', () => { if (!document.body.classList.contains('started')) start(); });
+  if (params.has('autoplay')) start();
+}
+</script>
+</body>
+</html>

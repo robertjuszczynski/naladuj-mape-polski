@@ -5,10 +5,28 @@ Fork otwartego kodu portalu dane.gov.pl (https://dane.gov.pl/source-code/, `back
 - Prototyp: https://178-250-46-63.sslip.io/pl/aed (wersja angielska: /en/aed)
 - Panel dostawcy: https://admin.178-250-46-63.sslip.io
 - Ścieżka sprawdzenia krok po kroku: [JURY.md](JURY.md)
+- Klikalny prototyp bez internetu: `deliverables/prototyp/index.html`; prezentacja: `deliverables/prezentacja/` (HTML i PDF)
+
+## Materiały
+
+| Materiał | Link |
+|---|---|
+| Prezentacja (HTML, w przeglądarce; → / spacja – dalej, F – pełny ekran) | https://robertjuszczynski.github.io/naladuj-mape-polski/deliverables/prezentacja/prezentacja.html |
+| Prezentacja (PDF) | [deliverables/prezentacja/naladuj-mape-polski-prezentacja.pdf](deliverables/prezentacja/naladuj-mape-polski-prezentacja.pdf) |
+| Opis rozwiązania i kroki użytkownika (PDF) | [deliverables/prezentacja/naladuj-mape-polski-opis-rozwiazania.pdf](deliverables/prezentacja/naladuj-mape-polski-opis-rozwiazania.pdf) |
+| Wideo (2:13) | https://robertjuszczynski.github.io/naladuj-mape-polski/deliverables/prezentacja/wideo/naladuj-mape-polski-wideo.mp4 |
+| Klikalny prototyp (bez logowania) | https://robertjuszczynski.github.io/naladuj-mape-polski/deliverables/prototyp/index.html |
+| Działający portal z modułem AED | https://178-250-46-63.sslip.io/pl/aed |
+| Wzorcowy zakres danych (XLSX) | [deliverables/wzorcowy-zakres-danych-aed.xlsx](deliverables/wzorcowy-zakres-danych-aed.xlsx) |
+| Logo (JPG, PNG, PDF, SVG) | [deliverables/znak/logo/](deliverables/znak/logo/) |
+| Księga znaku (PDF) | [deliverables/znak/naladuj-mape-polski_ksiega-znaku.pdf](deliverables/znak/naladuj-mape-polski_ksiega-znaku.pdf) |
+| Raport dostępności WCAG | [deliverables/wcag/RAPORT.md](deliverables/wcag/RAPORT.md) |
 
 ## Kto udostępnia dane
 
-Dostawcą może być każdy dysponent AED z numerem REGON i profilem dostawcy w dane.gov.pl: urząd, szkoła, szpital, firma, galeria, OSP, fundacja. Udział jest dobrowolny, a każdy dostawca odpowiada za swój zbiór. Gmina może opublikować także AED innych dysponentów ze swojego terenu, jeśli ma ich zgodę lub podstawę prawną (kreator wymaga wtedy osobnego oświadczenia).
+Dostawcą może być każdy dysponent AED, który ma profil dostawcy w dane.gov.pl (instytucja albo firma, zwykle z numerem REGON): urząd, szkoła, szpital, firma, galeria, OSP, fundacja. Udział jest dobrowolny, a każdy dostawca odpowiada za swój zbiór. Gmina może opublikować także AED innych dysponentów ze swojego terenu, jeśli ma ich zgodę lub podstawę prawną (kreator wymaga wtedy osobnego oświadczenia).
+
+Osoba prywatna, która kupiła AED, nie ma profilu dostawcy, a adres jej domu to dane osobowe. Jej AED może trafić do wykazu przez gminę: właściciel zgłasza urządzenie gminie, a gmina publikuje je z oświadczeniem o zgodzie.
 
 ## Co zawiera rozwiązanie
 
@@ -108,6 +126,12 @@ Uruchomienie u siebie od zera:
 - Logowanie przez login.gov.pl istnieje w portalu, ale wymaga certyfikatu wydawanego przez COI; w demonstracji przycisk jest ukryty i używamy kont e-mail i hasło.
 - Publiczne serwery OpenStreetMap (Overpass) bywają przeciążone; gdy pobieranie się nie uda, portal spróbuje ponownie następnej nocy, a dotychczasowe dane zostają.
 - Część godzin dostępności zapisanych opisowo (np. „w godzinach otwarcia stacji metra”) nie daje się zamienić na format opening_hours; takie AED mają status „dostępność nieznana”.
+- Nie ma integracji z systemem dyspozytorskim 112. API (pole `verified`, dostępność na wskazaną godzinę, najbliższy AED) jest gotowe do podłączenia.
+- Dostępność sprawdziliśmy automatycznie (Lighthouse) na stronach publicznych. Kreatora w panelu dostawcy nie testowaliśmy, bo wymaga zalogowania; korzysta z szablonów panelu portalu.
+
+## Użycie AI (regulamin zadania §2.8)
+
+Przy pracy korzystaliśmy z asystenta AI (Claude) do analizy dokumentacji i kodu portalu, propozycji architektury, generowania i refaktoryzacji kodu (moduł Django, komponenty Angular, testy), konfiguracji serwera i szkiców materiałów. Głos lektora w filmie to syntezator ElevenLabs. Każdą zmianę przejrzał, uruchomił i zatwierdził autor. Decyzje autora: moduł w portalu zamiast kolejnej mapy, wykaz zbiorczy na wzór wykazu chronionych danych DGA, trzy koszyki danych zależnie od licencji, zakres 30 pól. Sygnet logo to uproszczony kontur Polski z danych Natural Earth (domena publiczna) z pulsem zaprojektowanym przez autora; napis złożono krojem Manrope (SIL OFL).
 
 ## Licencja
 
