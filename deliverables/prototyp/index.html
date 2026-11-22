@@ -106,6 +106,19 @@ document.addEventListener("click", function (e) {
   }
 }, true);
 
+var ORDER = ["p-home", "p-menu-top", "p-menu", "p-suggest", "p-nearest", "p-detail", "p-dotmap", "p-wykaz", "p-dataset",
+  "a-upload", "a-columns", "a-review", "a-review-blocked", "a-review-fix", "a-review-fix-hours", "a-license", "a-license-change", "a-done",
+  "a-single", "a-single-suggest", "a-single-filled", "a-tasks", "a-leads", "a-lead-form", "a-records", "a-register", "a-resource",
+  "a-acquisition", "a-sources"].filter(function (id) { return SCREENS[id]; });
+document.addEventListener("keydown", function (e) {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  var step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+  if (!step) return;
+  e.preventDefault();
+  var i = ORDER.indexOf(current());
+  location.hash = "#/" + ORDER[(i + step + ORDER.length) % ORDER.length];
+});
+
 window.addEventListener("hashchange", render);
 render();
 </script>

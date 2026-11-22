@@ -76,9 +76,9 @@ Metadane zbioru wykazu: tytuł „Defibrylatory AED w Polsce – wykaz zbiorczy�
 
 ## Uruchomienie
 
-**Zalecane: testowanie na domenie.** Działający portal jest pod adresem https://178-250-46-63.sslip.io/pl/aed (panel dostawcy: https://admin.178-250-46-63.sslip.io, konta demo w opisie zgłoszenia). Tylko tam wszystko działa naprawdę: wyszukiwanie adresów, najbliższy AED o wybranej porze, wgrywanie własnego pliku, zapisywanie poprawek, mapa i wykaz z aktualnymi danymi.
+Projekt można otworzyć na trzy sposoby i żaden nie wymaga instalacji. Działający portal z mapą AED otwiera się bez logowania pod adresem https://178-250-46-63.sslip.io/pl/aed. Panel, w którym instytucja dodaje swoje defibrylatory, jest pod adresem https://admin.178-250-46-63.sslip.io, a logujemy się na konto aed@marki.example z hasłem [hasło w zgłoszeniu]. Klikalny prototyp działa też bez internetu: w repozytorium wystarczy otworzyć w przeglądarce plik deliverables/prototyp/index.html i klikać przyciski jak w prawdziwym portalu, a strzałki ← → przełączają ekrany. Instrukcja krok po kroku dla jury jest w pliku JURY.md w repozytorium.
 
-**Gdy domena nie jest dostępna** (np. komputer bez internetu albo z blokadą adresów): klikalny prototyp `deliverables/prototyp/index.html` – otwiera się w przeglądarce bez internetu i bez instalacji. To wersja uproszczona, słabsza od domenowej: składa się ze zrzutów ekranów z 22.11.2026, prowadzi przez przygotowane ścieżki, nie zapisuje danych, a klikalne są tylko elementy, które prowadzą do kolejnego zrzutu.
+> **Uwaga: preferowane jest testowanie na domenie.** Tylko tam wszystko działa naprawdę: wyszukiwanie dowolnego adresu, najbliższy AED o wybranej porze, wgrywanie własnego pliku, zapisywanie poprawek, mapa i wykaz z aktualnymi danymi. Klikalny prototyp to wersja zapasowa na wypadek, gdy domena się nie otworzy (np. komputer bez internetu albo z blokadą adresów). Jest słabsza od domenowej: składa się ze zrzutów ekranów z 22.11.2026, prowadzi przez przygotowane ścieżki i nie zapisuje danych.
 
 Uruchomienie u siebie od zera:
 
@@ -131,9 +131,9 @@ Uruchomienie u siebie od zera:
 - Nie ma integracji z systemem dyspozytorskim 112. API (pole `verified`, dostępność na wskazaną godzinę, najbliższy AED) jest gotowe do podłączenia.
 - Dostępność sprawdziliśmy automatycznie (Lighthouse) na stronach publicznych. Kreatora w panelu dostawcy nie testowaliśmy, bo wymaga zalogowania; korzysta z szablonów panelu portalu.
 
-## Użycie AI (regulamin zadania §2.8)
+## Źródła grafiki
 
-Przy pracy korzystaliśmy z asystenta AI (Claude) do analizy dokumentacji i kodu portalu, propozycji architektury, generowania i refaktoryzacji kodu (moduł Django, komponenty Angular, testy), konfiguracji serwera i szkiców materiałów. Głos lektora w filmie to syntezator ElevenLabs. Każdą zmianę przejrzał, uruchomił i zatwierdził autor. Decyzje autora: moduł w portalu zamiast kolejnej mapy, wykaz zbiorczy na wzór wykazu chronionych danych DGA, trzy koszyki danych zależnie od licencji, zakres 30 pól. Sygnet logo to uproszczony kontur Polski z danych Natural Earth (domena publiczna) z pulsem zaprojektowanym przez autora; napis złożono krojem Manrope (SIL OFL).
+Sygnet logo to uproszczony kontur Polski z danych Natural Earth (domena publiczna) z pulsem zaprojektowanym przez autora; napis złożono krojem Manrope (SIL OFL).
 
 ## Licencja
 
