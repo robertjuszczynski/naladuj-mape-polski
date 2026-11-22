@@ -23,7 +23,7 @@
             </dl>
             <p class="aed-muted">
               {{ 'Aed.Source' | translate }}
-              <a [routerLink]="['/!dataset', aed.dataset.id + ',' + aed.dataset.slug] | localize">{{
+              <a [routerLink]="['/!dataset', '!' + aed.dataset.id + ',' + aed.dataset.slug] | localize">{{
                 aed.dataset.title
               }}</a>
               ({{ aed.institution }}).

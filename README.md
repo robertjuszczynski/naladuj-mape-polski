@@ -76,7 +76,9 @@ Metadane zbioru wykazu: tytuł „Defibrylatory AED w Polsce – wykaz zbiorczy�
 
 ## Uruchomienie
 
-Najszybciej: działający portal pod adresem https://178-250-46-63.sslip.io/pl/aed (panel: https://admin.178-250-46-63.sslip.io, konta demo w opisie zgłoszenia). 
+**Zalecane: testowanie na domenie.** Działający portal jest pod adresem https://178-250-46-63.sslip.io/pl/aed (panel dostawcy: https://admin.178-250-46-63.sslip.io, konta demo w opisie zgłoszenia). Tylko tam wszystko działa naprawdę: wyszukiwanie adresów, najbliższy AED o wybranej porze, wgrywanie własnego pliku, zapisywanie poprawek, mapa i wykaz z aktualnymi danymi.
+
+**Gdy domena nie jest dostępna** (np. komputer bez internetu albo z blokadą adresów): klikalny prototyp `deliverables/prototyp/index.html` – otwiera się w przeglądarce bez internetu i bez instalacji. To wersja uproszczona, słabsza od domenowej: składa się ze zrzutów ekranów z 22.11.2026, prowadzi przez przygotowane ścieżki, nie zapisuje danych, a klikalne są tylko elementy, które prowadzą do kolejnego zrzutu.
 
 Uruchomienie u siebie od zera:
 

@@ -49,7 +49,7 @@
       {{ 'Aed.MapLead' | translate }}
       <a [routerLink]="['/!aed', '!wykaz'] | localize">{{ 'Aed.CtaRegister' | translate }}</a>
       ·
-      <a *ngIf="vm.stats?.national_dataset as z" [routerLink]="['/!dataset', z.id + ',' + z.slug] | localize">{{
+      <a *ngIf="vm.stats?.national_dataset as z" [routerLink]="['/!dataset', '!' + z.id + ',' + z.slug] | localize">{{
         'Aed.CtaDownload' | translate
       }}</a>
     </p>
@@ -194,7 +194,7 @@
               <li *ngFor="let p of n.data.open; let i = index">
                 <span class="aed-nearest__num" aria-hidden="true">{{ i + 1 }}</span>
                 <div>
-                  <a [routerLink]="[route, p.id] | localize" class="aed-nearest__name">{{ p.name || 'AED' }}</a>
+                  <a [routerLink]="[route, '!' + p.id] | localize" class="aed-nearest__name">{{ p.name || 'AED' }}</a>
                   <span class="aed-nearest__dist">{{
                     'Aed.Nearest.Walk' | translate: { distance: distance(p.distance_m), min: p.walk_min }
                   }}</span>
@@ -254,7 +254,7 @@
             [attr.aria-busy]="loading()"
             [attr.aria-label]="'Aed.ListLabel' | translate">
             <li *ngFor="let p of visible()">
-              <a [routerLink]="[route, p.id] | localize" class="aed-list__item">
+              <a [routerLink]="[route, '!' + p.id] | localize" class="aed-list__item">
                 <span class="aed-dot" [attr.data-a]="p.availability" aria-hidden="true"></span>
                 <span class="aed-list__text">
                   <strong>{{ p.name || 'AED' }}</strong>

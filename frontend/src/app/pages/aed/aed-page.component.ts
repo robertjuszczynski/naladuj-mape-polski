@@ -265,7 +265,7 @@ export class AedPageComponent implements OnInit {
   }
 
   open(p: AedBrief): void {
-    this.router.navigate(this.localize.translateRoute([AED_ROUTE, p.id]) as unknown[]);
+    this.router.navigate(this.localize.translateRoute([AED_ROUTE, '!' + p.id]) as unknown[]);
   }
 
   locate(p: AedBrief): void {

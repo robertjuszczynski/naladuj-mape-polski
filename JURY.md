@@ -5,6 +5,8 @@ Rozwiązanie działa wewnątrz portalu dane.gov.pl (fork otwartego kodu portalu 
 Portal: https://178-250-46-63.sslip.io
 Panel dostawcy: https://admin.178-250-46-63.sslip.io (konto: aed@marki.example, hasło w zgłoszeniu)
 
+Najlepiej sprawdzać na tych adresach – tylko tam wszystko działa naprawdę. Gdy domena jest niedostępna, otwórz klikalny prototyp `deliverables/prototyp/index.html` (bez internetu). To wersja uproszczona: zrzuty z 22.11.2026, przygotowane ścieżki, bez zapisywania danych.
+
 Bez dostępu do serwera: klikalny prototyp `deliverables/prototyp/index.html` (otwiera się w przeglądarce bez internetu, 18 ekranów z działającego portalu, te same ścieżki co niżej).
 
 Ścieżka urzędnika:

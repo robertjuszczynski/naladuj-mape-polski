@@ -55,7 +55,8 @@ class AggregatedAedInfoAdmin(admin.ModelAdmin):
     def sources_report(self, obj):
         rows = format_html_join(
             "",
-            '<tr><td><a href="{}">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>',
+            '<tr><td><a href="{}">{}</a></td><td>{}</td><td style="white-space:nowrap">{}</td>'
+            '<td style="text-align:right">{}</td><td style="text-align:right">{}</td><td style="white-space:nowrap">{}</td></tr>',
             (
                 (
                     reverse("admin:resources_resource_change", args=[s["resource_id"]]),
@@ -70,8 +71,9 @@ class AggregatedAedInfoAdmin(admin.ModelAdmin):
             ),
         )
         return format_html(
-            "<table><thead><tr><th>Zasób</th><th>Dostawca</th><th>Licencja</th><th>Wierszy</th>"
-            "<th>W wykazie</th><th>Stan</th></tr></thead><tbody>{}</tbody></table>",
+            '<table style="width:100%"><thead><tr><th>Zasób</th><th>Dostawca</th><th style="white-space:nowrap">Licencja</th>'
+            '<th style="white-space:nowrap">Wierszy</th><th style="white-space:nowrap">W wykazie</th>'
+            '<th style="white-space:nowrap">Stan</th></tr></thead><tbody>{}</tbody></table>',
             rows,
         )
 
@@ -92,7 +94,8 @@ class AggregatedAedInfoAdmin(admin.ModelAdmin):
             "<p>{} przypadków: ten sam AED (do 30 m albo ten sam identyfikator) opisany przez źródła inaczej "
             "albo pola jednego rekordu, które sobie przeczą. Do wykazu trafia wersja pierwszego źródła; "
             "dostawca powinien ustalić, która jest aktualna.</p>"
-            "<table><thead><tr><th>AED</th><th>Drugie źródło</th><th>Sprzeczność</th></tr></thead><tbody>{}</tbody></table>",
+            '<table style="width:100%"><thead><tr><th>AED</th><th style="white-space:nowrap">Drugie źródło</th>'
+            "<th>Sprzeczność</th></tr></thead><tbody>{}</tbody></table>",
             len(obj.conflicts),
             rows,
         )

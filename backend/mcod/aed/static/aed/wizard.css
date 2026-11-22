@@ -1461,3 +1461,18 @@ headings, so spacing here comes from flex/grid gaps on one 8px scale (8 inside a
 .aed-wrap.aed-tool.aed-hours-box .aed-hint[hidden] {
   display: none;
 }
+.aed-wrap .aed-edit label.aed-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 400;
+}
+.aed-wrap .aed-edit label.aed-check input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}

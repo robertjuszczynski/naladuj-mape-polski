@@ -5,364 +5,110 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Naładuj mapę Polski – klikalny prototyp</title>
 <style>
-:root {
-  --navy: #0b2545;
-  --red: #d62839;
-  --ink: #1d2b3f;
-  --muted: #5a6a80;
-  --line: #dde3ec;
-}
-* { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; }
-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #1b2433;
-  color: var(--ink);
-  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  overflow: hidden;
-}
-button { font: inherit; }
-
-/* The real screen, as large as the window allows; clickable areas sit on top in percent */
-.screen {
-  position: relative;
-  width: min(100vw, calc(100vh * var(--ratio)));
-  aspect-ratio: var(--ratio);
-  background: #fff;
-}
-.screen img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+html, body { margin: 0; padding: 0; background: #d9dee6; }
+body { min-width: max-content; }
+.page { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 0 40px rgba(11, 37, 69, 0.18); }
+.page img { display: block; user-select: none; -webkit-user-drag: none; }
 .hot {
   position: absolute;
-  padding: 0;
+  display: block;
   border: 2px solid transparent;
   border-radius: 6px;
-  background: transparent;
   cursor: pointer;
-  transition: border-color 0.12s, background-color 0.12s;
+  transition: border-color 0.12s, background-color 0.12s, box-shadow 0.12s;
 }
 .hot:hover, .hot:focus-visible {
-  border-color: rgba(214, 40, 57, 0.7);
-  background: rgba(214, 40, 57, 0.06);
+  border-color: #d62839;
+  background: rgba(214, 40, 57, 0.08);
+  box-shadow: 0 0 0 3px rgba(214, 40, 57, 0.18);
   outline: none;
 }
-.screen.reveal .hot { animation: reveal 0.9s ease-out 2; }
+.page.reveal .hot { animation: reveal 0.9s ease-out 2; }
 @keyframes reveal {
   0%, 100% { border-color: transparent; background: transparent; }
-  40% { border-color: var(--red); background: rgba(214, 40, 57, 0.14); }
+  40% { border-color: #d62839; background: rgba(214, 40, 57, 0.16); }
 }
-
-/* Small control in the corner: position, arrows, instructions */
-.pill {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(11, 37, 69, 0.88);
-  color: #fff;
-  font-size: 13px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-  opacity: 0.55;
-  transition: opacity 0.2s;
-}
-.pill:hover, .pill:focus-within { opacity: 1; }
-.pill button {
-  min-width: 34px;
-  height: 32px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: #fff;
-  cursor: pointer;
-}
-.pill button:hover { background: rgba(255, 255, 255, 0.14); }
-.pill span { min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
-.pill .sep { width: 1px; min-width: 1px; height: 18px; margin: 0 4px; background: rgba(255, 255, 255, 0.3); }
-
-/* Instructions for the jury */
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  overflow-y: auto;
-  padding: 40px 16px;
-  background: rgba(17, 24, 36, 0.72);
-}
-.overlay[hidden] { display: none; }
-.doc {
-  position: relative;
-  max-width: 820px;
-  margin: 0 auto;
-  padding: 32px 36px;
-  border-radius: 12px;
-  background: #fff;
-}
-.doc h2 { margin: 0 0 8px; color: var(--navy); font-size: 22px; }
-.doc h3 { margin: 28px 0 8px; color: var(--navy); font-size: 16px; }
-.doc ol, .doc ul { padding-left: 22px; }
-.doc li + li { margin-top: 6px; }
-.doc a { color: var(--navy); font-weight: 700; }
-.doc code { padding: 1px 6px; border-radius: 4px; background: #eef1f6; font-size: 13px; }
-.doc .note { padding: 12px 14px; border-left: 3px solid var(--red); background: #fdf2f3; }
-.doc .close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  height: 36px;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--navy);
-  font-weight: 700;
-  cursor: pointer;
-}
-.doc .start {
-  margin-top: 16px;
-  height: 42px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--red);
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .screen.reveal .hot { animation: none; border-color: var(--red); }
+  .page.reveal .hot { animation: none; border-color: #d62839; }
 }
 </style>
 </head>
 <body>
-<div class="screen" id="screen"><img id="shot" src="ekrany/01-start.jpg" alt="Strona akcji w dane.gov.pl"></div>
-
-<div class="pill" role="toolbar" aria-label="Nawigacja prototypu">
-  <button type="button" id="prev" aria-label="Poprzedni ekran">‹</button>
-  <span id="count"></span>
-  <button type="button" id="next" aria-label="Następny ekran">›</button>
-  <i class="sep" aria-hidden="true"></i>
-  <button type="button" id="help">Instrukcje</button>
-</div>
-
-<div class="overlay" id="overlay" hidden>
-  <article class="doc" role="dialog" aria-modal="true" aria-labelledby="howto-title">
-    <button type="button" class="close">Zamknij ✕</button>
-    <h2 id="howto-title">[Opcjonalne] Instrukcje jak otworzyć projekt</h2>
-    <p>Ten prototyp działa bez internetu i bez instalacji. Pokazuje prawdziwe ekrany modułu AED w portalu dane.gov.pl (fork otwartego kodu portalu). Jeśli macie dostęp do internetu, możecie też przeklikać działający portal – jest łatwiej, bo wszystko działa naprawdę.</p>
-
-    <h3>1. Działający portal (wymaga internetu)</h3>
-    <ul>
-      <li>Strona akcji i mapa: <a href="https://178-250-46-63.sslip.io/pl/aed" target="_blank" rel="noopener">178-250-46-63.sslip.io/pl/aed</a></li>
-      <li>Wykaz AED w tabeli (jak wykaz DGA): <a href="https://178-250-46-63.sslip.io/pl/aed/wykaz" target="_blank" rel="noopener">178-250-46-63.sslip.io/pl/aed/wykaz</a></li>
-      <li>Panel dostawcy: <a href="https://admin.178-250-46-63.sslip.io" target="_blank" rel="noopener">admin.178-250-46-63.sslip.io</a></li>
-      <li>API wykazu: <code>https://api.178-250-46-63.sslip.io/aed/aggregated</code> (ten sam format co <code>/dga-aggregated</code>)</li>
-    </ul>
-
-    <h3>2. Konta demonstracyjne</h3>
-    <ul>
-      <li>Dostawca danych – Urząd Miasta Marki: [login i hasło – w opisie zgłoszenia]</li>
-      <li>Administrator (Ministerstwo, „Pozyskiwanie danych”): [login i hasło – w opisie zgłoszenia]</li>
-    </ul>
-
-    <h3>3. Co warto sprawdzić (ok. 10 minut)</h3>
-    <ol>
-      <li>Na stronie akcji wpiszcie adres zdarzenia, np. „Warszawa, Nowy Świat 1” – portal pokaże najbliższe AED dostępne o tej porze.</li>
-      <li>Otwórzcie „Wykaz AED w tabeli” – to zasób dane.gov.pl, pokazany tymi samymi komponentami co wykaz chronionych danych DGA.</li>
-      <li>Zalogujcie się jako Urząd Miasta Marki i wgrajcie plik z <code>backend/mcod/aed/data/testowe/</code> (np. <code>06-mieszany-dobre-i-zle.csv</code>) – kreator dopasuje kolumny i poprawi błędy.</li>
-      <li>W „Dane → Resources” otwórzcie dowolny zasób z listą AED i ustawcie pole „Wykaz zbiorczy” – po chwili zasób jest w wykazie (raport: „Wykaz zbiorczy AED”).</li>
-      <li>„AED do potwierdzenia”: AED z OpenStreetMap na terenie Marek – „To nasz” dodaje je jako dane gminy.</li>
-    </ol>
-
-    <h3>4. Kod i uruchomienie lokalne</h3>
-    <ul>
-      <li>Repozytorium: [link do repozytorium]</li>
-      <li><code>README.md</code> – co zbudowaliśmy i jak uruchomić portal lokalnie (docker compose).</li>
-      <li><code>JURY.md</code> – scenariusz testu krok po kroku.</li>
-    </ul>
-
-    <p class="note">Gdyby portal nie otworzył się na Waszym komputerze (np. blokada sieci albo domeny), ten prototyp pokazuje te same ekrany. Klikajcie w przyciski na ekranach, tak jak w portalu. Kliknięcie obok podświetli klikalne miejsca, a strzałki ← → przełączają ekrany.</p>
-    <button type="button" class="start">Wróć do prototypu od początku</button>
-  </article>
-</div>
-
+<main class="page" id="page"><img id="shot" alt=""></main>
 <script>
-// Areas are in pixels of each screenshot: [x, y, width, height]; "go" is the screen number a click opens (0 = instructions).
-var A = [1519, 784], B = [1568, 758];
-
-// Admin side menu, visible on panel screens that are not scrolled
-var MENU = [
-  { r: [25, 141, 96, 15], go: 7, label: "Wgraj plik z AED" },
-  { r: [25, 163, 92, 15], go: 14, label: "Dodaj jeden AED" },
-  { r: [25, 185, 86, 15], go: 16, label: "Do sprawdzenia" },
-  { r: [25, 207, 120, 15], go: 17, label: "AED do potwierdzenia" },
-  { r: [25, 250, 110, 15], go: 13, label: "Wykaz zbiorczy AED" }
-];
-// Wizard steps on wizard screens
-var STEPS = [
-  { r: [185, 142, 56, 22], go: 7, label: "Krok: plik" },
-  { r: [287, 142, 82, 22], go: 8, label: "Krok: kolumny" },
-  { r: [419, 142, 102, 22], go: 9, label: "Krok: sprawdzenie" },
-  { r: [571, 142, 80, 22], go: 11, label: "Krok: licencja" }
-];
-// Public portal banner on public screens that are not scrolled
-var BANNER_B = [
-  { r: [1287, 19, 162, 36], go: 7, label: "Dodaj dane o AED" },
-  { r: [1463, 27, 84, 20], go: 2, label: "Zobacz mapę" }
-];
-var BANNER_A = [
-  { r: [1190, 22, 191, 42], go: 7, label: "Dodaj dane o AED" },
-  { r: [1396, 34, 96, 20], go: 2, label: "Zobacz mapę" },
-  { r: [691, 240, 83, 22], go: 1, label: "Mapa AED" }
-];
-
-var SCREENS = [
-  { img: "01-start.jpg", size: B, title: "Strona akcji w dane.gov.pl", hot: BANNER_B.concat([
-    { r: [239, 507, 162, 38], go: 7, label: "Dodaj dane o AED" },
-    { r: [412, 507, 210, 38], go: 7, label: "Jak zostać dostawcą danych" },
-    { r: [239, 607, 354, 85], go: 5, label: "Wykaz AED" },
-    { r: [975, 607, 354, 85], go: 2, label: "AED dostępne teraz" }
-  ]) },
-  { img: "02-adres-zdarzenia.jpg", size: A, title: "Adres zdarzenia", hot: [
-    { r: [143, 507, 231, 50], go: 3, label: "Wybierz podpowiedź adresu" },
-    { r: [382, 457, 91, 46], go: 3, label: "Znajdź" },
-    { r: [213, 86, 158, 20], go: 5, label: "Wykaz AED w tabeli" },
-    { r: [382, 86, 186, 20], go: 6, label: "Pobierz zbiór ogólnopolski" }
-  ] },
-  { img: "03-najblizszy-aed.jpg", size: A, title: "Najbliższe dostępne AED", hot: [
-    { r: [168, 533, 60, 26], go: 4, label: "Kopiuj" },
-    { r: [163, 297, 320, 22], go: 4, label: "Najbliższy AED" },
-    { r: [163, 594, 194, 22], go: 4, label: "Drugi AED" }
-  ] },
-  { img: "04-mapa-kropek.jpg", size: A, title: "Ile mapy już naładowaliśmy?", hot: [
-    { r: [1085, 285, 240, 245], go: 5, label: "Województwo mazowieckie" },
-    { r: [426, 136, 278, 38], go: 5, label: "Bateria mazowieckiego" }
-  ] },
-  { img: "05-wykaz.jpg", size: A, title: "Wykaz AED", hot: BANNER_A.concat([
-    { r: [134, 737, 400, 47], go: 6, label: "Tabela" },
-    { r: [206, 506, 112, 29], go: 6, label: "Pobierz CSV" },
-    { r: [371, 307, 74, 20], go: 1, label: "Mapa AED" }
-  ]) },
-  { img: "06-wykaz-tabela.jpg", size: A, title: "Tabela wykazu", hot: [
-    { r: [150, 533, 1219, 50], go: 7, label: "Kolumny wzorcowego zakresu" },
-    { r: [206, 152, 112, 29], go: 7, label: "Pobierz CSV" }
-  ] },
-  { img: "07-wgraj-plik.jpg", size: B, title: "Wgranie pliku", hot: MENU.concat([
-    { r: [980, 646, 116, 33], go: 8, label: "Wczytaj plik" },
-    { r: [216, 393, 880, 176], go: 8, label: "Wybierz plik" }
-  ]) },
-  { img: "08-kolumny.jpg", size: B, title: "Dopasowanie kolumn", hot: MENU.concat(STEPS, [
-    { r: [779, 361, 317, 33], go: 9, label: "Dopasowane pole" }
-  ]) },
-  { img: "09-sprawdzenie.jpg", size: B, title: "Sprawdzenie danych", hot: MENU.concat(STEPS, [
-    { r: [528, 671, 92, 20], go: 10, label: "Popraw ręcznie" },
-    { r: [665, 508, 109, 30], go: 10, label: "Wstrzymane" }
-  ]) },
-  { img: "10-popraw-recznie.jpg", size: B, title: "Ręczna poprawka", hot: [
-    { r: [528, 628, 263, 37], go: 11, label: "Godziny dostępności" },
-    { r: [528, 154, 92, 18], go: 9, label: "Zwiń poprawkę" }
-  ] },
-  { img: "11-licencja.jpg", size: B, title: "Licencja i publikacja", hot: MENU.concat(STEPS, [
-    { r: [929, 474, 167, 33], go: 12, label: "Opublikuj w dane.gov.pl" },
-    { r: [216, 474, 121, 33], go: 9, label: "Sprawdzenie" }
-  ]) },
-  { img: "12-pole-wykaz-zbiorczy.jpg", size: B, title: "Pole „Wykaz zbiorczy”", hot: [
-    { r: [367, 587, 151, 22], go: 13, label: "Wykaz zbiorczy" },
-    { r: [1412, 17, 127, 33], go: 13, label: "Zapisz" }
-  ] },
-  { img: "13-raport-wykazu.jpg", size: B, title: "Raport wykazu zbiorczego", hot: MENU.concat([
-    { r: [350, 184, 179, 16], go: 5, label: "Defibrylatory AED w Polsce (CSV)" },
-    { r: [350, 299, 244, 16], go: 12, label: "Zasób Urzędu Miasta Marki" }
-  ]) },
-  { img: "14-dodaj-jeden-aed.jpg", size: B, title: "Dodaj jeden AED", hot: [
-    { r: [979, 253, 103, 28], go: 15, label: "Zdjęcie lotnicze" },
-    { r: [645, 358, 24, 36], go: 15, label: "Pinezka" },
-    { r: [219, 168, 874, 38], go: 15, label: "Adres" }
-  ] },
-  { img: "15-dodaj-jeden-godziny.jpg", size: B, title: "Godziny i daty", hot: [
-    { r: [978, 735, 115, 23], go: 16, label: "Opublikuj AED" },
-    { r: [219, 68, 263, 37], go: 16, label: "Dostępność" }
-  ] },
-  { img: "16-do-sprawdzenia.jpg", size: B, title: "Do sprawdzenia", hot: MENU.concat([
-    { r: [1035, 345, 58, 32], go: 17, label: "Zapisz" }
-  ]) },
-  { img: "17-aed-do-potwierdzenia.jpg", size: B, title: "AED do potwierdzenia", hot: MENU.concat([
-    { r: [778, 408, 156, 30], go: 18, label: "To nasz – sprawdź i dodaj" },
-    { r: [778, 528, 156, 30], go: 18, label: "To nasz – sprawdź i dodaj" },
-    { r: [778, 648, 156, 30], go: 18, label: "To nasz – sprawdź i dodaj" }
-  ]) },
-  { img: "18-to-nasz.jpg", size: B, title: "„To nasz”", hot: MENU.concat([
-    { r: [645, 570, 24, 40], go: 0, label: "Pinezka AED" },
-    { r: [219, 380, 874, 38], go: 0, label: "Adres" }
-  ]) }
-];
-
-var current = 1;
-var screen = document.getElementById("screen");
+var SCREENS = {"p-home": {"img": "ekrany/p-home.jpg", "w": 1384, "h": 3627, "title": "Mapa AED – Naładuj mapę Polski", "dismiss": "", "family": "p-home", "hot": [[1050, 22, 193, 44, "p-menu-top", "Dodaj dane o AED"], [134, 677, 193, 46, "p-menu", "Dodaj dane o AED"], [155, 1446, 235, 46, "p-suggest", ""], [398, 1446, 93, 46, "p-suggest", "Znajdź"], [155, 1502, 195, 46, "p-nearest", "Użyj mojej lokalizacji"], [695, 2083, 555, 527, "p-dotmap", "Mapa Polski z kropek"], [398, 1068, 188, 19, "p-dataset", "Pobierz zbiór ogólnopolski"], [1259, 32, 97, 24, "#977", "Zobacz mapę"], [539, 226, 84, 72, "p-home", "Mapa AED"], [339, 677, 250, 46, "#3214", "Jak zostać dostawcą danych"], [227, 1068, 160, 19, "p-wykaz", "Wykaz AED w tabeli"], [419, 2668, 147, 19, "a-upload", "Dodaj dane o AED"], [134, 3107, 189, 46, "a-single", "Dodaj AED w minutę"], [347, 3118, 158, 24, "a-upload", "Wgraj plik (wiele AED)"]]}, "p-menu": {"img": "ekrany/p-menu.jpg", "w": 1384, "h": 3627, "title": "Mapa AED – Naładuj mapę Polski", "dismiss": "p-home", "family": "p-home", "hot": [[1050, 22, 193, 44, "p-menu-top", "Dodaj dane o AED"], [155, 1446, 235, 46, "p-suggest", ""], [398, 1446, 93, 46, "p-suggest", "Znajdź"], [155, 1502, 195, 46, "p-nearest", "Użyj mojej lokalizacji"], [695, 2083, 555, 527, "p-dotmap", "Mapa Polski z kropek"], [398, 1068, 188, 19, "p-dataset", "Pobierz zbiór ogólnopolski"], [1259, 32, 97, 24, "#977", "Zobacz mapę"], [539, 226, 84, 72, "p-home", "Mapa AED"], [339, 677, 250, 46, "#3214", "Jak zostać dostawcą danych"], [227, 1068, 160, 19, "p-wykaz", "Wykaz AED w tabeli"], [419, 2668, 147, 19, "a-upload", "Dodaj dane o AED"], [134, 3107, 189, 46, "a-single", "Dodaj AED w minutę"], [347, 3118, 158, 24, "a-upload", "Wgraj plik (wiele AED)"], [134, 677, 193, 46, "p-home", "Dodaj dane o AED"], [141, 736, 266, 67, "a-single", "Dodaj jeden AED"], [141, 803, 266, 67, "a-upload", "Dodaj wiele AED"]]}, "p-menu-top": {"img": "ekrany/p-menu-top.jpg", "w": 1384, "h": 3627, "title": "Mapa AED – Naładuj mapę Polski", "dismiss": "p-home", "family": "p-home", "hot": [[134, 677, 193, 46, "p-menu", "Dodaj dane o AED"], [155, 1446, 235, 46, "p-suggest", ""], [398, 1446, 93, 46, "p-suggest", "Znajdź"], [155, 1502, 195, 46, "p-nearest", "Użyj mojej lokalizacji"], [695, 2083, 555, 527, "p-dotmap", "Mapa Polski z kropek"], [398, 1068, 188, 19, "p-dataset", "Pobierz zbiór ogólnopolski"], [1259, 32, 97, 24, "#977", "Zobacz mapę"], [539, 226, 84, 72, "p-home", "Mapa AED"], [339, 677, 250, 46, "#3214", "Jak zostać dostawcą danych"], [227, 1068, 160, 19, "p-wykaz", "Wykaz AED w tabeli"], [419, 2668, 147, 19, "a-upload", "Dodaj dane o AED"], [134, 3107, 189, 46, "a-single", "Dodaj AED w minutę"], [347, 3118, 158, 24, "a-upload", "Wgraj plik (wiele AED)"], [1050, 22, 193, 44, "p-home", "Dodaj dane o AED"], [970, 79, 266, 67, "a-single", "Dodaj jeden AED"], [970, 146, 266, 67, "a-upload", "Dodaj wiele AED"]]}, "p-suggest": {"img": "ekrany/p-suggest.jpg", "w": 1384, "h": 3627, "title": "Mapa AED – Naładuj mapę Polski", "dismiss": "p-home", "family": "p-home", "hot": [[1050, 22, 193, 44, "p-menu-top", "Dodaj dane o AED"], [134, 677, 193, 46, "p-menu", "Dodaj dane o AED"], [155, 1446, 235, 46, "p-suggest", ""], [155, 1502, 195, 46, "p-nearest", "Użyj mojej lokalizacji"], [695, 2083, 555, 527, "p-dotmap", "Mapa Polski z kropek"], [398, 1068, 188, 19, "p-dataset", "Pobierz zbiór ogólnopolski"], [1259, 32, 97, 24, "#977", "Zobacz mapę"], [539, 226, 84, 72, "p-home", "Mapa AED"], [339, 677, 250, 46, "#3214", "Jak zostać dostawcą danych"], [227, 1068, 160, 19, "p-wykaz", "Wykaz AED w tabeli"], [419, 2668, 147, 19, "a-upload", "Dodaj dane o AED"], [134, 3107, 189, 46, "a-single", "Dodaj AED w minutę"], [347, 3118, 158, 24, "a-upload", "Wgraj plik (wiele AED)"], [156, 1501, 233, 44, "p-nearest", "ul. Nowy Świat 1, Warszawa"], [398, 1446, 93, 46, "p-nearest", "Znajdź"]]}, "p-nearest": {"img": "ekrany/p-nearest.jpg", "w": 1384, "h": 3627, "title": "Mapa AED – Naładuj mapę Polski", "dismiss": "", "family": "p-home", "hot": [[1050, 22, 193, 44, "p-menu-top", "Dodaj dane o AED"], [134, 677, 193, 46, "p-menu", "Dodaj dane o AED"], [695, 2083, 555, 527, "p-dotmap", "Mapa Polski z kropek"], [398, 1068, 188, 19, "p-dataset", "Pobierz zbiór ogólnopolski"], [1259, 32, 97, 24, "#977", "Zobacz mapę"], [539, 226, 84, 72, "p-home", "Mapa AED"], [339, 677, 250, 46, "#3214", "Jak zostać dostawcą danych"], [227, 1068, 160, 19, "p-wykaz", "Wykaz AED w tabeli"], [419, 2668, 147, 19, "a-upload", "Dodaj dane o AED"], [134, 3107, 189, 46, "a-single", "Dodaj AED w minutę"], [347, 3118, 158, 24, "a-upload", "Wgraj plik (wiele AED)"], [445, 1138, 63, 24, "p-home", "Wyczyść"], [176, 1453, 332, 24, "p-detail", "Urząd Dzielnicy Śródmieście"], [176, 1754, 332, 24, "p-detail", "Ośrodek Sportu i Rekreacji"], [176, 1854, 332, 24, "p-detail", "Pałac Kultury i Nauki"]]}, "p-dotmap": {"img": "ekrany/p-dotmap.jpg", "w": 1384, "h": 3627, "title": "Mapa AED – Naładuj mapę Polski", "dismiss": "p-home", "family": "p-home", "hot": [[1050, 22, 193, 44, "p-menu-top", "Dodaj dane o AED"], [134, 677, 193, 46, "p-menu", "Dodaj dane o AED"], [155, 1446, 235, 46, "p-suggest", ""], [398, 1446, 93, 46, "p-suggest", "Znajdź"], [155, 1502, 195, 46, "p-nearest", "Użyj mojej lokalizacji"], [695, 2083, 555, 527, "p-dotmap", "Mapa Polski z kropek"], [398, 1068, 188, 19, "p-dataset", "Pobierz zbiór ogólnopolski"], [1259, 32, 97, 24, "#977", "Zobacz mapę"], [539, 226, 84, 72, "p-home", "Mapa AED"], [339, 677, 250, 46, "#3214", "Jak zostać dostawcą danych"], [227, 1068, 160, 19, "p-wykaz", "Wykaz AED w tabeli"], [419, 2668, 147, 19, "a-upload", "Dodaj dane o AED"], [134, 3107, 189, 46, "a-single", "Dodaj AED w minutę"], [347, 3118, 158, 24, "a-upload", "Wgraj plik (wiele AED)"]]}, "a-upload": {"img": "ekrany/a-upload.jpg", "w": 1384, "h": 960, "title": "Wgraj plik z AED", "dismiss": "", "family": "a-upload", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [1165, 767, 138, 40, "a-columns", "Wczytaj plik"], [257, 467, 1046, 210, "a-columns", "Wybierz plik"]]}, "a-columns": {"img": "ekrany/a-columns.jpg", "w": 1384, "h": 1189, "title": "Dopasowanie kolumn", "dismiss": "", "family": "a-columns", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [1150, 997, 153, 40, "a-review", "Sprawdź dane"], [220, 168, 121, 28, "a-upload", "Plik"], [497, 168, 182, 28, "a-review", "Sprawdzenie"], [257, 997, 115, 40, "a-upload", "Inny plik"]]}, "a-review": {"img": "ekrany/a-review.jpg", "w": 1384, "h": 2434, "title": "Sprawdzenie danych", "dismiss": "", "family": "a-review", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [628, 799, 120, 20, "a-review-fix", "Popraw ręcznie"], [628, 954, 120, 20, "a-review-fix", "Popraw ręcznie"], [628, 1150, 120, 20, "a-review-fix", "Popraw ręcznie"], [628, 1329, 120, 20, "a-review-fix", "Popraw ręcznie"], [628, 1489, 120, 20, "a-review-fix", "Popraw ręcznie"], [628, 1650, 120, 20, "a-review-fix", "Popraw ręcznie"], [628, 1810, 120, 20, "a-review-fix", "Popraw ręcznie"], [628, 1971, 120, 20, "a-review-fix", "Popraw ręcznie"], [628, 2155, 120, 20, "a-review-fix", "Popraw ręcznie"], [220, 168, 121, 28, "a-upload", "Plik"], [341, 168, 156, 28, "a-columns", "Kolumny"], [378, 603, 234, 37, "a-review", "Poprawione automatycznie"], [620, 603, 164, 37, "a-review", "Czeka na decyzję"], [791, 603, 129, 37, "a-review-blocked", "Wstrzymane"], [257, 2242, 118, 40, "a-columns", "Kolumny"], [1098, 2242, 205, 40, "a-license", "Dalej: licencja"], [679, 168, 105, 28, "a-license", "Licencja"]]}, "a-review-blocked": {"img": "ekrany/a-review-blocked.jpg", "w": 1384, "h": 1447, "title": "Sprawdzenie danych – wstrzymane", "dismiss": "", "family": "a-review-blocked", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [220, 168, 121, 28, "a-upload", "Plik"], [341, 168, 156, 28, "a-columns", "Kolumny"], [679, 168, 105, 28, "a-license", "Licencja"], [257, 603, 113, 37, "a-review", "Wszystkie"], [378, 603, 234, 37, "a-review", "Poprawione automatycznie"], [620, 603, 164, 37, "a-review", "Czeka na decyzję"], [791, 603, 129, 37, "a-review-blocked", "Wstrzymane"], [628, 823, 120, 20, "a-review-fix", "Popraw ręcznie"], [628, 984, 120, 20, "a-review-fix", "Popraw ręcznie"], [628, 1168, 120, 20, "a-review-fix", "Popraw ręcznie"], [257, 1255, 118, 40, "a-columns", "Kolumny"], [1098, 1255, 205, 40, "a-license", "Dalej: licencja"]]}, "a-review-fix": {"img": "ekrany/a-review-fix.jpg", "w": 1384, "h": 2679, "title": "Popraw ręcznie", "dismiss": "", "family": "a-review-fix", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [220, 168, 121, 28, "a-upload", "Plik"], [341, 168, 156, 28, "a-columns", "Kolumny"], [679, 168, 105, 28, "a-license", "Licencja"], [257, 603, 113, 37, "a-review", "Wszystkie"], [378, 603, 234, 37, "a-review", "Poprawione automatycznie"], [620, 603, 164, 37, "a-review", "Czeka na decyzję"], [791, 603, 129, 37, "a-review-blocked", "Wstrzymane"], [628, 823, 120, 20, "a-review-blocked", "Zwiń poprawkę"], [736, 1386, 204, 44, "a-review-fix-hours", "W wybranych godzinach"], [628, 2042, 196, 32, "a-review", "Zapisz i sprawdź ponownie"], [257, 2486, 118, 40, "a-columns", "Kolumny"], [1098, 2486, 205, 40, "a-license", "Dalej: licencja"]]}, "a-review-fix-hours": {"img": "ekrany/a-review-fix-hours.jpg", "w": 1384, "h": 2857, "title": "Popraw ręcznie – godziny", "dismiss": "", "family": "a-review-fix-hours", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [220, 168, 121, 28, "a-upload", "Plik"], [341, 168, 156, 28, "a-columns", "Kolumny"], [679, 168, 105, 28, "a-license", "Licencja"], [257, 603, 113, 37, "a-review", "Wszystkie"], [378, 603, 234, 37, "a-review", "Poprawione automatycznie"], [620, 603, 164, 37, "a-review", "Czeka na decyzję"], [791, 603, 129, 37, "a-review-blocked", "Wstrzymane"], [628, 823, 120, 20, "a-review-blocked", "Zwiń poprawkę"], [629, 1386, 107, 44, "a-review-fix", "Całą dobę"], [628, 2220, 196, 32, "a-review", "Zapisz i sprawdź ponownie"], [257, 2664, 118, 40, "a-columns", "Kolumny"], [1098, 2664, 205, 40, "a-license", "Dalej: licencja"]]}, "a-license": {"img": "ekrany/a-license.jpg", "w": 1384, "h": 797, "title": "Licencja i publikacja", "dismiss": "", "family": "a-license", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [220, 168, 121, 28, "a-upload", "Plik"], [341, 168, 156, 28, "a-columns", "Kolumny"], [497, 168, 182, 28, "a-review", "Sprawdzenie"], [717, 356, 40, 21, "a-license-change", "zmień"], [257, 563, 143, 40, "a-review", "Sprawdzenie"], [1104, 563, 199, 40, "a-done", "Opublikuj w dane.gov.pl"]]}, "a-license-change": {"img": "ekrany/a-license-change.jpg", "w": 1384, "h": 915, "title": "Licencja i publikacja – wybór", "dismiss": "", "family": "a-license-change", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [220, 168, 121, 28, "a-upload", "Plik"], [341, 168, 156, 28, "a-columns", "Kolumny"], [497, 168, 182, 28, "a-review", "Sprawdzenie"], [257, 356, 300, 21, "a-license", "Zwiń"], [257, 722, 143, 40, "a-review", "Sprawdzenie"], [1104, 722, 199, 40, "a-done", "Opublikuj w dane.gov.pl"]]}, "a-done": {"img": "ekrany/a-done.jpg", "w": 1384, "h": 797, "title": "Gotowe", "dismiss": "", "family": "a-done", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [713, 410, 120, 40, "a-records", "Rejestr AED"], [1144, 410, 159, 40, "a-upload", "Wgraj kolejny plik"]]}, "a-single": {"img": "ekrany/a-single.jpg", "w": 1384, "h": 1889, "title": "Dodaj jeden AED", "dismiss": "", "family": "a-single", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [586, 204, 66, 17, "a-upload", "Wgraj plik"], [261, 430, 1038, 44, "a-single-suggest", "Adres"], [261, 893, 158, 32, "a-single-filled", "Użyj mojej lokalizacji"], [261, 517, 1038, 360, "a-single-filled", "Mapa – kliknij miejsce AED"], [369, 1115, 204, 44, "a-single-filled", "W wybranych godzinach"], [1162, 1696, 137, 40, "a-tasks", "Opublikuj AED"]]}, "a-single-suggest": {"img": "ekrany/a-single-suggest.jpg", "w": 1384, "h": 1889, "title": "Dodaj jeden AED", "dismiss": "a-single", "family": "a-single", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [586, 204, 66, 17, "a-upload", "Wgraj plik"], [261, 893, 158, 32, "a-single-filled", "Użyj mojej lokalizacji"], [261, 517, 1038, 360, "a-single-filled", "Mapa – kliknij miejsce AED"], [369, 1115, 204, 44, "a-single-filled", "W wybranych godzinach"], [1162, 1696, 137, 40, "a-tasks", "Opublikuj AED"], [266, 484, 1028, 38, "a-single-filled", "al. Marszałka Józefa Piłsudskiego 95, Marki"]]}, "a-single-filled": {"img": "ekrany/a-single-filled.jpg", "w": 1384, "h": 2100, "title": "Dodaj jeden AED – wypełniony", "dismiss": "", "family": "a-single-filled", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [586, 204, 66, 17, "a-upload", "Wgraj plik"], [262, 1115, 107, 44, "a-single", "Całą dobę"], [1162, 1907, 137, 40, "a-tasks", "Opublikuj AED"]]}, "a-tasks": {"img": "ekrany/a-tasks.jpg", "w": 1384, "h": 902, "title": "Do sprawdzenia", "dismiss": "", "family": "a-tasks", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"]]}, "a-leads": {"img": "ekrany/a-leads.jpg", "w": 1384, "h": 976, "title": "AED do potwierdzenia", "dismiss": "", "family": "a-leads", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [924, 485, 187, 36, "a-lead-form", "To nasz – sprawdź i dodaj"], [924, 628, 187, 36, "a-lead-form", "To nasz – sprawdź i dodaj"], [924, 770, 187, 36, "a-lead-form", "To nasz – sprawdź i dodaj"]]}, "a-lead-form": {"img": "ekrany/a-lead-form.jpg", "w": 1384, "h": 1912, "title": "To nasz – formularz z danymi punktu", "dismiss": "", "family": "a-lead-form", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [1162, 1719, 137, 40, "a-leads", "Opublikuj AED"]]}, "p-detail": {"img": "ekrany/p-detail.jpg", "w": 1384, "h": 2107, "title": "Hala MOSiR – Defibrylator", "dismiss": "", "family": "p-detail", "hot": [[1050, 22, 193, 44, "a-upload", "Dodaj dane o AED"], [1259, 32, 97, 24, "p-home", "Zobacz mapę"], [539, 226, 84, 72, "p-home", "Mapa AED"], [388, 392, 74, 19, "p-home", "Mapa AED"], [134, 462, 156, 24, "p-home", "Wróć do mapy AED"]]}, "p-wykaz": {"img": "ekrany/p-wykaz.jpg", "w": 1384, "h": 2141, "title": "Wykaz AED", "dismiss": "", "family": "p-wykaz", "hot": [[1050, 22, 193, 44, "a-upload", "Dodaj dane o AED"], [1259, 32, 97, 24, "p-home", "Zobacz mapę"], [539, 226, 84, 72, "p-home", "Mapa AED"], [388, 392, 74, 19, "p-home", "Mapa AED"]]}, "p-dataset": {"img": "ekrany/p-dataset.jpg", "w": 1384, "h": 1531, "title": "Defibrylatory AED w Polsce – wykaz zbiorczy", "dismiss": "", "family": "p-dataset", "hot": [[1050, 22, 193, 44, "a-upload", "Dodaj dane o AED"], [1259, 32, 97, 24, "p-home", "Zobacz mapę"], [473, 226, 42, 72, "p-home", "Dane"], [432, 1073, 362, 29, "p-wykaz", "Defibrylatory AED w Polsce (CSV)"]]}, "a-register": {"img": "ekrany/a-register.jpg", "w": 1384, "h": 880, "title": "Wykaz zbiorczy AED", "dismiss": "", "family": "a-register", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [416, 221, 212, 16, "p-wykaz", "Defibrylatory AED w Polsce (CSV)"], [417, 409, 265, 42, "a-resource", "Defibrylatory AED – Urząd Miasta Marki (CSV)"]]}, "a-resource": {"img": "ekrany/a-resource.jpg", "w": 1384, "h": 2274, "title": "Zasób: pole Wykaz zbiorczy", "dismiss": "", "family": "a-resource", "hot": [[25, 150, 170, 21, "a-upload", "Wgraj plik z AED"], [25, 176, 170, 21, "a-single", "Dodaj jeden AED"], [25, 202, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 228, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 253, 170, 21, "a-records", "Rejestr AED"], [25, 279, 170, 21, "a-register", "Wykaz zbiorczy AED"], [436, 1578, 180, 28, "a-register", "Wykaz zbiorczy: Wykaz defibrylatorów AED"], [1199, 178, 150, 40, "a-register", "Zapisz"]]}, "a-records": {"img": "ekrany/a-records.jpg", "w": 1384, "h": 797, "title": "Rejestr AED", "dismiss": "", "family": "a-records", "hot": [[5, 107, 190, 54, "a-upload", "Defibrylatory AED"], [25, 166, 170, 23, "a-upload", "Wgraj plik z AED"], [25, 194, 170, 21, "a-single", "Dodaj jeden AED"], [25, 220, 170, 21, "a-tasks", "Do sprawdzenia"], [25, 245, 170, 21, "a-leads", "AED do potwierdzenia"], [25, 271, 170, 21, "a-records", "Rejestr AED"], [25, 297, 170, 21, "a-register", "Wykaz zbiorczy AED"], [231, 286, 108, 20, "p-detail", "aed-1434021-3 (Hala MOSiR)"]]}};
+var START = "p-home";
+var page = document.getElementById("page");
 var shot = document.getElementById("shot");
-var overlay = document.getElementById("overlay");
 
-function pct(value, total) { return (100 * value / total).toFixed(3) + "%"; }
+function current() {
+  var id = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+  return SCREENS[id] ? id : START;
+}
 
-function show(number) {
-  if (number === 0) { return help(true); }
-  current = number;
-  var s = SCREENS[number - 1];
-  screen.style.setProperty("--ratio", s.size[0] + " / " + s.size[1]);
-  shot.src = "ekrany/" + s.img;
+function render() {
+  var id = current();
+  var s = SCREENS[id];
+  page.style.width = s.w + "px";
+  page.style.height = s.h + "px";
+  shot.src = s.img;
+  shot.width = s.w;
+  shot.height = s.h;
   shot.alt = s.title;
-  document.title = s.title + " – Naładuj mapę Polski (prototyp)";
-  document.getElementById("count").textContent = number + " / " + SCREENS.length;
-  screen.querySelectorAll(".hot").forEach(function (h) { h.remove(); });
+  document.title = s.title + " – prototyp";
+  page.querySelectorAll(".hot").forEach(function (h) { h.remove(); });
   s.hot.forEach(function (h) {
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "hot";
-    b.title = h.label;
-    b.setAttribute("aria-label", h.label);
-    b.style.left = pct(h.r[0] - 5, s.size[0]);
-    b.style.top = pct(h.r[1] - 5, s.size[1]);
-    b.style.width = pct(h.r[2] + 10, s.size[0]);
-    b.style.height = pct(h.r[3] + 10, s.size[1]);
-    b.addEventListener("click", function (e) {
-      e.stopPropagation();
-      show(h.go);
-    });
-    screen.appendChild(b);
+    var a = document.createElement("a");
+    a.className = "hot";
+    a.style.left = (h[0] - 4) + "px";
+    a.style.top = (h[1] - 4) + "px";
+    a.style.width = (h[2] + 8) + "px";
+    a.style.height = (h[3] + 8) + "px";
+    a.title = h[5];
+    a.setAttribute("aria-label", h[5] || h[4]);
+    if (h[4].charAt(0) === "#") {
+      a.href = "#/" + id;
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.scrollTo({ top: Number(h[4].slice(1)) - 16, behavior: "smooth" });
+      });
+    } else {
+      a.href = "#/" + h[4];
+      a.addEventListener("click", function (e) { e.stopPropagation(); });
+    }
+    page.appendChild(a);
   });
+  var keep = sessionStorage && sessionStorage.getItem("keep-scroll") === "1";
+  try { sessionStorage.removeItem("keep-scroll"); } catch (e) {}
+  if (!keep) window.scrollTo(0, 0);
 }
 
-function help(open) {
-  overlay.hidden = !open;
-  if (open) overlay.querySelector(".close").focus();
-}
-
-screen.addEventListener("click", function () {
-  screen.classList.remove("reveal");
-  void screen.offsetWidth;
-  screen.classList.add("reveal");
-});
-document.getElementById("prev").addEventListener("click", function () { show(Math.max(1, current - 1)); });
-document.getElementById("next").addEventListener("click", function () { current === SCREENS.length ? help(true) : show(current + 1); });
-document.getElementById("help").addEventListener("click", function () { help(true); });
-overlay.addEventListener("click", function (e) { if (e.target === overlay) help(false); });
-overlay.querySelector(".close").addEventListener("click", function () { help(false); });
-overlay.querySelector(".start").addEventListener("click", function () { help(false); show(1); });
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape") return help(false);
-  if (!overlay.hidden) return;
-  if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); current === SCREENS.length ? help(true) : show(current + 1); }
-  if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); show(Math.max(1, current - 1)); }
+page.addEventListener("click", function () {
+  var s = SCREENS[current()];
+  if (s.dismiss) {
+    try { sessionStorage.setItem("keep-scroll", "1"); } catch (e) {}
+    location.hash = "#/" + s.dismiss;
+    return;
+  }
+  page.classList.remove("reveal");
+  void page.offsetWidth;
+  page.classList.add("reveal");
 });
 
-show(1);
+document.addEventListener("click", function (e) {
+  var a = e.target.closest && e.target.closest("a.hot");
+  if (!a) return;
+  var target = a.getAttribute("href").replace(/^#\/?/, "");
+  var from = SCREENS[current()];
+  var to = SCREENS[target];
+  if (to && from && to.family === from.family) {
+    try { sessionStorage.setItem("keep-scroll", "1"); } catch (err) {}
+  }
+}, true);
+
+window.addEventListener("hashchange", render);
+render();
 </script>
 </body>
 </html>
