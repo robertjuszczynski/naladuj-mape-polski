@@ -1,7 +1,5 @@
 # Naładuj mapę Polski. – dane o defibrylatorach AED w portalu dane.gov.pl
 
-HackNation 2026, wyzwanie „Misja AED – dane na ratunek” (Departament Zarządzania Danymi, Ministerstwo Cyfryzacji).
-
 Fork otwartego kodu portalu dane.gov.pl (https://dane.gov.pl/source-code/, `backend_latest` i `frontend_latest` z 21.11.2026) z modułem, który zbiera dane o defibrylatorach AED od dostawców **wewnątrz portalu**: każdy dostawca publikuje własny zbiór według wzorcowego zakresu danych, a portal scala je w jeden wykaz zbiorczy.
 
 - Prototyp: https://178-250-46-63.sslip.io/pl/aed (wersja angielska: /en/aed)
@@ -60,7 +58,9 @@ Metadane zbioru wykazu: tytuł „Defibrylatory AED w Polsce – wykaz zbiorczy�
 
 ## Uruchomienie
 
-Najszybciej: działający portal pod adresem https://178-250-46-63.sslip.io/pl/aed (panel: https://admin.178-250-46-63.sslip.io, konta demo w opisie zgłoszenia). Uruchomienie u siebie od zera:
+Najszybciej: działający portal pod adresem https://178-250-46-63.sslip.io/pl/aed (panel: https://admin.178-250-46-63.sslip.io, konta demo w opisie zgłoszenia). 
+
+Uruchomienie u siebie od zera:
 
 **Wymagania:** Docker z Docker Compose v2, ok. 8 GB RAM dla kontenerów (Elasticsearch), 15 GB miejsca, Node.js 20+ (tylko do frontendu w trybie deweloperskim). Najprościej na Linuksie – tak działa nasz serwer. Na macOS adresy sieci dockerowej nie są osiągalne z hosta (zob. uwaga w `backend/README.md`).
 
@@ -100,10 +100,6 @@ Najszybciej: działający portal pod adresem https://178-250-46-63.sslip.io/pl/a
 **Testy modułu:** `docker compose -f docker-compose.local.yml run mcod-local-tests mcod/aed/tests --no-cov` (82 testy). Pliki do przetestowania kreatora: `backend/mcod/aed/data/testowe/` (opis w README w tym katalogu).
 
 **Serwer demonstracyjny:** warstwa `backend/deploy/` (domena, certyfikaty, statyczny frontend): `docker compose -f docker-compose.local.yml -f deploy/docker-compose.deploy.yml up -d`.
-
-## Użycie AI (regulamin zadania §2.8)
-
-Przy pracy korzystaliśmy z asystenta AI (Claude) do analizy dokumentacji i kodu portalu, propozycji architektury, generowania i refaktoryzacji kodu (moduł Django, komponenty Angular, testy), konfiguracji serwera i szkiców materiałów. Każdą zmianę przejrzał, uruchomił i zatwierdził autor. Sygnet logo to uproszczony kontur Polski z danych Natural Earth (domena publiczna) z pulsem zaprojektowanym przez autora; napis złożono krojem Manrope (SIL OFL).
 
 ## Ograniczenia
 
