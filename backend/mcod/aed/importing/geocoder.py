@@ -52,7 +52,7 @@ class GugikGeocoder:
 
     def candidates(self, address, use_cache=True):
         """All GUGiK matches for a free-text address, in GUGiK's order; [] when nothing matched or the service failed."""
-        key = self.CACHE_PREFIX + "all:" + hashlib.sha1(address.encode("utf-8")).hexdigest()
+        key = self.CACHE_PREFIX + "all2:" + hashlib.sha1(address.encode("utf-8")).hexdigest()
         if use_cache and self.cache is not None:
             hit = self.cache.get(key)
             if hit is not None:
@@ -79,6 +79,8 @@ class GugikGeocoder:
             "street": result.get("street") or "",
             "number": result.get("number") or "",
             "code": result.get("code") or "",
+            "teryt": result.get("teryt") or "",
+            "area": [x.strip() for x in (result.get("jednostka") or "").strip("{}").split(",") if x.strip()],
         }
 
     def fill_missing(self, mapped, limit=GEOCODE_LIMIT):

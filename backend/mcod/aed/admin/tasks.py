@@ -12,6 +12,7 @@ from django.utils import timezone
 
 from mcod.aed.admin.base import StaffOnlyMixin, user_organizations
 from mcod.aed.constants import GEOCODE_TIMEOUT_S, RecordStatus, ReportType, TaskKind, TaskStatus
+from mcod.aed.geo import Boundaries
 from mcod.aed.importing.address import AddressParser
 from mcod.aed.importing.geocoder import GugikGeocoder
 from mcod.aed.importing.mapper import normalize_value
@@ -237,14 +238,17 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
             licenses=license_options(),
         )
 
+    @staticmethod
+    def _missing(organization, values):
+        checks = (
+            (organization is None, "Wybierz instytucję."),
+            (not values.get("consent"), "Zaznacz oświadczenie o prawie do udostępnienia danych."),
+            (not (values.get("nazwa_obiektu") or "").strip(), "Podaj nazwę miejsca, np. „Urząd Miasta Marki”."),
+        )
+        return [message for failed, message in checks if failed]
+
     def _single_record(self, organization, values, form):
-        errors = []
-        if organization is None:
-            errors.append("Wybierz instytucję.")
-        if not values.get("consent"):
-            errors.append("Zaznacz oświadczenie o prawie do udostępnienia danych.")
-        if not (values.get("nazwa_obiektu") or "").strip():
-            errors.append("Podaj nazwę miejsca, np. „Urząd Miasta Marki”.")
+        errors = self._missing(organization, values)
         if errors:
             return None, errors
         today = timezone.localdate().isoformat()
@@ -258,9 +262,8 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
         set_hours(record, form)
         if not record["godziny_dostepnosci"]:
             return None, ["Wybierz dni i podaj godziny od–do albo zaznacz „Całą dobę”."]
-        self._place(record, values)
-        if not record.get("szerokosc_geograficzna"):
-            return None, ["Nie mamy lokalizacji – kliknij „Jestem przy AED” albo podaj adres."]
+        if not self._place(record, values):
+            return None, ["Nie mamy lokalizacji – wybierz adres z podpowiedzi albo kliknij miejsce na mapie."]
         checked = RecordChecker().check_all([record])[0]
         if checked["status"] in RecordStatus.BLOCKED:
             return None, [i["message"] for i in checked["issues"]] or ["Sprawdź lokalizację."]
@@ -268,14 +271,19 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
 
     @staticmethod
     def _place(record, values):
+        """Coordinates from the pin (or the address) and the municipality of that point, not of the institution."""
         lat, lon = (values.get("lat") or "").strip(), (values.get("lon") or "").strip()
-        if lat and lon:
-            record["szerokosc_geograficzna"], _ = normalize_value("szerokosc_geograficzna", lat)
-            record["dlugosc_geograficzna"], _ = normalize_value("dlugosc_geograficzna", lon)
-            return
-        hit = GugikGeocoder(cache=cache).geocode(GugikGeocoder.query_for(record))
-        if hit:
-            record["szerokosc_geograficzna"], record["dlugosc_geograficzna"] = hit["lat"], hit["lon"]
+        if not (lat and lon):
+            hit = GugikGeocoder(cache=cache).geocode(GugikGeocoder.query_for(record)) or {}
+            lat, lon = hit.get("lat", ""), hit.get("lon", "")
+        if not (lat and lon):
+            return False
+        record["szerokosc_geograficzna"], _ = normalize_value("szerokosc_geograficzna", lat)
+        record["dlugosc_geograficzna"], _ = normalize_value("dlugosc_geograficzna", lon)
+        teryt = Boundaries.teryt_at(float(record["szerokosc_geograficzna"]), float(record["dlugosc_geograficzna"]))
+        if teryt:
+            record["kod_teryt_gminy"] = teryt
+        return True
 
     def search_view(self, request):
         """Address suggestions while typing (GUGiK): each one fills the address fields and moves the pin."""
@@ -283,23 +291,45 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
         if len(query) < 3:
             return JsonResponse({"results": []})
         geocoder = GugikGeocoder(cache=cache, timeout=GEOCODE_TIMEOUT_S * 2)
-        results = []
-        for found in self._candidates(geocoder, query)[:SUGGESTIONS]:
-            feature, street, _ = AddressParser.split_street(found["street"])
-            place = " ".join(x for x in (feature, street, found["number"]) if x).strip()
-            results.append(
-                {
-                    "label": ", ".join(x for x in (place, found["city"]) if x),
-                    "ulica": " ".join(x for x in (feature, street) if x),
-                    "numer_budynku": found["number"],
-                    "kod_pocztowy": found.get("code", ""),
-                    "miejscowosc": found["city"],
-                    "lat": float(found["lat"]),
-                    "lon": float(found["lon"]),
-                    "exact": bool(found["number"]),
-                }
-            )
-        return JsonResponse({"results": results})
+        near = self._home_teryt(request)
+        found = sorted(self._candidates(geocoder, query), key=lambda f: -self._closeness(f.get("teryt", ""), near))
+        results, seen = [], set()
+        for item in found:
+            result = self._suggestion(item)
+            if result["label"] not in seen:
+                seen.add(result["label"])
+                results.append(result)
+        return JsonResponse({"results": results[:SUGGESTIONS]})
+
+    @staticmethod
+    def _suggestion(found):
+        feature, street, _ = AddressParser.split_street(found["street"])
+        place = " ".join(x for x in (feature, street, found["number"]) if x).strip()
+        area = found.get("area") or []
+        context = "%s, %s" % (area[3], area[1]) if len(area) >= 4 else ""
+        kind = "address" if found["number"] else ("street" if street else "place")
+        label = ", ".join(x for x in (place, found["city"]) if x)
+        return {
+            "label": label + (" (gm. %s)" % context if context and kind != "address" else ""),
+            "kind": kind,
+            "ulica": " ".join(x for x in (feature, street) if x) if found["street"] else "",
+            "numer_budynku": found["number"],
+            "kod_pocztowy": found.get("code", ""),
+            "miejscowosc": found["city"],
+            "lat": float(found["lat"]),
+            "lon": float(found["lon"]),
+            "exact": bool(found["number"]),
+        }
+
+    @staticmethod
+    def _home_teryt(request):
+        organization = user_organizations(request.user).first()
+        return ImportSource.for_organization(organization, "", "").teryt if organization else ""
+
+    @staticmethod
+    def _closeness(teryt, near):
+        """Shared TERYT prefix: same municipality, county, voivodeship first."""
+        return next((n for n in (6, 4, 2) if near and teryt[:n] == near[:n]), 0)
 
     @staticmethod
     def _candidates(geocoder, query):

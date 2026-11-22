@@ -89,7 +89,7 @@
       li.textContent = r.label;
       if (!r.exact) {
         var note = document.createElement("small");
-        note.textContent = "ulica – wskaż punkt na mapie";
+        note.textContent = r.kind === "place" ? "miejscowość" : "ulica";
         li.appendChild(note);
       }
       li.addEventListener("mousedown", function (e) { e.preventDefault(); choose(i); });
@@ -105,11 +105,11 @@
     if (!r) return;
     search.value = r.label;
     fill(r);
-    place(r.lat, r.lon, r.exact ? 19 : 17, false);
+    place(r.lat, r.lon, r.exact ? 19 : r.kind === "street" ? 17 : 14, false);
     if (map && r.exact) setLayer("orto");
     searchStatus.textContent = r.exact
       ? "Pinezka stoi przy budynku. Przesuń ją na wejście albo miejsce, gdzie wisi AED."
-      : "Pokazujemy ulicę. Kliknij na mapie dokładne miejsce AED.";
+      : "Pokazujemy " + (r.kind === "place" ? "miejscowość" : "ulicę") + ". Kliknij na mapie dokładne miejsce AED.";
     close();
   }
 

@@ -65,5 +65,10 @@ class Boundaries:
         return cls.all().get(teryt or "")
 
     @classmethod
+    def teryt_at(cls, lat, lon):
+        """TERYT code of the municipality containing the point, or ""."""
+        return next((teryt for teryt, b in cls.all().items() if in_boundary(lat, lon, b)), "")
+
+    @classmethod
     def containing(cls, lat, lon, exclude=None):
         return next((b for b in cls.all().values() if b is not exclude and in_boundary(lat, lon, b)), None)

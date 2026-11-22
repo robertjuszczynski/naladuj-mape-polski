@@ -743,6 +743,7 @@ headings, so spacing here comes from flex/grid gaps on one 8px scale (8 inside a
 /* Address combobox */
 .aed-wrap.aed-tool .aed-combo {
   position: relative;
+  z-index: 2;
 }
 .aed-wrap.aed-tool .aed-combo__list {
   position: absolute;
@@ -778,6 +779,7 @@ headings, so spacing here comes from flex/grid gaps on one 8px scale (8 inside a
 /* Map */
 .aed-wrap.aed-tool .aed-mapbox {
   position: relative;
+  z-index: 1;
   margin: 0;
 }
 .aed-wrap.aed-tool .aed-pinmap {
