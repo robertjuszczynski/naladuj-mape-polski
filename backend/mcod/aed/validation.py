@@ -1,5 +1,6 @@
 """AED record validation: field formats, location (swapped coordinates, point outside the municipality), duplicates and status."""
 
+import datetime
 import re
 
 from mcod.aed.constants import (
@@ -12,6 +13,7 @@ from mcod.aed.constants import (
 )
 from mcod.aed.field_types import type_of
 from mcod.aed.geo import Boundaries, distance_to_boundary_m, in_boundary, in_poland
+from mcod.aed.opening_hours import ALWAYS_OPEN, OpeningHours
 from mcod.aed.profile import FIELDS
 
 LAT, LON = "szerokosc_geograficzna", "dlugosc_geograficzna"
@@ -56,7 +58,26 @@ class RecordValidator:
                     "AED nie jest dostępny całodobowo, a brak godzin dostępności – status „nie wiadomo”",
                 )
             )
-        return issues
+        return issues + self.contradictions(record)
+
+    @staticmethod
+    def contradictions(record, today=None):
+        """Fields that are each valid but say opposite things about the same AED."""
+        today = today or datetime.date.today()
+        hours = (record.get("godziny_dostepnosci") or "").strip()
+        always = record.get("dostepny_calodobowo")
+        found = []
+        if always == "true" and hours and hours != ALWAYS_OPEN:
+            found.append(("godziny_dostepnosci", "„Dostępny całodobowo: tak”, a godziny to %s" % OpeningHours.to_polish(hours)))
+        if always == "false" and hours == ALWAYS_OPEN:
+            found.append(("dostepny_calodobowo", "„Dostępny całodobowo: nie”, a godziny to „całodobowo”"))
+        inspection = (record.get("data_ostatniego_przegladu") or "").strip()
+        if re.match(r"^\d{4}-\d{2}-\d{2}$", inspection) and inspection > today.isoformat():
+            found.append(("data_ostatniego_przegladu", "Data ostatniego przeglądu %s jest w przyszłości" % inspection))
+        floor = (record.get("pietro") or "").strip()
+        if record.get("wewnatrz_budynku") == "false" and floor not in ("", "0"):
+            found.append(("pietro", "AED jest na zewnątrz budynku, a podano piętro %s" % floor))
+        return [issue(field, IssueCode.CONFLICTING_DATA, Severity.WARNING, "Sprzeczne dane: " + text) for field, text in found]
 
     @staticmethod
     def _personal_data(record):

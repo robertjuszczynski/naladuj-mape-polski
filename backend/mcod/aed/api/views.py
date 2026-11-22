@@ -10,6 +10,7 @@ from mcod.aed.address_search import AddressSuggestions
 from mcod.aed.api.serializers import AedStats, brief, detail, reported_ids
 from mcod.aed.availability import night_of
 from mcod.aed.constants import REPORT_RATE_LIMIT, REPORT_RATE_WINDOW_S, ReportType, TaskKind
+from mcod.aed.export import AedGeoJson
 from mcod.aed.importing.geocoder import GugikGeocoder
 from mcod.aed.models import AedRecord, AedTask, AggregatedAedInfo
 from mcod.aed.nearest import MAX_DISTANCE_M, SEARCH_RADIUS_DEG, AddressLocator, NearestAed
@@ -48,6 +49,10 @@ class AedListView:
         query = (request.get_param("q") or "").strip()
         if query:
             queryset = queryset.filter(Q(nazwa_obiektu__icontains=query) | Q(miejscowosc__icontains=query))
+        if request.get_param("format") == "geojson":
+            response.content_type = "application/geo+json; charset=utf-8"
+            response.text = json.dumps(AedGeoJson.collection(r.data for r in queryset), ensure_ascii=False)
+            return
         reported = reported_ids()
         data = [brief(r, when, reported) for r in queryset]
         send_json(response, {"meta": {"count": len(data), "at": when.isoformat()}, "data": data})

@@ -141,26 +141,27 @@ class DatasetPublisher:
             "Dane zebrane w ramach akcji „Naładuj mapę Polski.”" % (title, PROFILE_VERSION),
         )
 
-    def replace_resource(self, dataset, content, title, description, register=""):
+    def replace_resource(self, dataset, content, title, description, register="", file_format="csv"):
         """Replace the resource with this title; other resources of the dataset (e.g. the provider's own file) stay."""
+        tabular = file_format == "csv"
         for old in Resource.objects.filter(dataset=dataset, status="published", title=title):
             old.delete()
         resource = Resource.objects.create(
             dataset=dataset,
             title=title,
             description=description,
-            format="csv",
+            format=file_format,
             type="file",
             status="published",
             data_date=datetime.date.today(),
             created_by=self.user,
             modified_by=self.user,
-            show_tabular_view=True,
-            tabular_data_schema=AedCsv.table_schema(content),
+            show_tabular_view=tabular,
+            tabular_data_schema=AedCsv.table_schema(content) if tabular else None,
             aggregated_register=register,
         )
-        name = "aed-%s-%s.csv" % (dataset.pk, timezone.now().strftime("%Y%m%d%H%M%S"))
-        ResourceFile.objects.create(resource=resource, is_main=True, format="csv", file=ContentFile(content, name=name))
+        name = "aed-%s-%s.%s" % (dataset.pk, timezone.now().strftime("%Y%m%d%H%M%S"), file_format)
+        ResourceFile.objects.create(resource=resource, is_main=True, format=file_format, file=ContentFile(content, name=name))
         return resource
 
     @staticmethod

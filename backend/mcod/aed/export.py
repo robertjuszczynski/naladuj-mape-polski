@@ -1,10 +1,9 @@
 import csv
 import io
+import json
 import re
 import unicodedata
 from urllib.parse import quote
-
-from django.http import HttpResponse
 
 from mcod.aed.changes import row_changes
 from mcod.aed.field_types import STRING_COLUMN, type_of
@@ -43,6 +42,30 @@ class AedCsv:
         return {"fields": fields, "missingValues": []}
 
 
+class AedGeoJson:
+    """GeoJSON (RFC 7946) of the same records: one Point per AED, every field of the data standard as a property."""
+
+    COORDINATES = ("szerokosc_geograficzna", "dlugosc_geograficzna")
+
+    @classmethod
+    def features(cls, records):
+        for record in records:
+            try:
+                lat, lon = float(record.get(cls.COORDINATES[0])), float(record.get(cls.COORDINATES[1]))
+            except (TypeError, ValueError):
+                continue
+            properties = {name: record.get(name, "") for name in FIELD_NAMES if name not in cls.COORDINATES}
+            yield {"type": "Feature", "geometry": {"type": "Point", "coordinates": [lon, lat]}, "properties": properties}
+
+    @classmethod
+    def collection(cls, records):
+        return {"type": "FeatureCollection", "features": list(cls.features(records))}
+
+    @classmethod
+    def to_geojson(cls, records):
+        return json.dumps(cls.collection(records), ensure_ascii=False).encode("utf-8")
+
+
 class CorrectedCsvExport:
     """Review step download: fixed data plus status, automatic changes and to-check columns."""
 
@@ -63,6 +86,8 @@ class CorrectedCsvExport:
         return (self.upload.filename.rsplit(".", 1)[0] or "aed") + "-poprawiony.csv"
 
     def response(self):
+        from django.http import HttpResponse
+
         content = UTF8_BOM + AedCsv.write(FIELD_NAMES + self.EXTRA_COLUMNS, self.rows())
         response = HttpResponse(content.encode("utf-8"), content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = attachment_header(self.filename())

@@ -11,7 +11,7 @@ class AggregatedAedInfoAdmin(admin.ModelAdmin):
     """The main AED register and which provider resources went into it, like the main DGA list."""
 
     list_display = ("__str__", "main_resource", "source_count", "aed_count")
-    readonly_fields = ("updated_at", "main_resource", "sources_report")
+    readonly_fields = ("updated_at", "main_resource", "sources_report", "conflicts_report")
     fields = readonly_fields
     actions = ["rebuild"]
 
@@ -76,6 +76,39 @@ class AggregatedAedInfoAdmin(admin.ModelAdmin):
         )
 
     sources_report.short_description = "Źródła"
+
+    def conflicts_report(self, obj):
+        if not obj.conflicts:
+            return "Brak – źródła nie opisują tego samego AED inaczej."
+        rows = format_html_join(
+            "",
+            "<tr><td>{}<br><small>{} · {}</small></td><td>{}</td><td>{}</td></tr>",
+            (
+                (c["a"]["name"] or c["a"]["id"], c["a"]["source"], c["a"]["id"], self._other(c), self._differences(c))
+                for c in obj.conflicts
+            ),
+        )
+        return format_html(
+            "<p>{} przypadków: ten sam AED (do 30 m albo ten sam identyfikator) opisany przez źródła inaczej "
+            "albo pola jednego rekordu, które sobie przeczą. Do wykazu trafia wersja pierwszego źródła; "
+            "dostawca powinien ustalić, która jest aktualna.</p>"
+            "<table><thead><tr><th>AED</th><th>Drugie źródło</th><th>Sprzeczność</th></tr></thead><tbody>{}</tbody></table>",
+            len(obj.conflicts),
+            rows,
+        )
+
+    @staticmethod
+    def _other(conflict):
+        other = conflict["b"]
+        return "%s · %s" % (other["source"], other["name"] or other["id"]) if other else "–"
+
+    @staticmethod
+    def _differences(conflict):
+        if conflict["b"] is None:
+            return "; ".join(f["a"] for f in conflict["fields"])
+        return "; ".join("%s: „%s” / „%s”" % (f["field"], f["a"], f["b"]) for f in conflict["fields"])
+
+    conflicts_report.short_description = "Sprzeczne dane między źródłami"
 
     def rebuild(self, request, queryset):
         count = RegistryBuilder(request.user).rebuild()

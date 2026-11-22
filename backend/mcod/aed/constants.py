@@ -46,6 +46,7 @@ class IssueCode:
     NEAR_BORDER = "near_municipality_border"
     DUPLICATE_POINT = "duplicate_point"
     SWAPPED_COORDINATES = "swapped_coordinates"
+    CONFLICTING_DATA = "conflicting_data"
 
 
 class Availability:

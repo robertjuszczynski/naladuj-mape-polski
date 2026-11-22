@@ -11,8 +11,9 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 
+from mcod.aed.conflicts import duplicate_id, find_conflicts, within_record
 from mcod.aed.constants import NATIONAL_ORG_TITLE, PUBLIC_TITLE_PREFIX, STATS_CACHE_KEY, RecordStatus
-from mcod.aed.export import AedCsv
+from mcod.aed.export import AedCsv, AedGeoJson
 from mcod.aed.importing.geocoder import GugikGeocoder
 from mcod.aed.importing.pipeline import ImportPipeline, ImportSource
 from mcod.aed.importing.reader import TabularReader, UploadError
@@ -20,6 +21,7 @@ from mcod.aed.models import AedRecord, AggregatedAedInfo
 from mcod.aed.planner import TaskPlanner
 from mcod.aed.profile import FIELD_NAMES
 from mcod.aed.publishing import DatasetPublisher, license_name, register_resources
+from mcod.aed.validation import RecordValidator
 from mcod.datasets.models import Dataset
 from mcod.organizations.models import Organization
 
@@ -77,6 +79,7 @@ class RegistryBuilder:
         self.user = user
         self.reader = reader or SourceReader()
         self.geocoder = geocoder if geocoder is not None else GugikGeocoder(cache=cache)
+        self.conflicts = []
 
     @classmethod
     def rebuild_on_commit(cls):
@@ -93,9 +96,20 @@ class RegistryBuilder:
 
     def rebuild(self):
         collected, licenses, report = {}, {}, []
+        self.conflicts = []
         for resource in sorted(register_resources(), key=lambda r: (is_public_source(r), self._is_original_file(r))):
             report.append(self._read_source(resource, collected, licenses))
         entries = self._without_public_duplicates(collected)
+        self.conflicts += find_conflicts(
+            [
+                {"source": e.resource.title, "id": e.id_aed, "name": e.nazwa_obiektu, "lat": e.lat, "lon": e.lon, "data": e.data}
+                for e in entries
+            ]
+        )
+        for e in entries:
+            messages = [i["message"] for i in RecordValidator.contradictions(e.data)]
+            if messages:
+                self.conflicts.append(within_record(e.resource.title, e.id_aed, e.nazwa_obiektu, messages))
         with transaction.atomic():
             AedRecord.objects.all().delete()
             AedRecord.objects.bulk_create(entries, batch_size=BULK_BATCH_SIZE)
@@ -149,11 +163,11 @@ class RegistryBuilder:
             licenses[dataset.organization.title] = entry["license"]
         return entry
 
-    @staticmethod
-    def _collect(collected, resource, result):
+    def _collect(self, collected, resource, result):
         id_aed = result["record"]["id_aed"]
         if id_aed in collected:
             logger.warning("AED: identyfikator %s występuje w zasobach %s i %s", id_aed, collected[id_aed][0].pk, resource.pk)
+            self.conflicts.append(duplicate_id(id_aed, collected[id_aed][0].title, resource.title))
             return False
         collected[id_aed] = (resource, result)
         return True
@@ -178,6 +192,14 @@ class RegistryBuilder:
             "Każdy dostawca odpowiada za swoje dane. Źródła i licencje: %s." % (len(records), sources)
         )
         resource = publisher.replace_resource(dataset, AedCsv.to_csv(records), "Defibrylatory AED w Polsce (CSV)", description)
+        publisher.replace_resource(
+            dataset,
+            AedGeoJson.to_geojson(records),
+            "Defibrylatory AED w Polsce (GeoJSON)",
+            description + " Ten sam wykaz jako punkty GeoJSON (WGS 84) do map i systemów GIS.",
+            file_format="geojson",
+        )
         info = AggregatedAedInfo.current() or AggregatedAedInfo()
         info.dataset, info.resource, info.sources = dataset, resource, report
+        info.conflicts = self.conflicts
         info.save()

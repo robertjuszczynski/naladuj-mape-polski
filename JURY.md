@@ -23,7 +23,8 @@ Panel dostawcy: https://admin.178-250-46-63.sslip.io (konto: aed@marki.example, 
 Ścieżka obywatela:
 8. Strona główna portalu: pasek akcji na samej górze.
 9. „Mapa AED” w menu: liczba AED, instytucji i AED dostępnych teraz. Wybierz dzień i godzinę suwakiem, kliknij dowolny AED, zgłoś problem.
-10. Strona AED → „Wykaz AED w tabeli” (`/pl/aed/wykaz`): wykaz zbiorczy pokazany tak samo jak wykaz chronionych danych DGA, tymi samymi komponentami portalu, z kolumnami wzorcowego zakresu AED. Ten sam zasób jest w Dane → kategoria „Zdrowie” (widok tabeli, CSV, API) obok osobnych zbiorów 5 instytucji.
+10. Strona AED → „Wykaz AED w tabeli” (`/pl/aed/wykaz`): wykaz zbiorczy pokazany tak samo jak wykaz chronionych danych DGA, tymi samymi komponentami portalu, z kolumnami wzorcowego zakresu AED. Ten sam zbiór jest w Dane → kategoria „Zdrowie”: zasób CSV (widok tabeli, API) i zasób GeoJSON do map, obok osobnych zbiorów 5 instytucji. GeoJSON jest też w API: `https://api.178-250-46-63.sslip.io/aed?format=geojson`.
+- Panel → „Wykaz zbiorczy AED”: raport źródeł i „Sprzeczne dane między źródłami” (np. AED z Warszawy z „całodobowo: nie” przy godzinach „całodobowo”). Kreator pokazuje takie sprzeczności jako ostrzeżenia przy rekordzie.
 
 Pliki do oceny:
 11. Wzorcowy zakres danych: deliverables/wzorcowy-zakres-danych-aed.xlsx (30 pól, minimum dla instytucji oznaczone na czerwono).

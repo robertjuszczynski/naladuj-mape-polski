@@ -146,6 +146,7 @@ class AggregatedAedInfo(models.Model):
         "resources.Resource", on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="Zasób wykazu zbiorczego"
     )
     sources = JSONField("Źródła", default=list)
+    conflicts = JSONField("Sprzeczne dane między źródłami", default=list)
 
     class Meta:
         verbose_name = "wykaz zbiorczy AED"
