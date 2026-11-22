@@ -7,8 +7,6 @@ Panel dostawcy: https://admin.178-250-46-63.sslip.io (konto: aed@marki.example, 
 
 Najlepiej sprawdzać na tych adresach – tylko tam wszystko działa naprawdę. Gdy domena jest niedostępna, otwórz klikalny prototyp `deliverables/prototyp/index.html` (bez internetu). To wersja uproszczona: zrzuty z 22.11.2026, przygotowane ścieżki, bez zapisywania danych.
 
-Bez dostępu do serwera: klikalny prototyp `deliverables/prototyp/index.html` (otwiera się w przeglądarce bez internetu, 18 ekranów z działającego portalu, te same ścieżki co niżej).
-
 Ścieżka urzędnika:
 1. Zaloguj się do panelu jako Urząd Miasta Marki i wybierz „Defibrylatory AED” → „Dodaj dane o AED”.
 2. Przeciągnij plik backend/mcod/aed/data/testowe/04-marki-oryginal-z-dane-gov-pl.csv (prawdziwy plik Marek z dane.gov.pl, z błędami). Plik z mieszanką dobrych i złych rekordów: 06-mieszany-dobre-i-zle.csv.

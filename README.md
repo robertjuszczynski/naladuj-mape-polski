@@ -20,6 +20,7 @@ Fork otwartego kodu portalu dane.gov.pl (https://dane.gov.pl/source-code/, `back
 | Wzorcowy zakres danych (XLSX) | [deliverables/wzorcowy-zakres-danych-aed.xlsx](deliverables/wzorcowy-zakres-danych-aed.xlsx) |
 | Logo (JPG, PNG, PDF, SVG) | [deliverables/znak/logo/](deliverables/znak/logo/) |
 | Księga znaku (PDF) | [deliverables/znak/naladuj-mape-polski_ksiega-znaku.pdf](deliverables/znak/naladuj-mape-polski_ksiega-znaku.pdf) |
+| Materiały kampanii (posty, banery, plakat, naklejka, odznaka, plan) | [deliverables/kampania/](deliverables/kampania/) |
 | Raport dostępności WCAG | [deliverables/wcag/RAPORT.md](deliverables/wcag/RAPORT.md) |
 
 ## Kto udostępnia dane
@@ -59,7 +60,9 @@ Osoba prywatna, która kupiła AED, nie ma profilu dostawcy, a adres jej domu to
   - *sprzeczne dane*: „dostępny całodobowo” niezgodny z godzinami, data przeglądu w przyszłości, piętro przy AED na zewnątrz budynku, a między źródłami różne godziny, dostępność, stan albo rodzaj dostępu tego samego AED. Lista sprzeczności jest w raporcie „Wykaz zbiorczy AED”;
   - *format i kompletność*: pola obowiązkowe, formaty dat, kodów i godzin (opening_hours), dane osobowe (adresy e-mail) oraz reguły weryfikacji jakości portalu.
 - **Frontend portalu**: pasek akcji na górze portalu, strona akcji z wyszukiwaniem najbliższego dostępnego AED (adres, sama ulica albo lokalizacja), mapą (także zdjęcie lotnicze GUGiK), dostępnością w wybranym dniu i godzinie, mapą z kropek „Ile mapy już naładowaliśmy?”, wykazem w tabeli (`/pl/aed/wykaz`), strona AED ze zgłoszeniem problemu, wersja PL/EN, tryby wysokiego kontrastu portalu.
-- **Kampania**: nazwa i hasło „Naładuj mapę Polski.”, logo i księga znaku w `deliverables/znak/`.
+- **Kampania**: nazwa i hasło „Naładuj mapę Polski.”, logo i księga znaku w `deliverables/znak/`, materiały w `deliverables/kampania/`: posty dla firm, instytucji publicznych i gmin, banery, plakat A3, naklejka z kodem QR na szafkę AED, odznaka do wstawienia na stronę instytucji albo do BIP i plan kampanii.
+
+  Koncepcja znaku: sygnet to kontur Polski rysowany jak pasek ładowania, który zatrzymuje się tuż przed końcem, a z niedorysowanego wschodniego brzegu wychodzi czerwony puls serca. Defibrylator ratuje życie, gdy jest naładowany, a mapa Polski pomaga, gdy jest pełna danych. Każda instytucja, która udostępnia dane, dodaje mapie kolejny ładunek.
 
 ## Dane, źródła i licencje
 
@@ -76,7 +79,7 @@ Metadane zbioru wykazu: tytuł „Defibrylatory AED w Polsce – wykaz zbiorczy�
 
 ## Uruchomienie
 
-Projekt można otworzyć na trzy sposoby i żaden nie wymaga instalacji. Działający portal z mapą AED otwiera się bez logowania pod adresem https://178-250-46-63.sslip.io/pl/aed. Panel, w którym instytucja dodaje swoje defibrylatory, jest pod adresem https://admin.178-250-46-63.sslip.io, a logujemy się na konto aed@marki.example z hasłem [hasło w zgłoszeniu]. Klikalny prototyp działa też bez internetu: w repozytorium wystarczy otworzyć w przeglądarce plik deliverables/prototyp/index.html i klikać przyciski jak w prawdziwym portalu, a strzałki ← → przełączają ekrany. Instrukcja krok po kroku dla jury jest w pliku JURY.md w repozytorium.
+Projekt można otworzyć na trzy sposoby i żaden nie wymaga instalacji. Działający portal z mapą AED otwiera się bez logowania pod adresem https://178-250-46-63.sslip.io/pl/aed. Panel, w którym instytucja dodaje swoje defibrylatory, jest pod adresem https://admin.178-250-46-63.sslip.io, a logujemy się na konto aed@marki.example (hasło w zgłoszeniu). Klikalny prototyp działa też bez internetu: w repozytorium wystarczy otworzyć w przeglądarce plik deliverables/prototyp/index.html i klikać przyciski jak w prawdziwym portalu, a strzałki ← → przełączają ekrany. Instrukcja krok po kroku dla jury jest w pliku JURY.md w repozytorium.
 
 > **Uwaga: preferowane jest testowanie na domenie.** Tylko tam wszystko działa naprawdę: wyszukiwanie dowolnego adresu, najbliższy AED o wybranej porze, wgrywanie własnego pliku, zapisywanie poprawek, mapa i wykaz z aktualnymi danymi. Klikalny prototyp to wersja zapasowa na wypadek, gdy domena się nie otworzy (np. komputer bez internetu albo z blokadą adresów). Jest słabsza od domenowej: składa się ze zrzutów ekranów z 22.11.2026, prowadzi przez przygotowane ścieżki i nie zapisuje danych.
 
@@ -130,6 +133,10 @@ Uruchomienie u siebie od zera:
 - Część godzin dostępności zapisanych opisowo (np. „w godzinach otwarcia stacji metra”) nie daje się zamienić na format opening_hours; takie AED mają status „dostępność nieznana”.
 - Nie ma integracji z systemem dyspozytorskim 112. API (pole `verified`, dostępność na wskazaną godzinę, najbliższy AED) jest gotowe do podłączenia.
 - Dostępność sprawdziliśmy automatycznie (Lighthouse) na stronach publicznych. Kreatora w panelu dostawcy nie testowaliśmy, bo wymaga zalogowania; korzysta z szablonów panelu portalu.
+
+## Użycie AI (regulamin zadania §2.8)
+
+Przy pracy korzystaliśmy z asystenta AI (Claude) do analizy dokumentacji i kodu portalu, propozycji architektury, generowania i refaktoryzacji kodu (moduł Django, komponenty Angular, testy), konfiguracji serwera i szkiców materiałów. Głos lektora w filmie to syntezator ElevenLabs. Każdą zmianę przejrzał, uruchomił i zatwierdził autor. Decyzje autora: moduł w portalu zamiast kolejnej mapy, wykaz zbiorczy na wzór wykazu chronionych danych DGA, trzy koszyki danych zależnie od licencji, zakres 30 pól.
 
 ## Źródła grafiki
 

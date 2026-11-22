@@ -4,3 +4,16 @@ backend/deploy/htpasswd
 backend/.env
 backend/mcod/settings/local.py
 .credentials.local
+
+# pliki robocze i źródła materiałów (lokalnie)
+.impeccable/
+docs/PRODUCT.md
+deliverables/prezentacja/hacktribe-teksty.md
+deliverables/prezentacja/scenariusz-pitchu.md
+deliverables/prezentacja/build/
+deliverables/prezentacja/intro/build/
+deliverables/prezentacja/intro/intro.mp4
+deliverables/prezentacja/wideo/build/
+deliverables/prezentacja/wideo/lektor/
+deliverables/prezentacja/wideo/assets/
+deliverables/prezentacja/wideo/wideo.html
