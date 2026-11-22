@@ -1,6 +1,5 @@
 """Provider tools beside the file wizard: "Dodaj jeden AED" (a phone-friendly form) and the "Do sprawdzenia" list."""
 
-import requests
 from django.contrib import admin, messages
 from django.core.cache import cache
 from django.http import Http404, JsonResponse
@@ -8,10 +7,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
 from django.utils import timezone
 
+from mcod.aed.address_search import AddressSuggestions
 from mcod.aed.admin.base import StaffOnlyMixin, user_organizations
+from mcod.aed.admin.territory import confirm, lead_for
 from mcod.aed.constants import GEOCODE_TIMEOUT_S, RecordStatus, ReportType, TaskKind, TaskStatus
 from mcod.aed.geo import Boundaries
-from mcod.aed.hours import DEFAULT_DAYS, DEFAULT_FROM, DEFAULT_TO, hours_spec, week_rows
+from mcod.aed.hours import DEFAULT_DAYS, DEFAULT_FROM, DEFAULT_TO, form_values, hours_spec, week_rows
 from mcod.aed.importing.address import AddressParser
 from mcod.aed.importing.geocoder import GugikGeocoder
 from mcod.aed.importing.mapper import normalize_value
@@ -20,17 +21,12 @@ from mcod.aed.models import AedRecord, AedTask
 from mcod.aed.opening_hours import ALWAYS_OPEN
 from mcod.aed.provider import ProviderResource
 from mcod.aed.publishing import is_public_institution, license_from_form, license_options
-from mcod.aed.reminders import send_reminders
 from mcod.aed.validation import RecordChecker
 
-SUGGESTIONS = 8
 SINGLE_SOURCE = "Formularz „Dodaj jeden AED”, %s"
 DATE_FIELDS = ("data_ostatniego_przegladu", "data_waznosci_elektrod", "data_waznosci_baterii")
 TEXT_FIELDS = ("nazwa_obiektu", "opis_lokalizacji", "pietro", "ulica", "numer_budynku", "kod_pocztowy", "miejscowosc")
 GROUP_PREVIEW = 10
-LAST_MAIL_KEY = "aed:lastmail:%s"
-LAST_MAIL_TTL_S = 600
-REVERSE_URL = "https://services.gugik.gov.pl/uug/"
 
 
 def set_hours(record, values):
@@ -56,7 +52,6 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
             path("single/locate/", view(self.locate_view), name="aed_locate"),
             path("single/search/", view(self.search_view), name="aed_search"),
             path("<int:pk>/resolve/", view(self.resolve_view), name="aed_task_resolve"),
-            path("remind/", view(self.remind_view), name="aed_task_remind"),
         ] + super().get_urls()
 
     def render(self, request, template, **context):
@@ -84,18 +79,8 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
             preview=GROUP_PREVIEW,
             today=timezone.localdate(),
             report_labels=ReportType.LABELS,
-            last_mail=cache.get(LAST_MAIL_KEY % request.user.pk),
+            week=week_rows({}, DEFAULT_DAYS),
         )
-
-    def remind_view(self, request):
-        if request.method == "POST":
-            sent = send_reminders(user_organizations(request.user), only_new=False)
-            if sent:
-                cache.set(LAST_MAIL_KEY % request.user.pk, sent, LAST_MAIL_TTL_S)
-                messages.success(request, "Wysłano przypomnienie e-mail (%d) do osób z Twojej instytucji." % len(sent))
-            else:
-                messages.info(request, "Brak otwartych zadań albo adresów e-mail – nic nie wysłano.")
-        return redirect("admin:aed_aedtask_changelist")
 
     def resolve_view(self, request, pk):
         task = get_object_or_404(self.get_queryset(request), pk=pk, status=TaskStatus.OPEN)
@@ -148,13 +133,21 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
         organizations = user_organizations(request.user)
         values = {"hours_mode": "always", "hours_from": DEFAULT_FROM, "hours_to": DEFAULT_TO, "license": "", "organization": ""}
         days = list(DEFAULT_DAYS)
+        pk = request.POST.get("lead") or request.GET.get("lead")
+        lead = lead_for(request.user, pk) if pk else None
+        if lead and request.method != "POST":
+            values, days = self._from_lead(lead, values)
         if request.method == "POST":
             values, days = request.POST.dict(), request.POST.getlist("hours_day")
             organization = organizations.filter(pk=values.get("organization")).first()
             record, errors = self._single_record(organization, values, request.POST)
             if not errors:
                 ProviderResource(organization, request.user).upsert(record, license_from_form(values.get("license", "")))
-                return self.render(request, "single_done", title="Dodaj jeden AED", record=record, organization=organization)
+                if lead:
+                    confirm(lead, organization)
+                return self.render(
+                    request, "single_done", title="Dodaj jeden AED", record=record, organization=organization, lead=lead
+                )
             for error in errors:
                 messages.error(request, error)
         return self.render(
@@ -166,7 +159,24 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
             week=week_rows(values, days),
             licenses=license_options(),
             licence_folded=is_public_institution(list(organizations)),
+            lead=lead,
+            lead_hours=(lead.data or {}).get("godziny_dostepnosci", "") if lead else "",
         )
+
+    @staticmethod
+    def _from_lead(lead, values):
+        """Prefill from a point found in an outside source; the municipality checks it and confirms as its own data."""
+        data = lead.data or {}
+        values = dict(values, lead=lead.pk, lat="%.6f" % lead.lat, lon="%.6f" % lead.lon)
+        values.update({name: data[name] for name in TEXT_FIELDS if data.get(name)})
+        if values.get("nazwa_obiektu") == "AED":
+            values["nazwa_obiektu"] = ""
+        always = "24/7" if data.get("dostepny_calodobowo") == "true" else ""
+        parsed = form_values(data.get("godziny_dostepnosci") or always)
+        if parsed is None:
+            return values, list(DEFAULT_DAYS)
+        values.update(parsed[0])
+        return values, parsed[1]
 
     @staticmethod
     def _missing(organization, values):
@@ -216,80 +226,23 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
         return True
 
     def search_view(self, request):
-        """Address suggestions while typing (GUGiK): each one fills the address fields and moves the pin."""
-        query = (request.GET.get("q") or "").strip()
-        if len(query) < 3:
-            return JsonResponse({"results": []})
+        """Address suggestions while typing: each one fills the address fields and moves the pin."""
         geocoder = GugikGeocoder(cache=cache, timeout=GEOCODE_TIMEOUT_S * 2)
-        near = self._home_teryt(request)
-        found = sorted(self._candidates(geocoder, query), key=lambda f: -self._closeness(f.get("teryt", ""), near))
-        results, seen = [], set()
-        for item in found:
-            result = self._suggestion(item)
-            if result["label"] not in seen:
-                seen.add(result["label"])
-                results.append(result)
-        return JsonResponse({"results": results[:SUGGESTIONS]})
-
-    @staticmethod
-    def _suggestion(found):
-        feature, street, _ = AddressParser.split_street(found["street"])
-        place = " ".join(x for x in (feature, street, found["number"]) if x).strip()
-        area = found.get("area") or []
-        context = "%s, %s" % (area[3], area[1]) if len(area) >= 4 else ""
-        kind = "address" if found["number"] else ("street" if street else "place")
-        label = ", ".join(x for x in (place, found["city"]) if x)
-        return {
-            "label": label + (" (gm. %s)" % context if context and kind != "address" else ""),
-            "kind": kind,
-            "ulica": " ".join(x for x in (feature, street) if x) if found["street"] else "",
-            "numer_budynku": found["number"],
-            "kod_pocztowy": found.get("code", ""),
-            "miejscowosc": found["city"],
-            "lat": float(found["lat"]),
-            "lon": float(found["lon"]),
-            "exact": bool(found["number"]),
-        }
+        organizations = list(user_organizations(request.user)[:5]) if not request.user.is_superuser else []
+        cities = [o.city for o in organizations if o.city]
+        results = AddressSuggestions(geocoder).search(request.GET.get("q"), self._home_teryt(request), cities)
+        return JsonResponse({"results": results})
 
     @staticmethod
     def _home_teryt(request):
         organization = user_organizations(request.user).first()
         return ImportSource.for_organization(organization, "", "").teryt if organization else ""
 
-    @staticmethod
-    def _closeness(teryt, near):
-        """Shared TERYT prefix: same municipality, county, voivodeship first."""
-        return next((n for n in (6, 4, 2) if near and teryt[:n] == near[:n]), 0)
-
-    @staticmethod
-    def _candidates(geocoder, query):
-        """GUGiK expects "city, street number"; people also type "street number, city"."""
-        parts = [p.strip() for p in query.split(",") if p.strip()]
-        queries = [query] + ([", ".join(reversed(parts))] if len(parts) == 2 else [])
-        for candidate_query in queries:
-            found = geocoder.candidates(candidate_query)
-            if found:
-                return found
-        return []
-
     def locate_view(self, request):
-        """Address of the point from the phone's location (GUGiK reverse geocoding), to prefill the form."""
+        """Address of the point from the phone's location or the pin (GUGiK reverse geocoding), to prefill the form."""
         try:
             lat, lon = float(request.GET["lat"]), float(request.GET["lon"])
         except (KeyError, ValueError):
             return JsonResponse({"error": "Brak lokalizacji"}, status=400)
-        params = {"request": "GetAddressReverse", "location": "POINT(%f %f)" % (lon, lat), "srid": "4326"}
-        try:
-            found = (requests.get(REVERSE_URL, params=params, timeout=GEOCODE_TIMEOUT_S * 2).json().get("results") or {}).get("1")
-        except (requests.RequestException, ValueError):
-            found = None
-        if not found:
-            return JsonResponse({})
-        return JsonResponse(
-            {
-                "ulica": found.get("street") or "",
-                "numer_budynku": found.get("number") or "",
-                "kod_pocztowy": found.get("code") or "",
-                "miejscowosc": found.get("city") or "",
-            }
-        )
+        found = GugikGeocoder(cache=cache, timeout=GEOCODE_TIMEOUT_S * 2).reverse(lat, lon)
+        return JsonResponse(AddressSuggestions.suggestion(found) if found else {})

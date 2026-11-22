@@ -3,7 +3,16 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
 
-from mcod.aed.constants import ConsentStatus, RecordStatus, SourceLicence, SourceParser, TaskKind, TaskStatus, UploadStatus
+from mcod.aed.constants import (
+    ConsentStatus,
+    LeadReview,
+    RecordStatus,
+    SourceLicence,
+    SourceParser,
+    TaskKind,
+    TaskStatus,
+    UploadStatus,
+)
 from mcod.aed.review import UploadReview
 from mcod.aed.validation import coordinates
 
@@ -214,6 +223,10 @@ class AedSource(models.Model):
     def publishable(self):
         return self.licence in SourceLicence.PUBLISHABLE
 
+    @property
+    def licence_short(self):
+        return SourceLicence.SHORT.get(self.licence, self.licence)
+
 
 class ConsentRequest(models.Model):
     """One phone call or e-mail away from publishing: an operator (or a municipality as intermediary) with its AEDs."""
@@ -251,6 +264,8 @@ class AedLead(models.Model):
     kod_teryt_gminy = models.CharField("Kod TERYT gminy", max_length=7, blank=True)
     data = JSONField("Dane wg wzorcowego zakresu", default=dict)
     in_register = models.BooleanField("Już jest w wykazie", default=False)
+    review = models.CharField("Ocena gminy", max_length=20, choices=LeadReview.CHOICES, blank=True, default=LeadReview.PENDING)
+    review_note = models.CharField("Uwagi gminy", max_length=500, blank=True)
     updated = models.DateTimeField("Aktualizacja", auto_now=True)
 
     class Meta:

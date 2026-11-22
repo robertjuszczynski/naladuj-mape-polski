@@ -129,6 +129,7 @@ class SourceLicence:
         (NONE, "Brak licencji – tylko wewnętrznie, do pozyskania zgody"),
     )
     PUBLISHABLE = (CC0, CC_BY, PUBLIC_INFO)
+    SHORT = {CC0: "CC0", CC_BY: "CC BY", PUBLIC_INFO: "informacja publiczna", ODBL: "ODbL", NONE: "bez licencji"}
 
 
 class SourceParser:
@@ -137,6 +138,23 @@ class SourceParser:
     OVERPASS = "overpass"
 
     CHOICES = ((TABLE, "Plik CSV lub XLSX"), (PDF, "Tabela w PDF"), (OVERPASS, "OpenStreetMap (Overpass)"))
+
+
+class LeadReview:
+    """What the municipality said about an AED from an outside source on its territory."""
+
+    PENDING = ""
+    CONFIRMED = "confirmed"
+    NOT_OURS = "not_ours"
+    GONE = "gone"
+
+    CHOICES = (
+        (PENDING, "Do potwierdzenia"),
+        (CONFIRMED, "Potwierdzony – dodany do wykazu"),
+        (NOT_OURS, "Nie nasz – inny dysponent"),
+        (GONE, "Nie ma go na miejscu"),
+    )
+    CLOSED = (CONFIRMED, GONE)
 
 
 class ConsentStatus:

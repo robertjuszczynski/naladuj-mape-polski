@@ -693,6 +693,8 @@ class SSOView(BaseSSOView):
         if settings.USERS_TEST_LOGINGOVPL:
             context = {"in_response_to": self.get_authn_request_id()}
             return render(request, "logingovpl/test_login_gov_pl.html", context=context)
+        if not settings.LOGINGOVPL_AVAILABLE:
+            return HttpResponseRedirect(reverse("admin:login") + "?logingovpl=unavailable")
         return super().get(request, *args, **kwargs)
 
     def get_authn_request_id(self):

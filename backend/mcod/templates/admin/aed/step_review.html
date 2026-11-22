@@ -1,4 +1,6 @@
 {% extends "admin/aed/base_aed.html" %}
+{% load static %}
+{% block stepscript %}<script src="{% static 'aed/hours.js' %}" defer></script>{% endblock %}
 {% block aed %}
 <div class="aed-head">
 <h2>Sprawdzenie danych</h2>
@@ -28,9 +30,13 @@
 {% for f in r.to_check %}<li class="warn">{{ f.message }}</li>{% endfor %}
 {% for i in r.issues %}<li class="{{ i.css }}">{{ i.message }}</li>{% endfor %}
 </ul>
-<details><summary>Popraw ręcznie</summary><form method="post" class="aed-edit">{% csrf_token %}<input type="hidden" name="row" value="{{ r.index }}"><input type="hidden" name="action" value="{{ fix_action }}"><input type="hidden" name="filter" value="{{ row_filter }}">
-{% for f in r.edit_fields %}<label>{{ f.label }}{% if f.is_boolean %}{% include "admin/aed/_bool_select.html" with name=f.name value=f.value %}{% else %}<input name="{{ f.name }}" value="{{ f.value }}"{% if f.placeholder %} placeholder="{{ f.placeholder }}"{% endif %}>{% endif %}</label>
-{% endfor %}<button class="aed-btn sec sm" type="submit">Zapisz i sprawdź ponownie</button></form></details></td>
+<details class="aed-fix"><summary>Popraw ręcznie</summary><form method="post" class="aed-edit">{% csrf_token %}<input type="hidden" name="row" value="{{ r.index }}"><input type="hidden" name="action" value="{{ fix_action }}"><input type="hidden" name="filter" value="{{ row_filter }}">
+<p class="aed-edit__note"><span class="aed-req" aria-hidden="true">*</span> pole wymagane</p>
+{% for g in r.edit_groups %}<fieldset class="aed-edit__group{% if g.flagged %} is-flagged{% endif %}"><legend>{{ g.title }}{% if g.required %}<span class="aed-req" aria-hidden="true"> *</span>{% endif %}{% if g.flagged %} <span class="aed-edit__flag">do poprawy</span>{% endif %}</legend>
+{% if g.hours %}<div class="aed-edit__hours">{% include "admin/aed/_hours_widget.html" with hours=g.hours flagged=g.hours_flagged prefix=r.index %}</div>{% endif %}
+{% for f in g.fields %}<label class="{% if f.wide %}wide{% endif %}{% if f.flagged %} is-flagged{% endif %}"><span>{{ f.label }}{% if f.required %}<span class="aed-req" aria-hidden="true"> *</span><span class="aed-sr"> (wymagane)</span>{% endif %}</span>{% if f.is_boolean %}{% include "admin/aed/_bool_select.html" with name=f.name value=f.value %}{% elif f.choices %}<select name="{{ f.name }}"><option value="">–</option>{% for c in f.choices %}<option value="{{ c }}"{% if c == f.value %} selected{% endif %}>{{ c }}</option>{% endfor %}</select>{% else %}<input name="{{ f.name }}" value="{{ f.value }}"{% if f.is_date %} type="date"{% endif %}{% if f.placeholder %} placeholder="{{ f.placeholder }}"{% endif %}{% if f.flagged %} aria-invalid="true"{% endif %}>{% endif %}</label>
+{% endfor %}</fieldset>
+{% endfor %}<div class="aed-edit__foot"><button class="aed-btn sm" type="submit">Zapisz i sprawdź ponownie</button></div></form></details></td>
 <td><form method="post" class="aed-rowacts">{% csrf_token %}<input type="hidden" name="row" value="{{ r.index }}"><input type="hidden" name="filter" value="{{ row_filter }}">
 {% for value, label in r.actions %}<button class="aed-btn sec sm" name="action" value="{{ value }}">{{ label }}</button>{% endfor %}
 </form></td></tr>{% empty %}<tr><td colspan="4" class="aed-small">Brak rekordów w tym widoku.</td></tr>{% endfor %}

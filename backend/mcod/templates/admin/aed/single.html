@@ -4,8 +4,9 @@
 {% block toolscript %}<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 <script src="{% static 'aed/single.js' %}" defer></script>{% endblock %}
 {% block aed %}
-<p class="aed-lead">Bez pliku i szablonu. Masz wiele defibrylatorów? <a href="{% url 'admin:aed_upload' %}">Wgraj plik</a>.</p>
-<form method="post" class="aed-single" data-locate-url="{% url 'admin:aed_locate' %}" data-search-url="{% url 'admin:aed_search' %}" novalidate>{% csrf_token %}
+{% if lead %}<p class="aed-lead aed-lead--source">Ten AED pochodzi ze źródła „{{ lead.source.name }}”. Nie ufamy tym danym, dopóki ich nie sprawdzisz: zapisujesz go jako dane swojej instytucji. Dane i pinezkę wypełniliśmy ze źródła, a brakujący adres na podstawie pinezki.{% if lead_hours %} Godziny w źródle: <code>{{ lead_hours }}</code>.{% endif %}</p>
+{% else %}<p class="aed-lead">Bez pliku i szablonu. Masz wiele defibrylatorów? <a href="{% url 'admin:aed_upload' %}">Wgraj plik</a>.</p>{% endif %}
+<form method="post" class="aed-single" data-locate-url="{% url 'admin:aed_locate' %}" data-search-url="{% url 'admin:aed_search' %}" novalidate>{% csrf_token %}{% if lead %}<input type="hidden" name="lead" value="{{ lead.pk }}">{% endif %}
 
 <section class="aed-sec" aria-labelledby="sec-place">
 <h3 id="sec-place">Miejsce</h3>
@@ -15,7 +16,7 @@
 <div class="aed-fld"><label for="nazwa_obiektu">Nazwa miejsca</label>
 <input id="nazwa_obiektu" name="nazwa_obiektu" required value="{{ values.nazwa_obiektu|default:'' }}" placeholder="np. Urząd Miasta Marki"></div>
 <div class="aed-fld aed-combo"><label for="address-search">Adres</label>
-<input id="address-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="address-list" aria-autocomplete="list" placeholder="np. Marki, Piłsudskiego 95" data-search>
+<div class="aed-combo__box"><input id="address-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="address-list" aria-autocomplete="list" aria-busy="false" placeholder="np. Marki, Piłsudskiego 95" data-search><span class="aed-spin" hidden aria-hidden="true" data-search-spin></span></div>
 <ul id="address-list" class="aed-combo__list" role="listbox" hidden data-results></ul>
 <p class="aed-hint" data-search-status aria-live="polite">Wpisz miejscowość i ulicę, wybierz podpowiedź, a potem kliknij dokładne miejsce na mapie.</p></div>
 <div class="aed-mapbox">
@@ -24,7 +25,7 @@
 <button type="button" class="on" data-layer="map" aria-pressed="true">Mapa</button><button type="button" data-layer="orto" aria-pressed="false">Zdjęcie lotnicze</button>
 </div>
 </div>
-<div class="aed-row"><button type="button" class="aed-btn sec sm" data-locate>Użyj mojej lokalizacji</button><span class="aed-hint" data-locate-status aria-live="polite"></span></div>
+<div class="aed-row"><button type="button" class="aed-btn sec sm" data-locate><span class="aed-spin" hidden aria-hidden="true" data-locate-spin></span><span data-locate-label>Użyj mojej lokalizacji</span></button><span class="aed-hint" data-locate-status aria-live="polite"></span></div>
 <input type="hidden" name="lat" value="{{ values.lat|default:'' }}" data-lat><input type="hidden" name="lon" value="{{ values.lon|default:'' }}" data-lon>
 <div class="aed-cols aed-cols--addr">
 <div class="aed-fld"><label for="ulica">Ulica</label><input id="ulica" name="ulica" value="{{ values.ulica|default:'' }}" data-field="ulica"></div>

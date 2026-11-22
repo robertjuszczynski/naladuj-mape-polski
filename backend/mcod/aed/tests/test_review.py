@@ -92,3 +92,39 @@ def test_manual_fix_rechecks_record_and_keeps_notes():
     fixed = review.checked[index]
     assert fixed["record"]["szerokosc_geograficzna"] == "52.3301"
     assert fixed["notes"] == notes
+
+
+def test_manual_fix_covers_every_standard_field_group():
+    review = review_of()
+    row = review.review_rows()[0]
+    titles = {g["title"] for g in row["edit_groups"]}
+    assert titles == {"Miejsce", "Dostępność", "Urządzenie", "Dysponent"}
+    review.apply_decision(row["index"], Decision.FIX, {"ulica": "Wiejska", "producent": "Philips"})
+    record = review.checked[row["index"]]["record"]
+    assert (record["ulica"], record["producent"]) == ("Wiejska", "Philips")
+
+
+def test_group_with_a_problem_comes_first():
+    review = review_of()
+    blocked = next(r for r in review.review_rows() if r["issues"])
+    first = blocked["edit_groups"][0]
+    assert first["flagged"] and any(f["flagged"] for f in first["fields"])
+
+
+def test_manual_fix_sets_hours_with_the_widget():
+    review = review_of()
+    row = review.review_rows()[0]
+    hours = next(g for g in row["edit_groups"] if g["title"] == "Dostępność")["hours"]
+    assert hours["mode"] in ("always", "range", "keep")
+    values = {"hours_mode": "range", "hours_day": ["Mo", "Tu", "We", "Th", "Fr"], "hours_from": "07:00", "hours_to": "15:00"}
+    review.apply_decision(row["index"], Decision.FIX, values)
+    record = review.checked[row["index"]]["record"]
+    assert (record["godziny_dostepnosci"], record["dostepny_calodobowo"]) == ("Mo-Fr 07:00-15:00", "false")
+
+
+def test_keep_leaves_hours_untouched():
+    review = review_of()
+    row = review.review_rows()[0]
+    before = review.checked[row["index"]]["record"].get("godziny_dostepnosci")
+    review.apply_decision(row["index"], Decision.FIX, {"hours_mode": "keep"})
+    assert review.checked[row["index"]]["record"].get("godziny_dostepnosci") == before

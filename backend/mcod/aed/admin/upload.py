@@ -4,7 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import path, reverse
+from django.urls import path, re_path, reverse
 from django.utils import timezone
 
 from mcod.aed.admin.base import StaffOnlyMixin, user_organizations
@@ -30,6 +30,7 @@ LEGACY_STEPS = {
     "gotowe": "admin:aed_done",
     "pobierz": "admin:aed_download",
 }
+LEGACY_PATTERN = "|".join(key for key in LEGACY_STEPS if key != "wgraj")
 
 
 @admin.register(AedUpload)
@@ -58,8 +59,7 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
             path("<int:pk>/done/", view(self.step_done), name="aed_done"),
             path("<int:pk>/download/", view(self.download_fixed), name="aed_download"),
             path("wgraj/", view(self.legacy_redirect)),
-            path("<int:pk>/<str:legacy>/", view(self.legacy_redirect)),
-            path("<int:pk>/<str:legacy>/change/", view(self.legacy_redirect)),
+            re_path(r"^(?P<pk>\d+)/(?P<legacy>%s)/(?:change/)?$" % LEGACY_PATTERN, view(self.legacy_redirect)),
         ] + super().get_urls()
 
     def legacy_redirect(self, request, pk=None, legacy="wgraj"):

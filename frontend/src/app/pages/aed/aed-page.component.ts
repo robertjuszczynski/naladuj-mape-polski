@@ -1,11 +1,12 @@
 import { AsyncPipe, DOCUMENT, NgFor, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, OnInit, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Inject, OnInit, computed, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LocalizeRouterPipe, LocalizeRouterService } from '@gilsdav/ngx-translate-router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import type { LatLngTuple } from 'leaflet';
-import { finalize } from 'rxjs';
+import { Subject, catchError, debounceTime, distinctUntilChanged, finalize, of, switchMap } from 'rxjs';
 
 import { AedAddMenuComponent } from '@app/shared/aed-add-menu/aed-add-menu.component';
 import { AedMarkComponent } from '@app/shared/aed-mark/aed-mark.component';
@@ -20,9 +21,10 @@ import {
   AED_SINGLE_PATH,
   AED_WIZARD_PATH,
 } from './aed.constants';
-import { AedAvailability, AedBrief, AedIncidentPoint, AedNearest } from './aed.models';
+import { AedAddress, AedAvailability, AedBrief, AedIncidentPoint, AedNearest } from './aed.models';
 import { AedService } from './aed.service';
 import { readableHours } from './aed-hours';
+import { AedDotMapComponent } from './aed-dot-map.component';
 import { AedMapComponent } from './aed-map.component';
 import { AedNumberPipe } from './aed-number.pipe';
 
@@ -30,6 +32,8 @@ type TimeMode = 'now' | 'chosen';
 type IncidentQuery = { address: string } | { lat: number; lon: number };
 
 const FAR_WALK_MIN = 5;
+const SUGGEST_MIN = 3;
+const SUGGEST_DELAY_MS = 300;
 const NOT_FOUND = 404;
 const GEO_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 };
 
@@ -45,6 +49,7 @@ const GEO_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 10000,
     LocalizeRouterPipe,
     TranslatePipe,
     AedMapComponent,
+    AedDotMapComponent,
     AedAddMenuComponent,
     AedMarkComponent,
     AedNumberPipe,
@@ -82,6 +87,12 @@ export class AedPageComponent implements OnInit {
   readonly copied = signal(-1);
   readonly locating = signal(false);
   readonly farWalkMin = FAR_WALK_MIN;
+  readonly suggestions = signal<AedAddress[]>([]);
+  readonly activeSuggestion = signal(-1);
+  readonly suggesting = signal(false);
+  readonly provinceHighlight = signal<string | null>(null);
+  private readonly typed = new Subject<string>();
+  private here: { lat: number; lon: number } | null = null;
   private incident: IncidentQuery | null = null;
   private incidentLabel: Pick<AedIncidentPoint, 'label' | 'exact'> | null = null;
 
@@ -118,7 +129,64 @@ export class AedPageComponent implements OnInit {
     private readonly localize: LocalizeRouterService,
     readonly translate: TranslateService,
     @Inject(DOCUMENT) private readonly document: Document,
-  ) {}
+    destroyRef: DestroyRef,
+  ) {
+    this.typed
+      .pipe(
+        debounceTime(SUGGEST_DELAY_MS),
+        distinctUntilChanged(),
+        switchMap((q) => {
+          if (q.length < SUGGEST_MIN) {
+            return of([]);
+          }
+          this.suggesting.set(true);
+          return this.aed.addresses(q, this.here).pipe(
+            catchError(() => of([])),
+            finalize(() => this.suggesting.set(false)),
+          );
+        }),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe((found) => {
+        this.suggestions.set(found);
+        this.activeSuggestion.set(-1);
+      });
+  }
+
+  typeIncident(text: string): void {
+    this.incidentText.set(text);
+    this.typed.next(text.trim());
+  }
+
+  incidentKey(event: KeyboardEvent): void {
+    const count = this.suggestions().length;
+    if (!count) {
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const step = event.key === 'ArrowDown' ? 1 : -1;
+      this.activeSuggestion.update((i) => (i + step + count) % count);
+    } else if (event.key === 'Enter' && this.activeSuggestion() >= 0) {
+      event.preventDefault();
+      this.chooseAddress(this.suggestions()[this.activeSuggestion()]);
+    } else if (event.key === 'Escape') {
+      this.closeSuggestions();
+    }
+  }
+
+  chooseAddress(found: AedAddress): void {
+    this.incidentText.set(found.label);
+    this.closeSuggestions();
+    this.incident = { lat: found.lat, lon: found.lon };
+    this.incidentLabel = { label: found.label, exact: found.exact };
+    this.findNearest();
+  }
+
+  closeSuggestions(): void {
+    this.suggestions.set([]);
+    this.activeSuggestion.set(-1);
+  }
 
   ngOnInit(): void {
     this.load();
@@ -141,6 +209,7 @@ export class AedPageComponent implements OnInit {
         this.locating.set(false);
         this.incidentText.set('');
         this.incident = { lat: coords.latitude, lon: coords.longitude };
+        this.here = this.incident;
         this.incidentLabel = { label: this.translate.instant('Aed.Nearest.MyLocation'), exact: true };
         this.findNearest();
       },
@@ -205,6 +274,7 @@ export class AedPageComponent implements OnInit {
 
   findAddress(): void {
     const address = this.incidentText().trim();
+    this.closeSuggestions();
     if (address) {
       this.incident = { address };
       this.incidentLabel = null;
@@ -272,6 +342,7 @@ export class AedPageComponent implements OnInit {
             this.incidentLabel = { label: point.label, exact: point.exact };
           }
           this.incident = { lat: point.lat, lon: point.lon };
+          this.here = this.here ?? this.incident;
           this.nearest.set({ ...result, meta: { ...result.meta, point: { ...point, ...this.incidentLabel } } });
         },
         error: (err) => {

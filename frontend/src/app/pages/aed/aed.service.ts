@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { Observable, map, shareReplay } from 'rxjs';
 
-import { AedBrief, AedDetail, AedNearest, AedStats } from './aed.models';
+import { AedAddress, AedAggregated, AedBrief, AedDetail, AedNearest, AedStats } from './aed.models';
 
 interface ApiResponse<T> {
   data: T;
@@ -25,6 +25,21 @@ export class AedService {
 
   list(at?: string): Observable<AedBrief[]> {
     return this.http.get<ApiResponse<AedBrief[]>>(this.base, { params: at ? { at } : {} }).pipe(map((r) => r.data));
+  }
+
+  /** The national AED register resource (same shape as /dga-aggregated). */
+  aggregated(): Observable<AedAggregated> {
+    return this.http.get<AedAggregated>(`${this.base}/aggregated`);
+  }
+
+  /** Address suggestions (GUGiK) for the incident field. */
+  addresses(q: string, near?: { lat: number; lon: number } | null): Observable<AedAddress[]> {
+    const params: Record<string, string> = { q };
+    if (near) {
+      params['lat'] = near.lat.toFixed(5);
+      params['lon'] = near.lon.toFixed(5);
+    }
+    return this.http.get<ApiResponse<AedAddress[]>>(`${this.base}/address`, { params }).pipe(map((r) => r.data));
   }
 
   /** Nearest AED available at `at` (now when empty) for an address or a point. */

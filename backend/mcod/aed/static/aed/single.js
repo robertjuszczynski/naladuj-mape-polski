@@ -8,6 +8,12 @@
   var list = form.querySelector("[data-results]");
   var searchStatus = form.querySelector("[data-search-status]");
   var locateStatus = form.querySelector("[data-locate-status]");
+  var searchSpin = form.querySelector("[data-search-spin]");
+  var locateButton = form.querySelector("[data-locate]");
+  var locateSpin = form.querySelector("[data-locate-spin]");
+  var locateLabel = form.querySelector("[data-locate-label]");
+  var LOCATE_TEXT = locateLabel.textContent;
+  var loading = 0, searchId = 0;
   var ORTO = "https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/StandardResolution";
   var IMPRECISE_M = 150;
   var map, pin, layers, results = [], active = -1, timer;
@@ -22,11 +28,29 @@
     });
   }
 
+  function busy(on) {
+    loading = Math.max(0, loading + (on ? 1 : -1));
+    searchSpin.hidden = !loading;
+    search.setAttribute("aria-busy", loading ? "true" : "false");
+  }
+
   function reverse(la, lo) {
-    fetch(form.dataset.locateUrl + "?lat=" + la + "&lon=" + lo, { credentials: "same-origin" })
+    busy(true);
+    var previous = search.placeholder;
+    search.placeholder = "Ustalam adres…";
+    return fetch(form.dataset.locateUrl + "?lat=" + la + "&lon=" + lo, { credentials: "same-origin" })
       .then(function (r) { return r.json(); })
-      .then(fill)
-      .catch(function () {});
+      .then(function (address) {
+        fill(address);
+        if (address.label) search.value = address.label;
+        return address;
+      })
+      .catch(function () { return {}; })
+      .then(function (address) {
+        search.placeholder = previous;
+        busy(false);
+        return address;
+      });
   }
 
   function place(la, lo, zoom, lookup) {
@@ -69,7 +93,10 @@
       b.addEventListener("click", function () { setLayer(b.dataset.layer); });
     });
     map.on("click", function (e) { place(e.latlng.lat, e.latlng.lng, Math.max(map.getZoom(), 18), true); });
-    if (lat.value && lon.value) place(parseFloat(lat.value), parseFloat(lon.value), 18, false);
+    if (lat.value && lon.value) {
+      var noAddress = !field("ulica").value && !field("miejscowosc").value;
+      place(parseFloat(lat.value), parseFloat(lon.value), 18, noAddress);
+    }
   });
 
   // Address combobox
@@ -121,10 +148,14 @@
       return render();
     }
     timer = setTimeout(function () {
-      searchStatus.textContent = "Szukam…";
+      var id = ++searchId;
+      searchStatus.textContent = "Szukam adresu…";
+      busy(true);
       fetch(form.dataset.searchUrl + "?q=" + encodeURIComponent(q), { credentials: "same-origin" })
         .then(function (r) { return r.json(); })
+        .finally(function () { busy(false); })
         .then(function (data) {
+          if (id !== searchId) return;
           results = data.results || [];
           active = -1;
           render();
@@ -152,22 +183,36 @@
   search.addEventListener("blur", function () { setTimeout(close, 150); });
 
   // Device location: on Wi-Fi desktops it is often only the city, so say so and ask for the exact point.
-  form.querySelector("[data-locate]").addEventListener("click", function () {
+  function locating(text) {
+    locateButton.disabled = !!text;
+    locateSpin.hidden = !text;
+    locateLabel.textContent = text || LOCATE_TEXT;
+  }
+
+  locateButton.addEventListener("click", function () {
     if (!navigator.geolocation) {
       locateStatus.textContent = "Ta przeglądarka nie udostępnia lokalizacji.";
       return;
     }
-    locateStatus.textContent = "Ustalam lokalizację…";
+    locating("Ustalam lokalizację…");
+    locateStatus.textContent = "";
     navigator.geolocation.getCurrentPosition(
       function (p) {
         var accuracy = Math.round(p.coords.accuracy);
-        place(p.coords.latitude, p.coords.longitude, accuracy > IMPRECISE_M ? 16 : 19, true);
-        locateStatus.textContent =
-          accuracy > IMPRECISE_M
-            ? "Lokalizacja przybliżona (±" + accuracy + " m, np. z sieci Wi-Fi). Wpisz adres albo kliknij dokładne miejsce."
-            : "Dokładność ±" + accuracy + " m. Przesuń pinezkę, jeśli trzeba.";
+        place(p.coords.latitude, p.coords.longitude, accuracy > IMPRECISE_M ? 16 : 19, false);
+        locating("Szukam adresu…");
+        reverse(lat.value, lon.value).then(function () {
+          locating("");
+          locateStatus.textContent =
+            accuracy > IMPRECISE_M
+              ? "Lokalizacja przybliżona (±" + accuracy + " m, np. z sieci Wi-Fi). Sprawdź adres albo kliknij dokładne miejsce."
+              : "Dokładność ±" + accuracy + " m. Przesuń pinezkę, jeśli trzeba.";
+        });
       },
-      function () { locateStatus.textContent = "Nie udało się ustalić lokalizacji – wpisz adres."; },
+      function () {
+        locating("");
+        locateStatus.textContent = "Nie udało się ustalić lokalizacji – wpisz adres.";
+      },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   });

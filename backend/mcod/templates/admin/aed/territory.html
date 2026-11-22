@@ -1,0 +1,44 @@
+{% extends "admin/aed/base_tool.html" %}
+{% block aed %}
+<p class="aed-lead">AED na terenie {% if organization %}{{ organization.title }}{% else %}gminy{% endif %} znalezione w źródłach poza portalem: w otwartych mapach, wykazach w BIP i innych listach. Nie ufamy tym danym, dopóki ktoś ich nie sprawdzi na miejscu. Potwierdzony AED dodajesz jako dane swojej instytucji i trafia na mapę dla 112.</p>
+
+{% if areas|length > 1 %}<form method="get" class="aed-area"><label for="org">Gmina</label><select id="org" name="org">{% for a in areas %}<option value="{{ a.pk }}"{% if a == organization %} selected{% endif %}>{{ a.title }}</option>{% endfor %}</select><button class="aed-btn sec sm">Pokaż</button></form>{% endif %}
+
+{% if not organization %}<p class="aed-quality">Twoja instytucja nie jest gminą, więc nie ma tu AED do potwierdzenia.</p>
+{% else %}
+<dl class="aed-buckets aed-buckets--3">
+<div><dt>Do potwierdzenia</dt><dd>{{ pending_count }}</dd><p>ze źródeł zewnętrznych, niepotwierdzone</p></div>
+<div><dt>Potwierdzone przez Was</dt><dd>{{ confirmed_count }}</dd><p>dodane do wykazu jako Wasze dane</p></div>
+<div><dt>Rozpatrzone inaczej</dt><dd>{{ reviewed|length }}</dd><p>inny dysponent albo nie ma ich na miejscu</p></div>
+</dl>
+
+<ul class="aed-tasks">
+{% for item in pending %}{% with lead=item.lead %}
+<li class="aed-task">
+<div class="aed-task__what">
+<strong>{{ lead.name|default:"AED bez nazwy" }}</strong>
+{% if item.place %}<span class="aed-hint">{{ item.place }}</span>{% endif %}
+<span class="aed-hint">{% if item.address %}{{ item.address }} · {% endif %}{% if item.operator %}Dysponent według źródła: {{ item.operator }}{% else %}Bez wskazanego dysponenta{% endif %}{% if item.hours %} · {{ item.hours }}{% endif %}</span>
+<span class="aed-hint">Źródło: {{ lead.source.name }} ({{ lead.source.licence_short }}){% if item.public %} · na mapie jako niepotwierdzony{% endif %}</span>
+<a class="aed-hint" href="https://www.openstreetmap.org/?mlat={{ lead.lat|stringformat:'.6f' }}&amp;mlon={{ lead.lon|stringformat:'.6f' }}#map=19/{{ lead.lat|stringformat:'.6f' }}/{{ lead.lon|stringformat:'.6f' }}" target="_blank" rel="noopener">Pokaż na mapie ↗</a>
+</div>
+<form method="post" action="{% url 'admin:aed_lead_review' lead.pk %}" class="aed-task__form">{% csrf_token %}<input type="hidden" name="org" value="{{ organization.pk }}">
+<div class="aed-tf aed-tf--wide"><label for="n-{{ lead.pk }}">Uwagi, np. kto jest dysponentem</label><input id="n-{{ lead.pk }}" name="note" maxlength="500"></div>
+<div class="aed-task__btns">
+<button class="aed-btn sm" name="action" value="ours">To nasz – sprawdź i dodaj</button>
+<button class="aed-btn sec sm" name="action" value="not_ours">Nie nasz</button>
+<button class="aed-btn sec sm" name="action" value="gone">Nie ma go</button>
+</div>
+</form>
+</li>
+{% endwith %}{% empty %}<li class="aed-task"><span class="aed-quality">✓ Wszystkie AED z Waszego terenu są w wykazie albo rozpatrzone.</span></li>
+{% endfor %}
+</ul>
+{% if pending_count > pending|length %}<p class="aed-hint">Pokazano {{ pending|length }} z {{ pending_count }}.</p>{% endif %}
+
+{% if reviewed %}<details class="aed-sec aed-reviewed"><summary>Rozpatrzone ({{ reviewed|length }})</summary>
+<ul class="aed-tasks">{% for lead in reviewed %}<li class="aed-task"><div class="aed-task__what"><strong>{{ lead.name|default:"AED bez nazwy" }}</strong><span class="aed-hint">{{ lead.get_review_display }}{% if lead.review_note %}: {{ lead.review_note }}{% endif %}</span></div>
+<form method="post" action="{% url 'admin:aed_lead_review' lead.pk %}" class="aed-task__form">{% csrf_token %}<input type="hidden" name="org" value="{{ organization.pk }}"><div class="aed-task__btns"><button class="aed-btn sec sm" name="action" value="reopen">Cofnij</button></div></form></li>{% endfor %}</ul>
+</details>{% endif %}
+{% endif %}
+{% endblock %}

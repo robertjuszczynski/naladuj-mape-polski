@@ -38,7 +38,6 @@
             : {
                 confirmed: (src.confirmed | aedNumber: vm.lang),
                 public: (src.public | aedNumber: vm.lang),
-                waiting: (src.awaiting_consent | aedNumber: vm.lang),
               }
       }}
     </p>
@@ -48,6 +47,8 @@
     <h2 id="aed-map-title">{{ 'Aed.MapTitle' | translate }}</h2>
     <p class="aed-muted">
       {{ 'Aed.MapLead' | translate }}
+      <a [routerLink]="['/!aed', '!wykaz'] | localize">{{ 'Aed.CtaRegister' | translate }}</a>
+      ·
       <a *ngIf="vm.stats?.national_dataset as z" [routerLink]="['/!dataset', z.id + ',' + z.slug] | localize">{{
         'Aed.CtaDownload' | translate
       }}</a>
@@ -107,14 +108,36 @@
           <p class="aed-muted aed-incident__lead">{{ 'Aed.Nearest.Lead' | translate }}</p>
           <label class="aed-field" for="aed-incident">{{ 'Aed.Nearest.Address' | translate }}</label>
           <div class="aed-incident__row">
-            <input
-              id="aed-incident"
-              type="text"
-              name="incident"
-              autocomplete="street-address"
-              [ngModel]="incidentText()"
-              (ngModelChange)="incidentText.set($event)"
-              [placeholder]="'Aed.Nearest.Placeholder' | translate" />
+            <div class="aed-combo">
+              <input
+                id="aed-incident"
+                type="text"
+                name="incident"
+                autocomplete="off"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="aed-incident-list"
+                [attr.aria-expanded]="suggestions().length > 0"
+                [attr.aria-activedescendant]="activeSuggestion() >= 0 ? 'aed-addr-' + activeSuggestion() : null"
+                [attr.aria-busy]="suggesting()"
+                [ngModel]="incidentText()"
+                (ngModelChange)="typeIncident($event)"
+                (keydown)="incidentKey($event)"
+                (blur)="closeSuggestions()"
+                [placeholder]="'Aed.Nearest.Placeholder' | translate" />
+              <span class="aed-spinner aed-combo__spin" *ngIf="suggesting()" aria-hidden="true"></span>
+              <ul id="aed-incident-list" class="aed-combo__list" role="listbox" [hidden]="!suggestions().length">
+                <li
+                  *ngFor="let s of suggestions(); let i = index"
+                  [id]="'aed-addr-' + i"
+                  role="option"
+                  [attr.aria-selected]="i === activeSuggestion()"
+                  (mousedown)="$event.preventDefault(); chooseAddress(s)">
+                  {{ s.label }}
+                  <small *ngIf="!s.exact">{{ 'Aed.Nearest.Kind.' + s.kind | translate }}</small>
+                </li>
+              </ul>
+            </div>
             <button type="submit" class="aed-btn">{{ 'Aed.Nearest.Find' | translate }}</button>
           </div>
           <div class="aed-incident__alt">
@@ -123,7 +146,9 @@
               type="button"
               class="aed-btn aed-btn--ghost"
               [disabled]="locating()"
+              [attr.aria-busy]="locating()"
               (click)="useMyLocation()">
+              <span class="aed-spinner" *ngIf="locating()" aria-hidden="true"></span>
               {{ (locating() ? 'Aed.Nearest.Locating' : 'Aed.Nearest.UseLocation') | translate }}
             </button>
             <span class="aed-muted">{{ 'Aed.Nearest.MapHint' | translate }}</span>
@@ -282,15 +307,27 @@
           >
         </div>
       </div>
-      <ul class="aed-charge__grid">
-        <li *ngFor="let w of stats.coverage.provinces" [class.on]="w.municipalities > 0">
-          <span class="aed-charge__name">{{ w.name }}</span>
-          <span class="aed-battery" aria-hidden="true"
-            ><i [style.width.%]="w.municipalities > 0 ? (w.percent < 4 ? 4 : w.percent) : 0"></i
-          ></span>
-          <span class="aed-charge__n">{{ w.municipalities }}/{{ w.total }}</span>
-        </li>
-      </ul>
+      <div class="aed-charge__body">
+        <ul class="aed-charge__grid">
+          <li
+            *ngFor="let w of stats.coverage.provinces"
+            [class.on]="w.municipalities > 0"
+            [class.hl]="provinceHighlight() === w.code"
+            (mouseenter)="provinceHighlight.set(w.code)"
+            (mouseleave)="provinceHighlight.set(null)">
+            <span class="aed-charge__name">{{ w.name }}</span>
+            <span class="aed-battery" aria-hidden="true"
+              ><i [style.width.%]="w.municipalities > 0 ? (w.percent < 4 ? 4 : w.percent) : 0"></i
+            ></span>
+            <span class="aed-charge__n">{{ w.municipalities }}/{{ w.total }}</span>
+          </li>
+        </ul>
+        <app-aed-dot-map
+          class="aed-charge__map"
+          [points]="points()"
+          [provinces]="stats.coverage.provinces"
+          [(highlight)]="provinceHighlight"></app-aed-dot-map>
+      </div>
       <p class="aed-muted aed-charge__cta">
         {{ 'Aed.ChargeCta' | translate }} <a [href]="wizardUrl">{{ 'Aed.AddData' | translate }} →</a>
       </p>

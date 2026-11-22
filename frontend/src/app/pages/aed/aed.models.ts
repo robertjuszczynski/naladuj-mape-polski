@@ -50,6 +50,21 @@ export interface AedNearby extends AedBrief {
   phrase: string;
 }
 
+export interface AedAggregated {
+  dataset_id: number;
+  dataset_slug: string;
+  resource_id: number;
+  resource_slug: string;
+}
+
+export interface AedAddress {
+  label: string;
+  kind: 'address' | 'street' | 'place';
+  lat: number;
+  lon: number;
+  exact: boolean;
+}
+
 export interface AedIncidentPoint {
   lat: number;
   lon: number;

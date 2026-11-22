@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{% static 'aed/wizard.css' %}">
 {% endblock %}
 {% block extrahead %}{{ block.super }}
-<script src="{% static 'aed/wizard.js' %}" defer></script>
+<script src="{% static 'aed/wizard.js' %}" defer></script>{% block stepscript %}{% endblock %}
 {% endblock %}
 {% block content %}
 <div class="aed-wrap">

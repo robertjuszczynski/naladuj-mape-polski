@@ -1,3 +1,4 @@
+import os
 import string
 from collections import OrderedDict
 from datetime import date
@@ -536,6 +537,7 @@ SUIT_CONFIG = {
                 {"model": "aed.aedupload", "label": "Wgraj plik z AED", "icon": "icon-upload"},
                 {"url": "/aed/aedtask/single/", "label": "Dodaj jeden AED", "icon": "icon-plus"},
                 {"model": "aed.aedtask", "label": "Do sprawdzenia", "icon": "icon-check"},
+                {"model": "aed.aedlead", "label": "AED do potwierdzenia", "icon": "icon-map-marker"},
                 {"model": "aed.aedrecord", "label": "Rejestr AED", "icon": "icon-map-marker"},
                 {"model": "aed.aggregatedaedinfo", "label": "Wykaz zbiorczy AED", "icon": "icon-list"},
                 {"model": "aed.consentrequest", "label": "Pozyskiwanie danych", "icon": "icon-globe"},
@@ -2241,6 +2243,7 @@ LOGINGOVPL_SSO_URL = env("LOGINGOVPL_SSO_URL", default="https://int.login.gov.pl
 LOGINGOVPL_ASSERTION_CONSUMER_URL = env("LOGINGOVPL_ASSERTION_CONSUMER_URL", default="http://127.0.0.1/idp")
 LOGINGOVPL_ENC_KEY = env("LOGINGOVPL_ENC_KEY", default="logingovpl_int_enc.key.pem")
 LOGINGOVPL_ENC_CERT = env("LOGINGOVPL_ENC_CERT", default="logingovpl_int_enc.crt.pem")
+LOGINGOVPL_AVAILABLE = USERS_TEST_LOGINGOVPL or os.path.isfile(LOGINGOVPL_ENC_KEY)
 
 LOGINGOVPL_ARTIFACT_RESOLVE_URL = env(
     "LOGINGOVPL_ARTIFACT_RESOLVE_URL",

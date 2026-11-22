@@ -285,7 +285,8 @@
     "ShowcasesComponent": "PoCoTo",
     "PrivacyPolicy": "Privacy Policy and GDPR",
     "AedMap": "AED map",
-    "AedDevice": "Defibrillator"
+    "AedDevice": "Defibrillator",
+    "AedRegister": "AED register"
   },
   "BrokenLinks": {
     "Self": "Broken links",
@@ -1832,7 +1833,12 @@
       "UseLocation": "Use my location",
       "Locating": "Finding your location…",
       "MyLocation": "Your location",
-      "GeoDenied": "Could not get your location. Allow it in the browser or type the address."
+      "GeoDenied": "Could not get your location. Allow it in the browser or type the address.",
+      "Kind": {
+        "address": "address",
+        "street": "street",
+        "place": "place"
+      }
     },
     "CtaSingle": "Add an AED in a minute",
     "CtaFile": "Upload a file (many AEDs)",
@@ -1852,6 +1858,13 @@
       "Map": "Map",
       "Ortho": "Aerial photo"
     },
-    "SourcesLine": "{confirmed} AEDs confirmed by their owners and {public} from public sources (e.g. municipal bulletins). Another {waiting} AEDs from other sources await their owners' consent to publish."
+    "SourcesLine": "{confirmed} AEDs confirmed by their owners and {public} from public sources (e.g. municipal bulletins).",
+    "DotMap": {
+      "Label": "Map of Poland made of dots. {n} dots with AEDs in the register.",
+      "Aeds": "AEDs in the register: {n}",
+      "On": "AED in the register",
+      "Off": "no data (a dot is about 12 × 12 km)"
+    },
+    "CtaRegister": "AED register as a table →"
   }
 }

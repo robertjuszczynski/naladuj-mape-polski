@@ -1,0 +1,20 @@
+<div class="aed-wrap aed-tool aed-hours-box{% if flagged %} is-flagged{% endif %}" data-hours>
+<div class="aed-seg" role="radiogroup" aria-label="Dostępność">
+{% if hours.keep %}<label><input type="radio" name="hours_mode" value="keep"{% if hours.mode == "keep" %} checked{% endif %}><span>Bez zmian</span></label>{% endif %}
+<label><input type="radio" name="hours_mode" value="always"{% if hours.mode == "always" %} checked{% endif %}><span>Całą dobę</span></label>
+<label><input type="radio" name="hours_mode" value="range"{% if hours.mode == "range" %} checked{% endif %}><span>W wybranych godzinach</span></label>
+</div>
+{% if hours.keep %}<p class="aed-hint" data-keep-note>W pliku: {{ hours.keep }}</p>{% endif %}
+<div class="aed-hours" data-hours-range>
+<div class="aed-days" role="group" aria-label="Dni">{% for d in hours.week %}<label class="aed-day" title="{{ d.name }}"><input type="checkbox" name="hours_day" value="{{ d.code }}"{% if d.on %} checked{% endif %} data-day="{{ d.code }}"><span aria-hidden="true">{{ d.short }}</span><span class="aed-sr">{{ d.name }}</span></label>{% endfor %}</div>
+<div class="aed-cols aed-cols--time" data-same-hours>
+<div class="aed-fld"><label for="h{{ prefix }}-from">Od</label><input id="h{{ prefix }}-from" type="time" name="hours_from" value="{{ hours.start }}"></div>
+<div class="aed-fld"><label for="h{{ prefix }}-to">Do</label><input id="h{{ prefix }}-to" type="time" name="hours_to" value="{{ hours.end }}"></div>
+</div>
+<label class="aed-check"><input type="checkbox" name="hours_per_day" value="1"{% if hours.per_day %} checked{% endif %} data-per-day><span>Różne godziny w różne dni</span></label>
+<div class="aed-week" data-week>{% for d in hours.week %}<div class="aed-week__row" data-row="{{ d.code }}">
+<span class="aed-week__day">{{ d.name }}</span>
+<input type="time" name="from_{{ d.code }}" value="{{ d.start }}" aria-label="{{ d.name }} od"><span class="aed-week__dash" aria-hidden="true">–</span><input type="time" name="to_{{ d.code }}" value="{{ d.end }}" aria-label="{{ d.name }} do">
+</div>{% endfor %}</div>
+</div>
+</div>

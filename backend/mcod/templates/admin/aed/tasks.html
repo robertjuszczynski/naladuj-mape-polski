@@ -1,17 +1,14 @@
 {% extends "admin/aed/base_tool.html" %}
+{% load static %}
+{% block toolscript %}<script src="{% static 'aed/hours.js' %}" defer></script>{% endblock %}
 {% block aed %}
 <div class="aed-taskbar">
 <p class="aed-lead">Rzeczy, które warto sprawdzić przy Twoich AED: zbliżające się terminy przeglądów, elektrod i baterii, brakujące dane oraz zgłoszenia od obywateli. Każda poprawka od razu trafia do Twojego zbioru i na mapę.</p>
-<div class="aed-taskbar__acts">
-{% if kind %}<a class="aed-btn sec sm" href="{% url 'admin:aed_aedtask_changelist' %}">← Wszystko</a>{% endif %}
-<a class="aed-btn sec sm" href="{% url 'admin:aed_single' %}">Dodaj jeden AED</a>
-<form method="post" action="{% url 'admin:aed_task_remind' %}">{% csrf_token %}<button class="aed-btn sec sm">Wyślij przypomnienie e-mail</button></form>
+{% if kind %}<div class="aed-taskbar__acts"><a class="aed-btn sec sm" href="{% url 'admin:aed_aedtask_changelist' %}">← Wszystko</a></div>{% endif %}
 </div>
-</div>
-{% if last_mail %}<details class="aed-mail" open><summary>Wysłany e-mail</summary>{% for to, subject, body in last_mail %}<p class="aed-hint">Do: {{ to|join:", " }}</p><p><strong>{{ subject }}</strong></p><pre>{{ body }}</pre>{% endfor %}</details>{% endif %}
 {% for group in groups %}
 <section class="aed-taskgroup" aria-labelledby="g-{{ group.kind }}">
-<h3 id="g-{{ group.kind }}">{{ group.label }}<span class="aed-count">{{ group.count }}</span></h3>
+<h3 id="g-{{ group.kind }}">{{ group.label }}</h3>
 <ul class="aed-tasks">
 {% for t in group.tasks %}
 <li class="aed-task">
@@ -26,10 +23,18 @@
 <div class="aed-tf"><label for="d-{{ t.pk }}">{% if t.kind == "inspection" %}Data przeglądu{% else %}Nowa data ważności{% endif %}</label><input id="d-{{ t.pk }}" type="date" name="date"></div>
 <div class="aed-task__btns"><button class="aed-btn sm" name="action" value="date">Zapisz</button><button class="aed-btn sec sm" name="action" value="faulty">Niesprawny</button></div>
 {% elif t.kind == "missing_hours" %}
-<div class="aed-tf"><label for="days-{{ t.pk }}">Dni</label><select id="days-{{ t.pk }}" name="hours_days"><option value="everyday">Codziennie</option><option value="workdays">Pon–pt</option><option value="monsat">Pon–sob</option></select></div>
+<div class="aed-task__hours" data-hours>
+<div class="aed-seg" role="radiogroup" aria-label="Dostępność">
+<label><input type="radio" name="hours_mode" value="always" checked><span>Całą dobę</span></label>
+<label><input type="radio" name="hours_mode" value="range"><span>W wybranych godzinach</span></label>
+</div>
+<div class="aed-task__range" data-hours-range>
+<div class="aed-days" role="group" aria-label="Dni">{% for d in week %}<label class="aed-day" title="{{ d.name }}"><input type="checkbox" name="hours_day" value="{{ d.code }}"{% if d.on %} checked{% endif %}><span aria-hidden="true">{{ d.short }}</span><span class="aed-sr">{{ d.name }}</span></label>{% endfor %}</div>
 <div class="aed-tf aed-tf--time"><label for="f-{{ t.pk }}">Od</label><input id="f-{{ t.pk }}" type="time" name="hours_from" value="08:00"></div>
 <div class="aed-tf aed-tf--time"><label for="t-{{ t.pk }}">Do</label><input id="t-{{ t.pk }}" type="time" name="hours_to" value="16:00"></div>
-<div class="aed-task__btns"><button class="aed-btn sm" name="action" value="hours">Zapisz</button><button class="aed-btn sec sm" name="action" value="always">Całą dobę</button></div>
+</div>
+</div>
+<div class="aed-task__btns"><button class="aed-btn sm" name="action" value="hours">Zapisz</button></div>
 {% elif t.kind == "missing_location" %}
 <div class="aed-tf aed-tf--wide"><label for="l-{{ t.pk }}">Gdzie dokładnie wisi</label><input id="l-{{ t.pk }}" name="location" placeholder="np. parter, przy portierni"></div>
 <div class="aed-task__btns"><button class="aed-btn sm" name="action" value="location">Zapisz</button></div>

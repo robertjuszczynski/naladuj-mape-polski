@@ -23,7 +23,7 @@ Panel dostawcy: https://admin.178-250-46-63.sslip.io (konto: aed@marki.example, 
 Ścieżka obywatela:
 8. Strona główna portalu: pasek akcji na samej górze.
 9. „Mapa AED” w menu: liczba AED, instytucji i AED dostępnych teraz. Wybierz dzień i godzinę suwakiem, kliknij dowolny AED, zgłoś problem.
-10. Dane → kategoria „Zdrowie”: wykaz zbiorczy (widok tabeli, CSV, API) i osobne zbiory 5 instytucji.
+10. Strona AED → „Wykaz AED w tabeli” (`/pl/aed/wykaz`): wykaz zbiorczy pokazany tak samo jak wykaz chronionych danych DGA, tymi samymi komponentami portalu, z kolumnami wzorcowego zakresu AED. Ten sam zasób jest w Dane → kategoria „Zdrowie” (widok tabeli, CSV, API) obok osobnych zbiorów 5 instytucji.
 
 Pliki do oceny:
 11. Wzorcowy zakres danych: deliverables/wzorcowy-zakres-danych-aed.xlsx (30 pól, minimum dla instytucji oznaczone na czerwono).

@@ -285,7 +285,8 @@
     "ShowcasesComponent": "PoCoTo",
     "PrivacyPolicy": "Polityka prywatności i RODO",
     "AedMap": "Mapa AED",
-    "AedDevice": "Defibrylator"
+    "AedDevice": "Defibrylator",
+    "AedRegister": "Wykaz AED"
   },
   "BrokenLinks": {
     "Self": "Uszkodzone linki",
@@ -1835,7 +1836,12 @@
       "UseLocation": "Użyj mojej lokalizacji",
       "Locating": "Ustalam lokalizację…",
       "MyLocation": "Twoja lokalizacja",
-      "GeoDenied": "Nie udało się ustalić lokalizacji. Zezwól na nią w przeglądarce albo wpisz adres."
+      "GeoDenied": "Nie udało się ustalić lokalizacji. Zezwól na nią w przeglądarce albo wpisz adres.",
+      "Kind": {
+        "address": "adres",
+        "street": "ulica",
+        "place": "miejscowość"
+      }
     },
     "CtaSingle": "Dodaj AED w minutę",
     "CtaFile": "Wgraj plik (wiele AED)",
@@ -1855,6 +1861,13 @@
       "Map": "Mapa",
       "Ortho": "Zdjęcie lotnicze"
     },
-    "SourcesLine": "{confirmed} AED potwierdzonych przez dysponentów i {public} ze źródeł publicznych (np. BIP). Kolejne {waiting} AED z innych źródeł czeka na zgodę właścicieli na publikację."
+    "SourcesLine": "{confirmed} AED potwierdzonych przez dysponentów i {public} ze źródeł publicznych (np. BIP).",
+    "DotMap": {
+      "Label": "Mapa Polski z kropek. {n} kropek z AED w wykazie.",
+      "Aeds": "AED w wykazie: {n}",
+      "On": "jest AED w wykazie",
+      "Off": "brak danych (kropka ≈ 12 × 12 km)"
+    },
+    "CtaRegister": "Wykaz AED w tabeli →"
   }
 }

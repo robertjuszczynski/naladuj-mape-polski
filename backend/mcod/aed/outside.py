@@ -1,8 +1,10 @@
-"""AED lists outside the portal. Sources whose licence allows it (CC0, CC BY, public information) are published as
-"unconfirmed" resources of the main register with their author; the rest (e.g. OpenStreetMap, ODbL) stay internal
-as leads, grouped into consent requests until the owner agrees."""
+"""AED lists outside the portal (any format: CSV, XLSX, PDF, OpenStreetMap). The portal does not trust them: every point
+becomes a lead that its municipality confirms, rejects or marks as someone else's. Sources whose licence allows it
+(CC0, CC BY, public information) are also published meanwhile as "unconfirmed" with their author; the rest (e.g.
+OpenStreetMap, ODbL) stay internal and are grouped into consent requests until the owner agrees."""
 
 import datetime
+import hashlib
 import logging
 import re
 from collections import defaultdict
@@ -13,7 +15,16 @@ from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 
-from mcod.aed.constants import CONSENT_TITLE_PREFIX, PUBLIC_TITLE_PREFIX, VOIVODESHIPS, ConsentStatus, SourceParser
+from mcod.aed.constants import (
+    CONSENT_TITLE_PREFIX,
+    GEOCODE_TIMEOUT_S,
+    PUBLIC_TITLE_PREFIX,
+    VOIVODESHIPS,
+    ConsentStatus,
+    LeadReview,
+    SourceLicence,
+    SourceParser,
+)
 from mcod.aed.export import AedCsv
 from mcod.aed.geo import Boundaries
 from mcod.aed.importing.columns import ColumnMatcher
@@ -43,6 +54,7 @@ foreach.gminy->.g(
 );"""
 PUBLIC_DATASET_TITLE = "Defibrylatory AED ze źródeł publicznych (niepotwierdzone)"
 SAME_PLACE_M = 30
+MUNICIPALITY_PREFIX = 6
 GRID = 0.001
 NAME_COLUMN = re.compile(r"miejsce|nazwa|obiekt|lokalizacja", re.I)
 LICENCE_LABELS = {"cc0": "CC0 1.0", "cc_by": "CC BY 4.0", "public_info": "informacja publiczna"}
@@ -166,13 +178,17 @@ class OutsideSources:
         self.reader = reader or SourceReader()
 
     def run(self, source):
-        """Reads one source and returns (published, held)."""
+        """Reads one source and returns (published, held). Every point becomes a lead for its municipality to confirm;
+        the licence only decides whether the points are also published as unconfirmed meanwhile."""
         try:
             content = self.reader.fetch(source)
             if source.parser == SourceParser.OVERPASS:
-                published, held = 0, self._hold_osm(source, content)
+                found = self._osm_points(content)
             else:
-                published, held = self._publish(source, self.reader.table(source, content)), 0
+                found = self._table_points(source, self.reader.table(source, content))
+            source.rows = len(found)
+            published = self._publish(source, [point.record for point in found]) if source.publishable else 0
+            held = self._hold(source, found)
             source.error = ""
         except (requests.RequestException, ValueError, KeyError) as exc:
             logger.warning("AED: źródło %s nie zostało pobrane: %s", source.pk, exc)
@@ -181,21 +197,67 @@ class OutsideSources:
         source.save()
         return published, held
 
-    # Publishable sources
+    # Reading points
 
-    def _publish(self, source, table):
+    def _table_points(self, source, table):
         today = datetime.date.today().isoformat()
-        label = "%s (%s), licencja: %s" % (source.name, source.url, LICENCE_LABELS.get(source.licence, source.licence))
-        importer = OutsideImport(source.publisher, label, today, "", "aed-zr%s" % source.pk, source.city)
+        importer = OutsideImport(source.publisher, self.label(source), today, "", "aed-zr%s" % source.pk, source.city)
         results = ImportPipeline(importer, geocoder=GugikGeocoder(cache=cache)).run(
             table.header, table.rows, column_mapping(table)
         )
-        records = [r["record"] for r in results if r["record"].get("szerokosc_geograficzna")]
-        source.rows = len(table.rows)
+        points = []
+        for result in results:
+            record = result["record"]
+            if not record.get("szerokosc_geograficzna"):
+                continue
+            lat, lon = float(record["szerokosc_geograficzna"]), float(record["dlugosc_geograficzna"])
+            operator = record.get("dysponent_nazwa", "")
+            points.append(
+                Point(
+                    external_id=row_id(record),
+                    record=record,
+                    lat=lat,
+                    lon=lon,
+                    teryt=self._teryt(record, lat, lon),
+                    operator="" if operator == source.publisher else operator,
+                )
+            )
+        return points
+
+    @staticmethod
+    def _teryt(record, lat, lon):
+        """Municipality of a row: from the row, from its address (GUGiK), or from the nearest address to the point."""
+        if record.get("kod_teryt_gminy"):
+            return record["kod_teryt_gminy"][:MUNICIPALITY_PREFIX]
+        geocoder = GugikGeocoder(cache=cache)
+        found = geocoder.candidates(geocoder.query_for(record)) if record.get("miejscowosc") else []
+        return (found[0]["teryt"] if found else "")[:MUNICIPALITY_PREFIX] or municipality_at(lat, lon)
+
+    def _osm_points(self, content):
+        import json
+
+        elements = [e for e in json.loads(content).get("elements", []) if e.get("type") == "node" and "lat" in e]
+        places = self.reader.municipalities()
+        points = []
+        for element in elements:
+            lat, lon = element["lat"], element["lon"]
+            record = osm_record(element)
+            teryt, municipality = places.get(element["id"]) or (Boundaries.teryt_at(lat, lon), "")
+            record["gmina_nazwa"] = municipality
+            points.append(Point("osm-node-%s" % element["id"], record, lat, lon, (teryt or "")[:7], record["dysponent_nazwa"]))
+        return points
+
+    @staticmethod
+    def label(source):
+        return "%s (%s), licencja: %s" % (source.name, source.url, LICENCE_LABELS.get(source.licence, source.licence))
+
+    # Publishable sources
+
+    def _publish(self, source, records):
         publisher = self._publisher()
         dataset = self._public_dataset(publisher)
         description = "Dane pobrane automatycznie przez portal ze źródła: %s. Wydawca: %s. Niepotwierdzone przez dysponentów." % (
-            label,
+            self.label(source),
             source.publisher,
         )
         publisher.replace_resource(
@@ -227,41 +289,64 @@ class OutsideSources:
             dataset.save()
         return dataset
 
-    # Sources kept internal
+    # Leads: every point waits for its municipality (and, if the licence requires, for the owner's consent)
 
-    def _hold_osm(self, source, content):
-        import json
-
+    def _hold(self, source, points):
         from mcod.aed.models import AedLead, AedRecord
 
-        elements = [e for e in json.loads(content).get("elements", []) if e.get("type") == "node" and "lat" in e]
-        known = Proximity(AedRecord.objects.values_list("lat", "lon"))
-        places = self.reader.municipalities()
+        confirmed = Proximity(AedRecord.objects.filter(verified=True).values_list("lat", "lon"))
+        reviews = {
+            external_id: (review, note)
+            for external_id, review, note in AedLead.objects.filter(source=source)
+            .exclude(review="")
+            .values_list("external_id", "review", "review_note")
+        }
         leads = []
-        for element in elements:
-            lat, lon = element["lat"], element["lon"]
-            record = osm_record(element)
-            teryt, municipality = places.get(element["id"]) or (Boundaries.teryt_at(lat, lon), "")
-            record["gmina_nazwa"] = municipality
+        for point in points:
+            review, note = reviews.get(point.external_id, ("", ""))
             leads.append(
                 AedLead(
                     source=source,
-                    external_id="osm-node-%s" % element["id"],
-                    name=record["nazwa_obiektu"][:500],
-                    operator=record["dysponent_nazwa"][:300],
-                    lat=lat,
-                    lon=lon,
-                    kod_teryt_gminy=teryt,
-                    data=record,
-                    in_register=known.near(lat, lon),
+                    external_id=point.external_id,
+                    name=(point.record.get("nazwa_obiektu") or "AED")[:500],
+                    operator=point.operator[:300],
+                    lat=point.lat,
+                    lon=point.lon,
+                    kod_teryt_gminy=point.teryt,
+                    data=point.record,
+                    in_register=confirmed.near(point.lat, point.lon) or review == LeadReview.CONFIRMED,
+                    review=review,
+                    review_note=note,
                 )
             )
         with transaction.atomic():
             AedLead.objects.filter(source=source).delete()
             AedLead.objects.bulk_create(leads, batch_size=1000)
-        source.rows = len(leads)
         ConsentQueue().rebuild()
-        return sum(1 for lead in leads if not lead.in_register)
+        return 0 if source.publishable else sum(1 for lead in leads if not lead.in_register)
+
+
+@dataclass(frozen=True)
+class Point:
+    external_id: str
+    record: dict
+    lat: float
+    lon: float
+    teryt: str
+    operator: str
+
+
+def row_id(record):
+    """Stable id of a row without an id of its own: the same AED at the same address keeps its municipality's decision."""
+    key = "|".join(str(record.get(k) or "").strip().lower() for k in ("nazwa_obiektu", "ulica", "numer_budynku", "miejscowosc"))
+    return "row-" + hashlib.sha1(key.encode("utf-8")).hexdigest()[:20]
+
+
+def municipality_at(lat, lon):
+    """Municipality code (6 digits, as GUGiK gives it) of a point: the nearest address in the national register."""
+    found = GugikGeocoder(cache=cache, timeout=GEOCODE_TIMEOUT_S).reverse(lat, lon) or {}
+    teryt = found.get("teryt") or Boundaries.teryt_at(lat, lon) or ""
+    return teryt[:MUNICIPALITY_PREFIX]
 
 
 def operator_key(name):
@@ -276,7 +361,12 @@ class ConsentQueue:
 
         existing = {r.key: r for r in ConsentRequest.objects.all()}
         groups = defaultdict(list)
-        for lead in AedLead.objects.filter(in_register=False).only("id", "operator", "kod_teryt_gminy", "data"):
+        waiting = (
+            AedLead.objects.filter(in_register=False)
+            .exclude(review__in=LeadReview.CLOSED)
+            .exclude(source__licence__in=SourceLicence.PUBLISHABLE)
+        )
+        for lead in waiting.only("id", "operator", "kod_teryt_gminy", "data"):
             key = "op:" + operator_key(lead.operator) if operator_key(lead.operator) else "gm:" + (lead.kod_teryt_gminy or "?")
             groups[key].append(lead)
         with transaction.atomic():
@@ -307,7 +397,7 @@ class ConsentQueue:
         dataset = sources._public_dataset(publisher)
         today = datetime.date.today().isoformat()
         records = []
-        for lead in request.leads.all():
+        for lead in request.leads.filter(in_register=False).exclude(review__in=LeadReview.CLOSED):
             record = dict(lead.data)
             record.update(
                 {

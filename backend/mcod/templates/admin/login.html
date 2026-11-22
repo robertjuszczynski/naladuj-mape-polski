@@ -49,6 +49,10 @@
                 <p class="errornote alert alert-error"> {{ logingovpl_login_error }}</p>
             {% endif %}
 
+            {% if request.GET.logingovpl == 'unavailable' %}
+                <p class="errornote alert alert-error">Logowanie przez login.gov.pl wymaga certyfikatu wydanego przez COI. Na tym serwerze demonstracyjnym zaloguj się adresem e-mail i hasłem.</p>
+            {% endif %}
+
             {% trans "An error occurred and the account switch failed." as logingovpl_switch_error %}
             {% if request.GET.logingovpl == 'switch-error' %}
                 <p class="errornote alert alert-error"> {{ logingovpl_switch_error }}</p>
@@ -84,11 +88,13 @@
                 <div class="submit-row">
                     <input type="submit" value="{% trans 'Log in' %}" class="btn btn-info"/>
                 </div>
+                {% if SETTINGS.LOGINGOVPL_AVAILABLE %}
                 <div class="separator" style="position: relative; left: -15px;">lub</div>
                 <div class="submit-row" style="margin-bottom: 15px">
                     {% url 'logingovpl' as logingovpl_url %}
                     <a href="{{ logingovpl_url }}?portal=admin" class="btn btn-info">Zaloguj się przez login.gov.pl</a>
                 </div>
+                {% endif %}
             </form>
 
             <script type="text/javascript" nonce="{{ request.csp_nonce }}">

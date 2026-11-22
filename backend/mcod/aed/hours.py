@@ -73,3 +73,45 @@ def week_rows(values, days):
         }
         for code, short, name in WEEK
     ]
+
+
+RULE = re.compile(r"^([A-Z][a-z](?:[-,][A-Z][a-z])*)\s+(\d{2}:\d{2})-(\d{2}:\d{2})$")
+
+
+def _days(span):
+    codes = [code for code, _, _ in WEEK]
+    days = []
+    for part in span.split(","):
+        ends = part.split("-")
+        if any(end not in codes for end in ends):
+            return None
+        start, stop = codes.index(ends[0]), codes.index(ends[-1])
+        if stop < start:
+            return None
+        days += codes[start : stop + 1]
+    return days
+
+
+def form_values(spec):
+    """The reverse of hours_spec for simple specs ("Mo-Fr 08:00-16:00; Sa 09:00-14:00"): (values, days) or None."""
+    spec = (spec or "").strip()
+    if spec == ALWAYS_OPEN:
+        return {"hours_mode": "always"}, list(DEFAULT_DAYS)
+    ranges = {}
+    for rule in filter(None, (r.strip() for r in spec.split(";"))):
+        match = RULE.match(rule)
+        days = _days(match.group(1)) if match else None
+        if not days or not _times(match.group(2), match.group(3)):
+            return None
+        ranges.update({day: (match.group(2), match.group(3)) for day in days})
+    if not ranges:
+        return None
+    values = {"hours_mode": "range"}
+    times = set(ranges.values())
+    if len(times) == 1:
+        values["hours_from"], values["hours_to"] = times.pop()
+    else:
+        values["hours_per_day"] = "on"
+        for day, (start, end) in ranges.items():
+            values["from_" + day], values["to_" + day] = start, end
+    return values, [code for code, _, _ in WEEK if code in ranges]

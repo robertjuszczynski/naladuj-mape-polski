@@ -6,17 +6,19 @@ from django.core.cache import cache
 from django.db.models import Q
 from django.utils import timezone
 
+from mcod.aed.address_search import AddressSuggestions
 from mcod.aed.api.serializers import AedStats, brief, detail, reported_ids
 from mcod.aed.availability import night_of
 from mcod.aed.constants import REPORT_RATE_LIMIT, REPORT_RATE_WINDOW_S, ReportType, TaskKind
 from mcod.aed.importing.geocoder import GugikGeocoder
-from mcod.aed.models import AedRecord, AedTask
+from mcod.aed.models import AedRecord, AedTask, AggregatedAedInfo
 from mcod.aed.nearest import MAX_DISTANCE_M, SEARCH_RADIUS_DEG, AddressLocator, NearestAed
 
 NIGHT_PARAM = "night"
 MIN_NEARBY_RECORDS = 20
 REPORT_COMMENT_MAX = 2000
 ADDRESS_TIMEOUT_S = 8
+ADDRESS_RATE_LIMIT = 60
 
 
 def requested_time(request):
@@ -64,6 +66,30 @@ class AedStatsView:
         send_json(response, {"data": AedStats(timezone.localtime()).get()})
 
 
+class AedAggregatedView:
+    """The national AED register resource, in the same shape as /dga-aggregated: the portal shows its table as the wykaz."""
+
+    def on_get(self, request, response, *args, **kwargs):
+        info = (
+            AggregatedAedInfo.objects.select_related("resource", "resource__dataset")
+            .filter(resource__status="published", resource__is_removed=False)
+            .order_by("-pk")
+            .first()
+        )
+        if info is None:
+            raise falcon.HTTPNotFound(title="Wykaz AED nie jest jeszcze opublikowany")
+        resource = info.resource
+        send_json(
+            response,
+            {
+                "dataset_id": resource.dataset.id,
+                "dataset_slug": resource.dataset.slug,
+                "resource_id": resource.id,
+                "resource_slug": resource.slug,
+            },
+        )
+
+
 class AedNearestView:
     """Nearest AED open at ?at= for a point (?lat=&lon=) or a free-text address (?address=)."""
 
@@ -103,6 +129,33 @@ class AedNearestView:
         return nearby if len(nearby) >= MIN_NEARBY_RECORDS else list(queryset)
 
 
+class AedAddressView:
+    """Address suggestions for the incident field on the AED page (?q=)."""
+
+    def on_get(self, request, response, *args, **kwargs):
+        limit(request, "address", ADDRESS_RATE_LIMIT, 60)
+        geocoder = GugikGeocoder(cache=cache, timeout=ADDRESS_TIMEOUT_S)
+        here = self.place(geocoder, request) or {}
+        found = AddressSuggestions(geocoder).search(request.get_param("q"), here.get("teryt", ""), [here.get("city", "")])
+        send_json(response, {"data": found})
+
+    @staticmethod
+    def place(geocoder, request):
+        """Where the person is (or looks at on the map), so that "Wiejska" means the street in their town first."""
+        try:
+            return geocoder.reverse(float(request.get_param("lat")), float(request.get_param("lon")))
+        except (TypeError, ValueError):
+            return None
+
+
+def limit(request, name, count_max, window_s):
+    key = "aed:%s:%s" % (name, request.access_route[0] if request.access_route else request.remote_addr)
+    count = cache.get_or_set(key, 0, window_s)
+    if count >= count_max:
+        raise falcon.HTTPTooManyRequests(title="Za dużo zapytań, spróbuj później")
+    cache.incr(key)
+
+
 class AedReportView:
     """A citizen report from the AED page; it becomes a task for the provider and a warning on the map."""
 
@@ -114,7 +167,7 @@ class AedReportView:
         report_type = payload.get("type")
         if report_type not in ReportType.LABELS:
             raise falcon.HTTPBadRequest(title="Nieznany typ zgłoszenia")
-        self._limit(request)
+        limit(request, "report", REPORT_RATE_LIMIT, REPORT_RATE_WINDOW_S)
         AedTask.objects.create(
             organization_id=record.organization_id,
             id_aed=record.id_aed,
@@ -125,11 +178,3 @@ class AedReportView:
         )
         send_json(response, {"data": {"status": "received"}})
         response.status = falcon.HTTP_201
-
-    @staticmethod
-    def _limit(request):
-        key = "aed:report:%s" % (request.access_route[0] if request.access_route else request.remote_addr)
-        count = cache.get_or_set(key, 0, REPORT_RATE_WINDOW_S)
-        if count >= REPORT_RATE_LIMIT:
-            raise falcon.HTTPTooManyRequests(title="Za dużo zgłoszeń, spróbuj później")
-        cache.incr(key)

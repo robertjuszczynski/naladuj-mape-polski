@@ -69,6 +69,23 @@ class GugikGeocoder:
             self.cache.set(key, found, self.cache_ttl)
         return found
 
+    def reverse(self, lat, lon):
+        """Nearest address to a point (within ~100 m), parsed like candidates; None when there is none."""
+        key = "%sreverse:%.5f:%.5f" % (self.CACHE_PREFIX, float(lat), float(lon))
+        hit = self.cache.get(key) if self.cache is not None else None
+        if hit is not None:
+            return hit or None
+        params = {"request": "GetAddressReverse", "location": "POINT(%f %f)" % (float(lon), float(lat)), "srid": "4326"}
+        try:
+            result = (self.http.get(self.URL, params=params, timeout=self.timeout).json().get("results") or {}).get("1")
+        except (requests.RequestException, ValueError, TypeError, AttributeError) as exc:
+            logger.warning("GUGiK reverse geocode failed for %s, %s: %s", lat, lon, exc)
+            return None
+        hit = self._parse(result) if result and result.get("x") else {}
+        if self.cache is not None:
+            self.cache.set(key, hit, self.cache_ttl)
+        return hit or None
+
     @staticmethod
     def _parse(result):
         return {

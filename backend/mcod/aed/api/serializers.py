@@ -7,7 +7,9 @@ from mcod.aed.constants import (
     STATS_CACHE_TTL_S,
     VOIVODESHIPS,
     ConsentStatus,
+    LeadReview,
     RecordWarning,
+    SourceLicence,
     TaskKind,
     TaskStatus,
 )
@@ -86,7 +88,12 @@ class AedStats:
     @staticmethod
     def sources():
         """All AEDs in one place: confirmed by providers, unconfirmed from public sources, held until the owner agrees."""
-        waiting = AedLead.objects.filter(in_register=False).exclude(request__status=ConsentStatus.AGREED)
+        waiting = (
+            AedLead.objects.filter(in_register=False)
+            .exclude(request__status=ConsentStatus.AGREED)
+            .exclude(review__in=LeadReview.CLOSED)
+            .exclude(source__licence__in=SourceLicence.PUBLISHABLE)
+        )
         return {
             "confirmed": AedRecord.objects.filter(verified=True).count(),
             "public": AedRecord.objects.filter(verified=False).count(),

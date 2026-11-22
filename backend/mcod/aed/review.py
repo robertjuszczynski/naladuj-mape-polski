@@ -1,22 +1,54 @@
 """Institution decisions in the wizard review step: what gets published, the summary and manual fixes."""
 
-from collections import namedtuple
+import re
 
 from mcod.aed.changes import HOURS, readable, row_changes, summarize
 from mcod.aed.constants import Decision, RecordStatus, Severity
+from mcod.aed.hours import DEFAULT_DAYS, DEFAULT_FROM, DEFAULT_TO, form_values, hours_spec, week_rows
 from mcod.aed.importing.mapper import normalize_value
+from mcod.aed.opening_hours import ALWAYS_OPEN
 from mcod.aed.profile import FIELDS_BY_NAME, format_address
 from mcod.aed.validation import RecordChecker
 
-EditableField = namedtuple("EditableField", "name label placeholder")
-
-EDITABLE_FIELDS = (
-    EditableField("szerokosc_geograficzna", "Szerokość geogr.", ""),
-    EditableField("dlugosc_geograficzna", "Długość geogr.", ""),
-    EditableField(HOURS, "Godziny dostępności", "pn–pt 8–16, sob. 9–14"),
-    EditableField("dostepny_calodobowo", "Dostępny całodobowo", ""),
-    EditableField("sprawny", "Sprawny", ""),
+EDIT_GROUPS = (
+    (
+        "Miejsce",
+        (
+            "nazwa_obiektu",
+            "ulica",
+            "numer_budynku",
+            "numer_lokalu",
+            "kod_pocztowy",
+            "miejscowosc",
+            "kod_teryt_gminy",
+            "szerokosc_geograficzna",
+            "dlugosc_geograficzna",
+            "opis_lokalizacji",
+            "pietro",
+            "wewnatrz_budynku",
+        ),
+    ),
+    ("Dostępność", ("dostep",)),
+    (
+        "Urządzenie",
+        (
+            "sprawny",
+            "data_ostatniego_przegladu",
+            "data_waznosci_elektrod",
+            "data_waznosci_baterii",
+            "producent",
+            "model",
+            "mobilny",
+        ),
+    ),
+    ("Dysponent", ("dysponent_nazwa", "dysponent_telefon", "uwagi")),
 )
+EDITABLE_FIELDS = tuple(name for _, names in EDIT_GROUPS for name in names)
+PLACEHOLDERS = {HOURS: "pn–pt 8–16, sob. 9–14", "kod_pocztowy": "00-000", "pietro": "0 = parter"}
+ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+WIDE_FIELDS = ("nazwa_obiektu", "opis_lokalizacji", "uwagi")
+HOURS_FIELDS = (HOURS, "dostepny_calodobowo")
+HOURS_GROUP = "Dostępność"
 ROW_DECISIONS = (Decision.ACCEPT, Decision.HOLD)
 HELD_BY_INSTITUTION = "wstrzymany przez instytucję"
 ACCEPTED_BY_INSTITUTION = "zatwierdzony przez instytucję"
@@ -100,9 +132,14 @@ class UploadReview:
     def apply_manual_fix(self, index, values):
         previous = self.checked[index]
         record = dict(previous["record"])
-        for field in EDITABLE_FIELDS:
-            if field.name in values:
-                record[field.name], _ = normalize_value(field.name, values[field.name])
+        for name in EDITABLE_FIELDS:
+            if name in values:
+                record[name], _ = normalize_value(name, values[name])
+        if values.get("hours_mode") in ("always", "range"):
+            spec = hours_spec(values)
+            if spec:
+                record[HOURS] = spec
+                record["dostepny_calodobowo"] = "true" if spec == ALWAYS_OPEN else "false"
         fixed = RecordChecker().check_all([record], [previous.get("notes", [])])[0]
         fixed["fixes"] = previous["fixes"] + fixed["fixes"]
         self.checked[index] = fixed
@@ -134,18 +171,56 @@ class UploadReview:
             issues=[dict(i, css="bad" if i["severity"] == Severity.ERROR else "warn") for i in row["issues"]],
             is_foreign_operator=self.is_foreign_operator(row["record"]),
             actions=actions,
-            edit_fields=[self._edit_field(field, row["record"]) for field in EDITABLE_FIELDS],
+            edit_groups=self._edit_groups(row),
         )
 
+    @classmethod
+    def _edit_groups(cls, row):
+        """All fields a provider can correct, grouped; fields with a problem are marked and their group opens first."""
+        flagged = {i["field"] for i in row["issues"]} | {f["field"] for f in row["fixes"] if not f["auto"] and f.get("field")}
+        groups = []
+        for title, names in EDIT_GROUPS:
+            fields = [cls._edit_field(name, row["record"], name in flagged) for name in names]
+            group = {"title": title, "fields": fields, "flagged": any(f["flagged"] for f in fields), "required": False}
+            if title == HOURS_GROUP:
+                group["hours"] = cls._hours(row["record"])
+                group["hours_flagged"] = bool(flagged & set(HOURS_FIELDS))
+                group["flagged"] = group["flagged"] or group["hours_flagged"]
+                group["required"] = True
+            groups.append(group)
+        return sorted(groups, key=lambda g: not g["flagged"])
+
     @staticmethod
-    def _edit_field(field, record):
-        is_boolean = FIELDS_BY_NAME[field.name].type == "boolean"
+    def _edit_field(name, record, flagged):
+        field = FIELDS_BY_NAME[name]
         return {
-            "name": field.name,
+            "name": name,
             "label": field.label,
-            "placeholder": field.placeholder,
-            "value": readable(field.name, record.get(field.name, "")),
-            "is_boolean": is_boolean,
+            "placeholder": PLACEHOLDERS.get(name, ""),
+            "value": readable(name, record.get(name, "")),
+            "is_boolean": field.type == "boolean",
+            "is_date": field.type == "date" and bool(ISO_DATE.match(record.get(name) or "2000-01-01")),
+            "choices": getattr(field, "values", None) or (),
+            "wide": name in WIDE_FIELDS,
+            "flagged": flagged,
+            "required": field.required,
+        }
+
+    @staticmethod
+    def _hours(record):
+        """The hours widget prefilled from the record; specs it cannot show (e.g. a lunch break) are kept unless changed."""
+        spec = record.get(HOURS) or ""
+        always = record.get("dostepny_calodobowo") == "true" or spec == ALWAYS_OPEN
+        parsed = form_values(ALWAYS_OPEN if always else spec)
+        values, days = parsed if parsed else ({}, list(DEFAULT_DAYS))
+        rows = week_rows(values, days)
+        return {
+            "mode": values.get("hours_mode", "keep"),
+            "keep": "" if parsed else (readable(HOURS, spec) or "nie podano"),
+            "week": rows,
+            "start": values.get("hours_from") or DEFAULT_FROM,
+            "end": values.get("hours_to") or DEFAULT_TO,
+            "per_day": bool(values.get("hours_per_day")),
         }
 
     @staticmethod
