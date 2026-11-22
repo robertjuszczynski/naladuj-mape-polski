@@ -1,8 +1,17 @@
 from django.core.cache import cache
 
 from mcod.aed.availability import availability_at
-from mcod.aed.constants import MUNICIPALITY_CODE_LENGTH, STATS_CACHE_KEY, STATS_CACHE_TTL_S, VOIVODESHIPS, TaskKind, TaskStatus
-from mcod.aed.models import AedRecord, AedTask
+from mcod.aed.constants import (
+    MUNICIPALITY_CODE_LENGTH,
+    STATS_CACHE_KEY,
+    STATS_CACHE_TTL_S,
+    VOIVODESHIPS,
+    ConsentStatus,
+    RecordWarning,
+    TaskKind,
+    TaskStatus,
+)
+from mcod.aed.models import AedLead, AedRecord, AedTask, ConsentRequest
 from mcod.aed.planner import REPORTS_SHOWN_ON_MAP, record_warnings
 from mcod.aed.profile import format_address
 from mcod.aed.publishing import national_dataset
@@ -33,7 +42,8 @@ def brief(record, when, reported=frozenset()):
         "operational": data.get("sprawny", ""),
         "institution": record.organization.title,
         "dataset_id": record.dataset_id,
-        "warnings": record_warnings(data, record.id_aed in reported),
+        "verified": record.verified,
+        "warnings": ([] if record.verified else [RecordWarning.UNVERIFIED]) + record_warnings(data, record.id_aed in reported),
     }
 
 
@@ -66,10 +76,22 @@ class AedStats:
         national = national_dataset()
         return {
             "aed_count": AedRecord.objects.count(),
+            "sources": self.sources(),
             "institution_count": AedRecord.objects.order_by().values("organization").distinct().count(),
             "availability": {"now": self.availability()},
             "coverage": self.coverage(self.municipalities()),
             "national_dataset": {"id": national.id, "slug": national.slug, "title": national.title} if national else None,
+        }
+
+    @staticmethod
+    def sources():
+        """All AEDs in one place: confirmed by providers, unconfirmed from public sources, held until the owner agrees."""
+        waiting = AedLead.objects.filter(in_register=False).exclude(request__status=ConsentStatus.AGREED)
+        return {
+            "confirmed": AedRecord.objects.filter(verified=True).count(),
+            "public": AedRecord.objects.filter(verified=False).count(),
+            "awaiting_consent": waiting.count(),
+            "consent_requests": ConsentRequest.objects.filter(lead_count__gt=0).exclude(status=ConsentStatus.AGREED).count(),
         }
 
     def availability(self):

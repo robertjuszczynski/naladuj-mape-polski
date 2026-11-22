@@ -177,9 +177,13 @@ def test_planner_opens_tasks_for_due_dates_and_missing_data():
 def test_hours_from_day_buttons():
     pytest = __import__("pytest")
     pytest.importorskip("django")
+    from django.conf import settings
+
+    if not settings.configured:
+        settings.configure()
     from django.http import QueryDict
 
-    from mcod.aed.admin.tasks import hours_spec
+    from mcod.aed.hours import hours_spec
 
     same = QueryDict(
         "hours_mode=range&hours_day=Mo&hours_day=Tu&hours_day=We&hours_day=Th&hours_day=Fr&hours_from=08:00&hours_to=16:00"
@@ -192,3 +196,25 @@ def test_hours_from_day_buttons():
     assert hours_spec(per_day) == "Mo-Tu 08:00-16:00; Sa 09:00-13:00"
     assert hours_spec(QueryDict("hours_mode=always")) == "24/7"
     assert hours_spec(QueryDict("hours_mode=range&hours_from=08:00&hours_to=16:00")) == ""
+
+
+def test_pdf_rows_are_read_by_meaning():
+    from mcod.aed.importing.pdf import pdf_row
+
+    assert pdf_row(["1.", "", "Regionalny Dworzec - Hol", "", "ul. Bosacka 18", "1"]) == [
+        "1",
+        "Regionalny Dworzec - Hol",
+        "ul. Bosacka 18",
+        "1",
+    ]
+    assert pdf_row(["47.", "Urząd Miasta – hol", "ul. Stachiewicza 18", "1"]) == [
+        "47",
+        "Urząd Miasta – hol",
+        "ul. Stachiewicza 18",
+        "1",
+    ]
+    assert (
+        pdf_row(["3.", "", "PKP – Hol", "", "Plac Jana Nowaka Jeziorańskiego 3", "2"])[2] == "Plac Jana Nowaka Jeziorańskiego 3"
+    )
+    assert pdf_row(["LP.", "MIEJSCE", None, None, "ADRES", "Liczba AED"]) is None
+    assert pdf_row(["RAZEM NA TERENIE KRAKOWA:", None, None, "99"]) is None

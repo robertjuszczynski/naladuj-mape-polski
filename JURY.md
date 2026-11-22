@@ -16,6 +16,10 @@ Panel dostawcy: https://admin.178-250-46-63.sslip.io (konto: aed@marki.example, 
 6. W panelu otwórz dowolny zasób z listą AED (Dane → Zasoby), w polu „Wykaz zbiorczy” wybierz „Wykaz defibrylatorów AED” i zapisz. Kolumny mogą mieć dowolne nazwy.
 7. Po chwili zasób jest w wykazie. Raport źródeł: „Defibrylatory AED” → „Wykaz zbiorczy AED” (co odczytano, ile rekordów, co odpadło i dlaczego).
 
+Ścieżka Ministerstwa – jak najwięcej AED w jednym miejscu (konto administratora):
+- „Defibrylatory AED” → „Pozyskiwanie danych”: trzy koszyki (potwierdzone, ze źródeł publicznych, czekające na zgodę) i kolejka próśb o zgodę od największych dysponentów. Wpisz e-mail, kliknij „Wyślij zaproszenie” albo po rozmowie „Zgoda – opublikuj”.
+- „Źródła zewnętrzne”: Kraków (PDF w BIP, publikowany z podaniem źródła) i OpenStreetMap (tylko wewnętrznie, licencja ODbL).
+
 Ścieżka obywatela:
 8. Strona główna portalu: pasek akcji na samej górze.
 9. „Mapa AED” w menu: liczba AED, instytucji i AED dostępnych teraz. Wybierz dzień i godzinę suwakiem, kliknij dowolny AED, zgłoś problem.

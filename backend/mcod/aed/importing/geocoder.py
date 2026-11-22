@@ -14,7 +14,7 @@ logger = logging.getLogger("mcod")
 
 class GugikGeocoder:
     URL = "https://services.gugik.gov.pl/uug/"
-    CACHE_PREFIX = "aed:geocode:"
+    CACHE_PREFIX = "aed:geocode:v2:"
 
     def __init__(
         self, http=requests, cache=None, timeout=GEOCODE_TIMEOUT_S, cache_ttl=GEOCODE_CACHE_TTL_S, workers=GEOCODE_WORKERS
@@ -48,7 +48,7 @@ class GugikGeocoder:
         found = self.candidates(address, use_cache=False)
         if not found:
             return None
-        return {key: found[0][key] for key in ("lat", "lon", "simc")}
+        return dict({key: found[0][key] for key in ("lat", "lon", "simc")}, street=found[0]["street"])
 
     def candidates(self, address, use_cache=True):
         """All GUGiK matches for a free-text address, in GUGiK's order; [] when nothing matched or the service failed."""
@@ -93,7 +93,9 @@ class GugikGeocoder:
             hits = dict(zip(addresses, pool.map(self.geocode, addresses)))
         for record, notes, address in pending:
             hit = hits[address]
-            if hit:
+            if hit and record.get("ulica") and not hit.get("street", True):
+                notes.append(change(COORDINATES, "Nie znaleziono ulicy w rejestrze adresów – wskaż punkt ręcznie", "", ""))
+            elif hit:
                 record["szerokosc_geograficzna"], record["dlugosc_geograficzna"] = hit["lat"], hit["lon"]
                 if not record.get("kod_simc") and hit["simc"]:
                     record["kod_simc"] = hit["simc"]
@@ -106,4 +108,5 @@ class GugikGeocoder:
         has_coordinates = (record.get("szerokosc_geograficzna") or "").strip() and (
             record.get("dlugosc_geograficzna") or ""
         ).strip()
-        return not has_coordinates and bool(record.get("miejscowosc"))
+        has_place = bool(record.get("ulica") or record.get("numer_budynku"))
+        return not has_coordinates and bool(record.get("miejscowosc")) and has_place

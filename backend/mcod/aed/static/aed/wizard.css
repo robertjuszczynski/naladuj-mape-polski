@@ -1174,3 +1174,108 @@ headings, so spacing here comes from flex/grid gaps on one 8px scale (8 inside a
   font-family: inherit;
   color: var(--navy);
 }
+/* Pozyskiwanie danych */
+.aed-wrap.aed-tool .aed-buckets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 8px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.aed-wrap.aed-tool .aed-buckets > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 20px 20px 20px 0;
+}
+.aed-wrap.aed-tool .aed-buckets > div + div {
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
+}
+.aed-wrap.aed-tool .aed-buckets dt {
+  margin: 0;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 700;
+}
+.aed-wrap.aed-tool .aed-buckets dd {
+  margin: 0;
+  color: var(--navy);
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.aed-wrap.aed-tool .aed-buckets p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.aed-wrap.aed-tool .aed-plain {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.aed-wrap.aed-tool .aed-plain th,
+.aed-wrap.aed-tool .aed-plain td {
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.aed-wrap.aed-tool .aed-plain th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.aed-wrap.aed-tool .aed-plain td .aed-due {
+  display: block;
+  margin-top: 4px;
+}
+.aed-wrap.aed-tool .aed-filters {
+  margin: 0;
+}
+.aed-wrap.aed-tool .aed-notes {
+  max-width: 60ch;
+}
+@media (max-width: 900px) {
+  .aed-wrap.aed-tool .aed-buckets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .aed-wrap.aed-tool .aed-buckets > div:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+/* Licence: folded for public institutions (CC0 by default), open for companies and foundations */
+.aed-wrap .aed-licence > summary {
+  margin: 0;
+  padding: 0;
+  color: var(--navy);
+  font-size: 14px;
+  list-style: none;
+  cursor: pointer;
+}
+.aed-wrap .aed-licence > summary::-webkit-details-marker {
+  display: none;
+}
+.aed-wrap .aed-licence > summary span {
+  margin-left: 8px;
+  color: var(--navy);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.aed-wrap .aed-licence[open] > summary span {
+  display: none;
+}
+.aed-wrap .aed-licence[open] > summary {
+  margin-bottom: 12px;
+}
+.aed-wrap .aed-licence[open] > summary strong {
+  display: none;
+}

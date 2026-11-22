@@ -1,4 +1,4 @@
-"""One e-mail per provider when new tasks appear, with a link to the "Zadania" inbox."""
+"""One e-mail per provider when new tasks appear, with a link to the "Do sprawdzenia" list."""
 
 from django.conf import settings
 from django.core.mail import send_mail

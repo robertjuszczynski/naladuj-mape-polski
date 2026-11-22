@@ -1,0 +1,48 @@
+{% extends "admin/aed/base_tool.html" %}
+{% block aed %}
+<p class="aed-lead">Wszystkie AED w jednym miejscu, bez łamania licencji. Dane, które wolno publikować, trafiają do wykazu z podaniem źródła. Pozostałe czekają tutaj, aż dysponent się zgodzi.</p>
+
+<dl class="aed-buckets">
+<div><dt>Potwierdzone przez dysponentów</dt><dd>{{ stats.confirmed }}</dd><p>w wykazie, z kreatora, formularza i zbiorów instytucji</p></div>
+<div><dt>Ze źródeł publicznych</dt><dd>{{ stats.public }}</dd><p>w wykazie jako niepotwierdzone (CC0, CC BY, BIP), z autorem</p></div>
+<div><dt>Czekają na zgodę</dt><dd>{{ stats.awaiting_consent }}</dd><p>tylko wewnętrznie, licencja nie pozwala publikować (np. ODbL)</p></div>
+<div><dt>Prośby o zgodę</dt><dd>{{ stats.consent_requests }}</dd><p>po jednej na dysponenta albo gminę-pośrednika</p></div>
+</dl>
+
+<section class="aed-sec" aria-labelledby="sec-sources">
+<h3 id="sec-sources">Źródła zewnętrzne</h3>
+<table class="aed-plain">
+<thead><tr><th>Źródło</th><th>Licencja</th><th>Ostatnio</th><th>Rekordów</th><th>W wykazie</th><th>Czeka na zgodę</th></tr></thead>
+<tbody>{% for s in sources %}<tr><td><a href="{% url 'admin:aed_aedsource_change' s.pk %}">{{ s.name }}</a>{% if s.error %}<span class="aed-due late">{{ s.error|truncatechars:120 }}</span>{% endif %}</td><td>{{ s.get_licence_display }}</td><td>{{ s.fetched|date:"d.m H:i"|default:"–" }}</td><td>{{ s.rows }}</td><td>{{ s.published }}</td><td>{{ s.held }}</td></tr>{% endfor %}</tbody>
+</table>
+<p class="aed-hint">Portal pobiera źródła co noc o 3:15. <a href="{% url 'admin:aed_aedsource_changelist' %}">Dodaj źródło albo pobierz teraz</a>.</p>
+</section>
+
+<section class="aed-sec" aria-labelledby="sec-queue">
+<h3 id="sec-queue">Kolejka zgód</h3>
+<nav class="aed-filters" aria-label="Stan prośby">{% for code, label, count in statuses %}<a href="?status={{ code }}"{% if code == status %} aria-current="true"{% endif %}>{{ label }} <span>{{ count }}</span></a>{% endfor %}</nav>
+<ul class="aed-tasks">
+{% for r in requests %}
+<li class="aed-task">
+<div class="aed-task__what">
+<strong>{{ r.label }}</strong>
+<span class="aed-hint">{{ r.lead_count }} AED{% if r.is_municipality %} · gmina może opublikować AED ze swojego terenu, jeśli ma zgodę lub podstawę prawną{% endif %}</span>
+{% if r.notes %}<span class="aed-hint aed-notes">{{ r.notes|linebreaksbr }}</span>{% endif %}
+</div>
+<form method="post" action="{% url 'admin:aed_consent_act' r.pk %}" class="aed-task__form">{% csrf_token %}<input type="hidden" name="back" value="{{ status }}">
+<div class="aed-tf aed-tf--wide"><label for="c-{{ r.pk }}">Kontakt (e-mail lub telefon)</label><input id="c-{{ r.pk }}" name="contact" value="{{ r.contact }}"></div>
+<div class="aed-tf aed-tf--wide"><label for="n-{{ r.pk }}">Notatka z rozmowy</label><input id="n-{{ r.pk }}" name="notes" value="{{ r.notes }}"></div>
+<div class="aed-task__btns">
+<button class="aed-btn sec sm" name="action" value="invite">Wyślij zaproszenie</button>
+<button class="aed-btn sec sm" name="action" value="contacted">Zadzwoniono</button>
+<button class="aed-btn sm" name="action" value="agreed">Zgoda – opublikuj</button>
+<button class="aed-btn sec sm" name="action" value="refused">Odmowa</button>
+</div>
+</form>
+</li>
+{% empty %}<li class="aed-task"><span class="aed-hint">Brak próśb w tym stanie.</span></li>
+{% endfor %}
+</ul>
+{% if total > page %}<p class="aed-hint">Pokazano {{ page }} z {{ total }}, od dysponentów z największą liczbą AED.</p>{% endif %}
+</section>
+{% endblock %}

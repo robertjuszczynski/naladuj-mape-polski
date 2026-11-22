@@ -105,10 +105,52 @@ class ReportType:
 
 
 class RecordWarning:
+    UNVERIFIED = "unverified"
     INSPECTION_OVERDUE = "inspection_overdue"
     ELECTRODES_EXPIRED = "electrodes_expired"
     BATTERY_EXPIRED = "battery_expired"
     REPORTED = "reported"
+
+
+class SourceLicence:
+    """What the licence of an outside source allows: publish it, or keep it internal until the owner agrees."""
+
+    CC0 = "cc0"
+    CC_BY = "cc_by"
+    PUBLIC_INFO = "public_info"
+    ODBL = "odbl"
+    NONE = "none"
+
+    CHOICES = (
+        (CC0, "CC0 – można publikować"),
+        (CC_BY, "CC BY – można publikować z podaniem autora"),
+        (PUBLIC_INFO, "Informacja publiczna (BIP) – można publikować z podaniem źródła"),
+        (ODBL, "ODbL (OpenStreetMap) – tylko wewnętrznie, do pozyskania zgody"),
+        (NONE, "Brak licencji – tylko wewnętrznie, do pozyskania zgody"),
+    )
+    PUBLISHABLE = (CC0, CC_BY, PUBLIC_INFO)
+
+
+class SourceParser:
+    TABLE = "table"
+    PDF = "pdf"
+    OVERPASS = "overpass"
+
+    CHOICES = ((TABLE, "Plik CSV lub XLSX"), (PDF, "Tabela w PDF"), (OVERPASS, "OpenStreetMap (Overpass)"))
+
+
+class ConsentStatus:
+    TO_CONTACT = "to_contact"
+    CONTACTED = "contacted"
+    AGREED = "agreed"
+    REFUSED = "refused"
+
+    CHOICES = (
+        (TO_CONTACT, "Do kontaktu"),
+        (CONTACTED, "Skontaktowano – czekamy"),
+        (AGREED, "Zgoda – opublikowano"),
+        (REFUSED, "Odmowa"),
+    )
 
 
 class UploadStatus:
@@ -139,7 +181,10 @@ INSPECTION_INTERVAL_DAYS = 365
 REPORT_RATE_LIMIT = 10
 REPORT_RATE_WINDOW_S = 3600
 
-STATS_CACHE_KEY = "aed:stats:v2"
+PUBLIC_TITLE_PREFIX = "AED ze źródła publicznego – "
+CONSENT_TITLE_PREFIX = "AED za zgodą dysponenta – "
+
+STATS_CACHE_KEY = "aed:stats:v3"
 STATS_CACHE_TTL_S = 300
 
 NATIONAL_ORG_TITLE = "Departament Zarządzania Danymi – Ministerstwo Cyfryzacji"

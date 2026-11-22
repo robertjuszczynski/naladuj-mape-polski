@@ -1843,7 +1843,8 @@
       "inspection_overdue": "Przegląd po terminie",
       "electrodes_expired": "Elektrody po terminie",
       "battery_expired": "Bateria po terminie",
-      "reported": "Zgłoszono problem – czeka na sprawdzenie"
+      "reported": "Zgłoszono problem – czeka na sprawdzenie",
+      "unverified": "Ze źródła publicznego – niepotwierdzony przez dysponenta"
     },
     "AddOne": "Dodaj jeden AED",
     "AddOneHint": "W minutę, z telefonu lub komputera",
@@ -1853,6 +1854,7 @@
       "Label": "Widok mapy",
       "Map": "Mapa",
       "Ortho": "Zdjęcie lotnicze"
-    }
+    },
+    "SourcesLine": "{confirmed} AED potwierdzonych przez dysponentów i {public} ze źródeł publicznych (np. BIP). Kolejne {waiting} AED z innych źródeł czeka na zgodę właścicieli na publikację."
   }
 }

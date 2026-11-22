@@ -1840,7 +1840,8 @@
       "inspection_overdue": "Inspection overdue",
       "electrodes_expired": "Electrodes expired",
       "battery_expired": "Battery expired",
-      "reported": "Problem reported – awaiting check"
+      "reported": "Problem reported – awaiting check",
+      "unverified": "From a public source – not confirmed by the owner"
     },
     "AddOne": "Add one AED",
     "AddOneHint": "In a minute, from a phone or computer",
@@ -1850,6 +1851,7 @@
       "Label": "Map view",
       "Map": "Map",
       "Ortho": "Aerial photo"
-    }
+    },
+    "SourcesLine": "{confirmed} AEDs confirmed by their owners and {public} from public sources (e.g. municipal bulletins). Another {waiting} AEDs from other sources await their owners' consent to publish."
   }
 }

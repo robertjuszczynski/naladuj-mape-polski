@@ -21,6 +21,7 @@ LICENSE_HINTS = {
     Dataset.LICENSE_CC_BY: ("z podaniem źródła", "Kto korzysta z danych, musi wskazać Twoją organizację jako autora."),
 }
 LICENSE_NAME_TO_CODE = {name: code for code, name in Dataset.LICENSES}
+PUBLIC_INSTITUTION_TYPES = ("local", "state")
 
 
 def license_options():
@@ -33,6 +34,11 @@ def license_options():
         }
         for code in ALLOWED_LICENSES
     ]
+
+
+def is_public_institution(organizations):
+    """Public bodies publish open data without conditions by default (CC0), so the licence choice starts folded."""
+    return all(o.institution_type in PUBLIC_INSTITUTION_TYPES for o in organizations) if organizations else False
 
 
 def license_from_form(value):

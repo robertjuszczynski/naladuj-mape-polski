@@ -60,7 +60,7 @@ class TaskPlanner:
             for t in AedTask.objects.filter(status=TaskStatus.OPEN).exclude(kind=TaskKind.REPORT)
         }
         seen, new = set(), []
-        for record in AedRecord.objects.all().only("organization_id", "id_aed", "nazwa_obiektu", "data"):
+        for record in AedRecord.objects.filter(verified=True).only("organization_id", "id_aed", "nazwa_obiektu", "data"):
             for kind, due in self.wanted(record.data):
                 key = (record.organization_id, record.id_aed, kind)
                 seen.add(key)

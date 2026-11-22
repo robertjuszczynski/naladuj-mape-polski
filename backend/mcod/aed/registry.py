@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 
-from mcod.aed.constants import NATIONAL_ORG_TITLE, STATS_CACHE_KEY, RecordStatus
+from mcod.aed.constants import NATIONAL_ORG_TITLE, PUBLIC_TITLE_PREFIX, STATS_CACHE_KEY, RecordStatus
 from mcod.aed.export import AedCsv
 from mcod.aed.importing.geocoder import GugikGeocoder
 from mcod.aed.importing.pipeline import ImportPipeline, ImportSource
@@ -63,6 +63,10 @@ class SourceReader:
             raise SourceError(str(exc))
 
 
+def is_public_source(resource):
+    return resource.title.startswith(PUBLIC_TITLE_PREFIX)
+
+
 def is_standard(header):
     """Files made with the data standard (e.g. by the wizard) are only checked; any other layout is matched first."""
     return "id_aed" in header and set(header) <= set(FIELD_NAMES)
@@ -89,20 +93,31 @@ class RegistryBuilder:
 
     def rebuild(self):
         collected, licenses, report = {}, {}, []
-        for resource in sorted(register_resources(), key=self._is_original_file):
+        for resource in sorted(register_resources(), key=lambda r: (is_public_source(r), self._is_original_file(r))):
             report.append(self._read_source(resource, collected, licenses))
+        entries = self._without_public_duplicates(collected)
         with transaction.atomic():
             AedRecord.objects.all().delete()
-            AedRecord.objects.bulk_create(
-                [AedRecord.from_result(resource.dataset, resource, result) for resource, result in collected.values()],
-                batch_size=BULK_BATCH_SIZE,
-            )
-        records = [result["record"] for _, result in collected.values()]
+            AedRecord.objects.bulk_create(entries, batch_size=BULK_BATCH_SIZE)
+        records = [entry.data for entry in entries]
         self._publish_main(records, licenses, report)
         cache.delete(STATS_CACHE_KEY)
         TaskPlanner().sync()
         logger.info("Wykaz zbiorczy AED: %d urządzeń z %d zasobów", len(records), len(report))
         return len(records)
+
+    @staticmethod
+    def _without_public_duplicates(collected):
+        """Registry entries; an unconfirmed AED from a public source is left out when a provider already published it."""
+        from mcod.aed.outside import Proximity
+
+        entries = []
+        for resource, result in collected.values():
+            entry = AedRecord.from_result(resource.dataset, resource, result)
+            entry.verified = not is_public_source(resource)
+            entries.append(entry)
+        confirmed = Proximity([(e.lat, e.lon) for e in entries if e.verified and e.lat is not None])
+        return [e for e in entries if e.verified or e.lat is None or not confirmed.near(e.lat, e.lon)]
 
     @staticmethod
     def _is_original_file(resource):

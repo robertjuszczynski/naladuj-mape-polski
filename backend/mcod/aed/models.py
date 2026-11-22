@@ -3,7 +3,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
 
-from mcod.aed.constants import RecordStatus, TaskKind, TaskStatus, UploadStatus
+from mcod.aed.constants import ConsentStatus, RecordStatus, SourceLicence, SourceParser, TaskKind, TaskStatus, UploadStatus
 from mcod.aed.review import UploadReview
 from mcod.aed.validation import coordinates
 
@@ -30,6 +30,7 @@ class AedRecord(models.Model):
     fixes = JSONField("Poprawki automatyczne", default=list)
     issues = JSONField("Uwagi walidacji", default=list)
     status = models.CharField("Status", max_length=20, choices=RecordStatus.CHOICES)
+    verified = models.BooleanField("Potwierdzony przez dysponenta", default=True)
     updated = models.DateTimeField("Aktualizacja", auto_now=True)
 
     class Meta:
@@ -182,3 +183,77 @@ class AedTask(models.Model):
     def close(self, status=TaskStatus.DONE):
         self.status, self.resolved = status, timezone.now()
         self.save(update_fields=["status", "resolved"])
+
+
+class AedSource(models.Model):
+    """An outside list of AEDs the portal reads on its own: a BIP file, a city website, OpenStreetMap."""
+
+    name = models.CharField("Nazwa", max_length=300)
+    publisher = models.CharField("Wydawca", max_length=300)
+    url = models.URLField("Adres pliku lub usługi", max_length=1000)
+    parser = models.CharField("Format", max_length=20, choices=SourceParser.CHOICES, default=SourceParser.TABLE)
+    licence = models.CharField("Licencja", max_length=20, choices=SourceLicence.CHOICES)
+    city = models.CharField("Miejscowość domyślna", max_length=200, blank=True, help_text="Dla list z samymi adresami ulic")
+    query = models.TextField("Zapytanie Overpass", blank=True)
+    active = models.BooleanField("Pobieraj co noc", default=True)
+    fetched = models.DateTimeField("Ostatnie pobranie", null=True, blank=True)
+    rows = models.PositiveIntegerField("Rekordów w źródle", default=0)
+    published = models.PositiveIntegerField("Opublikowano", default=0)
+    held = models.PositiveIntegerField("Czeka na zgodę", default=0)
+    error = models.TextField("Błąd ostatniego pobrania", blank=True)
+
+    class Meta:
+        verbose_name = "źródło AED"
+        verbose_name_plural = "źródła AED"
+        ordering = ("name",)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def publishable(self):
+        return self.licence in SourceLicence.PUBLISHABLE
+
+
+class ConsentRequest(models.Model):
+    """One phone call or e-mail away from publishing: an operator (or a municipality as intermediary) with its AEDs."""
+
+    key = models.CharField("Klucz", max_length=300, unique=True)
+    label = models.CharField("Dysponent lub gmina", max_length=500)
+    is_municipality = models.BooleanField("Przez gminę", default=False)
+    contact = models.CharField("Kontakt", max_length=300, blank=True)
+    status = models.CharField("Stan", max_length=20, choices=ConsentStatus.CHOICES, default=ConsentStatus.TO_CONTACT)
+    lead_count = models.PositiveIntegerField("AED", default=0)
+    notes = models.TextField("Notatki z rozmów", blank=True)
+    updated = models.DateTimeField("Zmieniono", auto_now=True)
+
+    class Meta:
+        verbose_name = "prośba o zgodę"
+        verbose_name_plural = "prośby o zgodę"
+        ordering = ("-lead_count",)
+
+    def __str__(self):
+        return self.label
+
+
+class AedLead(models.Model):
+    """An AED known from a source whose licence does not allow publishing; kept internal until its owner agrees."""
+
+    source = models.ForeignKey(AedSource, on_delete=models.CASCADE, related_name="leads", verbose_name="Źródło")
+    external_id = models.CharField("Identyfikator w źródle", max_length=120)
+    request = models.ForeignKey(
+        ConsentRequest, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads", verbose_name="Prośba o zgodę"
+    )
+    name = models.CharField("Nazwa", max_length=500, blank=True)
+    operator = models.CharField("Dysponent", max_length=300, blank=True)
+    lat = models.FloatField("Szerokość geograficzna")
+    lon = models.FloatField("Długość geograficzna")
+    kod_teryt_gminy = models.CharField("Kod TERYT gminy", max_length=7, blank=True)
+    data = JSONField("Dane wg wzorcowego zakresu", default=dict)
+    in_register = models.BooleanField("Już jest w wykazie", default=False)
+    updated = models.DateTimeField("Aktualizacja", auto_now=True)
+
+    class Meta:
+        verbose_name = "AED czekający na zgodę"
+        verbose_name_plural = "AED czekające na zgodę"
+        unique_together = (("source", "external_id"),)

@@ -22,7 +22,7 @@ class Http:
         self.calls.append((params["address"], timeout))
         if self.fail:
             raise requests.ConnectionError("brak sieci")
-        return Response({"results": {"1": {"x": "21.1", "y": "52.3", "simc": "0920806"}}})
+        return Response({"results": {"1": {"x": "21.1", "y": "52.3", "simc": "0920806", "street": "ulica Szkolna"}}})
 
 
 class Cache(dict):
@@ -57,3 +57,13 @@ def test_limit_and_records_with_coordinates():
     rows = mapped("A", "B", "C") + [({"miejscowosc": "D", "szerokosc_geograficzna": "52", "dlugosc_geograficzna": "21"}, [])]
     GugikGeocoder(http=http).fill_missing(rows, limit=2)
     assert sorted(a for a, _ in http.calls) == ["A, Szkolna 9", "B, Szkolna 9"]
+
+
+def test_city_centre_is_not_used_for_an_address_with_street():
+    class CityOnly(Http):
+        def get(self, url, params, timeout):
+            return Response({"results": {"1": {"x": "19.9", "y": "50.0", "simc": "0950463", "street": None}}})
+
+    rows = mapped("Kraków")
+    GugikGeocoder(http=CityOnly()).fill_missing(rows)
+    assert "szerokosc_geograficzna" not in rows[0][0]

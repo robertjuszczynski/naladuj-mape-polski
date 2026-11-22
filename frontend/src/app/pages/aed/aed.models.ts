@@ -35,6 +35,7 @@ export interface AedProvinceCoverage {
 
 export interface AedStats {
   aed_count: number;
+  sources?: { confirmed: number; public: number; awaiting_consent: number; consent_requests: number };
   institution_count: number;
   availability: { now: Partial<Record<AedAvailability, number>> };
   national_dataset: { id: number; slug: string; title: string } | null;

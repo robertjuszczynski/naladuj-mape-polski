@@ -5,9 +5,10 @@
 <h2>Licencja i publikacja</h2>
 <p>Opublikujesz <strong>{{ count }}</strong> AED w zbiorze <strong>{{ up.organization }}</strong>{% if held %}, {{ held }} zostaje wstrzymanych{% endif %}. Dane trafią też automatycznie do zbioru ogólnopolskiego.</p>
 </div>
-<fieldset class="aed-options aed-block"><legend>Na jakiej licencji udostępniasz dane?</legend>
+<details class="aed-licence aed-block"{% if not licence_folded %} open{% endif %}><summary>Licencja: <strong>CC0 1.0 – bez warunków</strong>{% if licence_folded %} (zalecana dla instytucji publicznych){% endif %} <span>zmień</span></summary>
+<fieldset class="aed-options"><legend class="aed-sr">Na jakiej licencji udostępniasz dane?</legend>
 {% for license in licenses %}<label class="aed-option"><input type="radio" name="license" value="{{ license.code }}"{% if forloop.first %} checked{% endif %}><strong>{{ license.name }} – {{ license.title }}</strong><span class="aed-small">{{ license.hint }}</span></label>
-{% endfor %}</fieldset>
+{% endfor %}</fieldset></details>
 <div class="aed-block">
 <span class="aed-label">Oświadczenie</span>
 <label class="aed-consent"><input type="checkbox" name="consent" value="1" required><span>Organizacja ma prawo udostępnić te dane i odpowiada za ich poprawność i aktualność. Dane nie zawierają danych osobowych (np. prywatnych numerów telefonów). Zgadzam się na publikację w dane.gov.pl na wybranej licencji.</span></label>

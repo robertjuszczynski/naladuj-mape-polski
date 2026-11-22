@@ -3,6 +3,8 @@ import datetime
 import pytest
 
 pytest.importorskip("django")
+if not __import__("django.apps", fromlist=["apps"]).apps.ready:
+    pytest.skip("needs the portal's Django setup (conftest)", allow_module_level=True)
 
 from mcod.aed.nearest import AddressLocator, NearestAed, opens_at, walk_minutes  # noqa: E402
 

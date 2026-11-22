@@ -17,7 +17,7 @@ from mcod.aed.importing.reader import UploadError, UploadValidator
 from mcod.aed.models import AedUpload
 from mcod.aed.profile import FIELDS, PROFILE_VERSION
 from mcod.aed.provider import ProviderResource
-from mcod.aed.publishing import license_from_form, license_name, license_options
+from mcod.aed.publishing import is_public_institution, license_from_form, license_name, license_options
 from mcod.aed.review import FILTER_AUTO, FILTER_BLOCKED, FILTER_PENDING
 from mcod.aed.validation import PortalQualityCheck
 
@@ -217,6 +217,7 @@ class AedUploadAdmin(StaffOnlyMixin, admin.ModelAdmin):
             others=len(others),
             others_organizations=len({(r.get("dysponent_nazwa") or "").strip().lower() for r in others}),
             licenses=license_options(),
+            licence_folded=is_public_institution([upload.organization]),
         )
 
     @staticmethod

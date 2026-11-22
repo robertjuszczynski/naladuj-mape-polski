@@ -69,7 +69,8 @@
 
 <section class="aed-sec" aria-labelledby="sec-publish">
 <h3 id="sec-publish">Publikacja</h3>
-<div class="aed-seg" role="radiogroup" aria-label="Licencja">{% for license in licenses %}<label><input type="radio" name="license" value="{{ license.code }}"{% if values.license == license.code|stringformat:"s" or not values.license and forloop.first %} checked{% endif %}><span>{{ license.name }} · {{ license.title }}</span></label>{% endfor %}</div>
+<details class="aed-licence"{% if not licence_folded %} open{% endif %}><summary>Licencja: <strong>CC0 1.0 – bez warunków</strong>{% if licence_folded %} (zalecana dla instytucji publicznych){% endif %} <span>zmień</span></summary>
+<div class="aed-seg" role="radiogroup" aria-label="Licencja">{% for license in licenses %}<label><input type="radio" name="license" value="{{ license.code }}"{% if values.license == license.code|stringformat:"s" or not values.license and forloop.first %} checked{% endif %}><span>{{ license.name }} · {{ license.title }}</span></label>{% endfor %}</div></details>
 <label class="aed-consent"><input type="checkbox" name="consent" value="1"{% if values.consent %} checked{% endif %}><span>Mamy prawo udostępnić te dane i odpowiadamy za ich aktualność. Nie zawierają danych osobowych.</span></label>
 </section>
 

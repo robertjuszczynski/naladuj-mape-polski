@@ -95,6 +95,11 @@ def get_beat_schedule(
             "options": default_options,
             "schedule": crontab(minute=45, hour=3),
         },
+        "aed_sources_fetch": {
+            "task": "mcod.aed.tasks.fetch_aed_sources",
+            "options": default_options,
+            "schedule": crontab(minute=15, hour=3),
+        },
         "aed_task_reminders": {
             "task": "mcod.aed.tasks.send_aed_task_reminders",
             "options": default_options,

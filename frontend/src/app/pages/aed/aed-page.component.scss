@@ -215,6 +215,12 @@ li:not(.on) > .aed-battery {
   color: var(--aed-closed);
 }
 
+.aed-sources {
+  margin-top: 12px;
+  color: var(--aed-muted);
+  font-size: 0.92rem;
+}
+
 .aed-explorer {
   padding-top: 48px;
   padding-bottom: 48px;

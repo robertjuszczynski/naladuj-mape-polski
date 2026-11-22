@@ -64,10 +64,29 @@ class Boundaries:
     def get(cls, teryt):
         return cls.all().get(teryt or "")
 
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def boxes():
+        """(min_lon, min_lat, max_lon, max_lat) per municipality, to skip polygons that cannot contain a point."""
+        out = {}
+        for teryt, boundary in Boundaries.all().items():
+            points = [p for polygon in boundary["polygons"] for p in polygon[0]]
+            out[teryt] = (
+                min(p[0] for p in points),
+                min(p[1] for p in points),
+                max(p[0] for p in points),
+                max(p[1] for p in points),
+            )
+        return out
+
     @classmethod
     def teryt_at(cls, lat, lon):
         """TERYT code of the municipality containing the point, or ""."""
-        return next((teryt for teryt, b in cls.all().items() if in_boundary(lat, lon, b)), "")
+        boundaries = cls.all()
+        for teryt, (x1, y1, x2, y2) in cls.boxes().items():
+            if x1 <= lon <= x2 and y1 <= lat <= y2 and in_boundary(lat, lon, boundaries[teryt]):
+                return teryt
+        return ""
 
     @classmethod
     def containing(cls, lat, lon, exclude=None):

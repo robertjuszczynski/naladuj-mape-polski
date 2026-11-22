@@ -31,6 +31,17 @@
         <span>{{ 'Aed.StatNow' | translate }}</span>
       </div>
     </section>
+    <p class="container aed-sources" *ngIf="stats.sources as src">
+      {{
+        'Aed.SourcesLine'
+          | translate
+            : {
+                confirmed: (src.confirmed | aedNumber: vm.lang),
+                public: (src.public | aedNumber: vm.lang),
+                waiting: (src.awaiting_consent | aedNumber: vm.lang),
+              }
+      }}
+    </p>
   </ng-container>
 
   <section class="container aed-explorer" aria-labelledby="aed-map-title">
