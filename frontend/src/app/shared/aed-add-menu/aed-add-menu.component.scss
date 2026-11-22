@@ -1,0 +1,93 @@
+@use 'aed/tokens';
+
+:host {
+  @include tokens.tokens;
+  display: inline-block;
+  position: relative;
+}
+@include tokens.contrast-tokens;
+
+.aed-add__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 10px 20px;
+  border: 2px solid var(--aed-accent);
+  border-radius: 8px;
+  background: var(--aed-accent);
+  color: var(--aed-on-accent);
+  font-weight: 800;
+  line-height: 1.2;
+  list-style: none;
+  cursor: pointer;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+  &:hover {
+    border-color: var(--aed-accent-strong);
+    background: var(--aed-accent-strong);
+  }
+  @include tokens.focus-ring;
+}
+.aed-add--banner .aed-add__btn {
+  min-height: 44px;
+}
+.aed-add__chev {
+  width: 12px;
+  height: 8px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  transition: transform 0.18s ease-out;
+}
+.aed-add[open] .aed-add__chev {
+  transform: rotate(180deg);
+}
+.aed-add__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1100;
+  min-width: 280px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--aed-line);
+  border-radius: 10px;
+  background: var(--aed-bg);
+  box-shadow: 0 12px 32px rgba(11, 37, 69, 0.18);
+
+  a {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    color: var(--aed-fg);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--aed-tint);
+      outline: none;
+    }
+  }
+  strong {
+    font-weight: 700;
+  }
+  span {
+    color: var(--aed-muted);
+    font-size: 0.875rem;
+  }
+}
+.aed-add--banner .aed-add__menu {
+  right: 0;
+  left: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aed-add__chev {
+    transition: none;
+  }
+}

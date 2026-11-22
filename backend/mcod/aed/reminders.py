@@ -25,8 +25,8 @@ def message(organization, tasks):
     if more > 0:
         lines.append("- …i %d więcej" % more)
     return (
-        "Dzień dobry,\n\nw portalu dane.gov.pl czekają nowe zadania dla AED instytucji %s:\n\n%s\n\n"
-        "Zadania: %s%s\n\nKażda poprawka od razu trafia do Waszego zbioru i na mapę AED.\n"
+        "Dzień dobry,\n\nw portalu dane.gov.pl czekają rzeczy do sprawdzenia przy AED instytucji %s:\n\n%s\n\n"
+        "Do sprawdzenia: %s%s\n\nKażda poprawka od razu trafia do Waszego zbioru i na mapę AED.\n"
         "Akcja „Naładuj mapę Polski.”" % (organization.title, "\n".join(lines), settings.ADMIN_URL.rstrip("/"), TASKS_PATH)
     )
 
@@ -46,7 +46,7 @@ def send_reminders(organizations=None, only_new=True):
         to = recipients(organization)
         if not to:
             continue
-        subject = "AED: %d %s do zrobienia – %s" % (len(tasks), "zadanie" if len(tasks) == 1 else "zadań", organization.title)
+        subject = "AED do sprawdzenia (%d) – %s" % (len(tasks), organization.title)
         body = message(organization, tasks)
         send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, to)
         AedTask.objects.filter(pk__in=[t.pk for t in tasks]).update(notified=timezone.now())

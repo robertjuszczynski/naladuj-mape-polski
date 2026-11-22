@@ -1,0 +1,20 @@
+<details #menu class="aed-add" [class.aed-add--banner]="variant === 'banner'">
+  <summary class="aed-add__btn">
+    {{ 'Aed.AddData' | translate }}
+    <svg class="aed-add__chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5" /></svg>
+  </summary>
+  <ul class="aed-add__menu">
+    <li>
+      <a [href]="singleUrl">
+        <strong>{{ 'Aed.AddOne' | translate }}</strong>
+        <span>{{ 'Aed.AddOneHint' | translate }}</span>
+      </a>
+    </li>
+    <li>
+      <a [href]="wizardUrl">
+        <strong>{{ 'Aed.AddMany' | translate }}</strong>
+        <span>{{ 'Aed.AddManyHint' | translate }}</span>
+      </a>
+    </li>
+  </ul>
+</details>

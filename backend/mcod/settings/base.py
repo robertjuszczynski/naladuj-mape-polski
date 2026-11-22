@@ -533,9 +533,9 @@ SUIT_CONFIG = {
         {
             "label": "Defibrylatory AED",
             "models": [
-                {"url": "/aed/aedtask/single/", "label": "Dodaj jeden AED", "icon": "icon-plus"},
                 {"model": "aed.aedupload", "label": "Wgraj plik z AED", "icon": "icon-upload"},
-                {"model": "aed.aedtask", "label": "Zadania", "icon": "icon-check"},
+                {"url": "/aed/aedtask/single/", "label": "Dodaj jeden AED", "icon": "icon-plus"},
+                {"model": "aed.aedtask", "label": "Do sprawdzenia", "icon": "icon-check"},
                 {"model": "aed.aedrecord", "label": "Rejestr AED", "icon": "icon-map-marker"},
                 {"model": "aed.aggregatedaedinfo", "label": "Wykaz zbiorczy AED", "icon": "icon-list"},
             ],
@@ -2339,6 +2339,7 @@ CSP_IMG_SRC = env.list(
         MATOMO_URL,  # Matomo Image Tracker (invisible tracking pixel for users without JS)
         BASE_URL,
         "https://tile.openstreetmap.org",  # map tiles in the AED provider forms
+        "https://mapy.geoportal.gov.pl",  # GUGiK orthophoto in the AED provider forms
         UNPKG_URL,  # Leaflet marker icons in the AED provider forms
     ],
 )

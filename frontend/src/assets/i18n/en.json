@@ -1841,6 +1841,15 @@
       "electrodes_expired": "Electrodes expired",
       "battery_expired": "Battery expired",
       "reported": "Problem reported – awaiting check"
+    },
+    "AddOne": "Add one AED",
+    "AddOneHint": "In a minute, from a phone or computer",
+    "AddMany": "Add many AEDs",
+    "AddManyHint": "Upload a CSV or Excel file",
+    "MapView": {
+      "Label": "Map view",
+      "Map": "Map",
+      "Ortho": "Aerial photo"
     }
   }
 }

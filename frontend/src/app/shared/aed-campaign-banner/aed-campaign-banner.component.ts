@@ -4,7 +4,8 @@ import { RouterLink } from '@angular/router';
 import { LocalizeRouterPipe } from '@gilsdav/ngx-translate-router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { AED_ROUTE, AED_WIZARD_PATH } from '@app/pages/aed/aed.constants';
+import { AED_ROUTE } from '@app/pages/aed/aed.constants';
+import { AedAddMenuComponent } from '@app/shared/aed-add-menu/aed-add-menu.component';
 import { AedNumberPipe } from '@app/pages/aed/aed-number.pipe';
 import { AedService } from '@app/pages/aed/aed.service';
 import { AedMarkComponent } from '@app/shared/aed-mark/aed-mark.component';
@@ -12,7 +13,16 @@ import { AedMarkComponent } from '@app/shared/aed-mark/aed-mark.component';
 @Component({
   selector: 'app-aed-campaign-banner',
   standalone: true,
-  imports: [NgIf, AsyncPipe, RouterLink, LocalizeRouterPipe, TranslatePipe, AedMarkComponent, AedNumberPipe],
+  imports: [
+    AedAddMenuComponent,
+    NgIf,
+    AsyncPipe,
+    RouterLink,
+    LocalizeRouterPipe,
+    TranslatePipe,
+    AedMarkComponent,
+    AedNumberPipe,
+  ],
   templateUrl: './aed-campaign-banner.component.html',
   styleUrls: ['./aed-campaign-banner.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,7 +30,6 @@ import { AedMarkComponent } from '@app/shared/aed-mark/aed-mark.component';
 export class AedCampaignBannerComponent {
   readonly route = AED_ROUTE;
   readonly stats$ = this.aed.stats$;
-  readonly wizardUrl = this.aed.adminUrl(AED_WIZARD_PATH);
 
   constructor(
     private readonly aed: AedService,

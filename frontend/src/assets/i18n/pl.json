@@ -1844,6 +1844,15 @@
       "electrodes_expired": "Elektrody po terminie",
       "battery_expired": "Bateria po terminie",
       "reported": "Zgłoszono problem – czeka na sprawdzenie"
+    },
+    "AddOne": "Dodaj jeden AED",
+    "AddOneHint": "W minutę, z telefonu lub komputera",
+    "AddMany": "Dodaj wiele AED",
+    "AddManyHint": "Wgraj plik CSV lub Excel",
+    "MapView": {
+      "Label": "Widok mapy",
+      "Map": "Mapa",
+      "Ortho": "Zdjęcie lotnicze"
     }
   }
 }

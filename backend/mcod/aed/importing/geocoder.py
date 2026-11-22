@@ -78,6 +78,7 @@ class GugikGeocoder:
             "city": result.get("city") or "",
             "street": result.get("street") or "",
             "number": result.get("number") or "",
+            "code": result.get("code") or "",
         }
 
     def fill_missing(self, mapped, limit=GEOCODE_LIMIT):

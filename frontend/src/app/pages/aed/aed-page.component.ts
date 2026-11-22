@@ -7,6 +7,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import type { LatLngTuple } from 'leaflet';
 import { finalize } from 'rxjs';
 
+import { AedAddMenuComponent } from '@app/shared/aed-add-menu/aed-add-menu.component';
 import { AedMarkComponent } from '@app/shared/aed-mark/aed-mark.component';
 
 import {
@@ -44,6 +45,7 @@ const GEO_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 10000,
     LocalizeRouterPipe,
     TranslatePipe,
     AedMapComponent,
+    AedAddMenuComponent,
     AedMarkComponent,
     AedNumberPipe,
   ],
@@ -86,10 +88,6 @@ export class AedPageComponent implements OnInit {
   readonly incidentPoint = computed<LatLngTuple | null>(() => {
     const point = this.nearest()?.meta.point;
     return point ? [point.lat, point.lon] : null;
-  });
-  readonly nearestApi = computed(() => {
-    const n = this.nearest();
-    return n ? this.aed.nearestApiUrl(n.meta.point.lat, n.meta.point.lon, this.momentParam()) : '';
   });
 
   mode: TimeMode = 'now';

@@ -4,53 +4,75 @@
 {% block toolscript %}<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 <script src="{% static 'aed/single.js' %}" defer></script>{% endblock %}
 {% block aed %}
-<div class="aed-head">
-<h2>Dodaj jeden AED</h2>
-<p>Stań przy defibrylatorze i wypełnij cztery krótkie kroki. Bez pliku, bez szablonu – zajmie to około minuty. Masz wiele AED? <a href="{% url 'admin:aed_upload' %}">Wgraj plik</a>.</p>
-</div>
-<form method="post" class="aed-single" data-locate-url="{% url 'admin:aed_locate' %}">{% csrf_token %}
-{% if organizations|length == 1 %}<input type="hidden" name="organization" value="{{ organizations.0.pk }}"><p class="aed-small">Dodajesz jako <strong>{{ organizations.0.title }}</strong></p>
-{% else %}<label class="aed-label" for="organization">Instytucja</label>
-<select id="organization" name="organization" required class="aed-select-narrow">{% for o in organizations %}<option value="{{ o.pk }}"{% if values.organization == o.pk|stringformat:"s" %} selected{% endif %}>{{ o.title }}</option>{% endfor %}</select>{% endif %}
+<p class="aed-lead">Bez pliku i szablonu. Masz wiele defibrylatorów? <a href="{% url 'admin:aed_upload' %}">Wgraj plik</a>.</p>
+<form method="post" class="aed-single" data-locate-url="{% url 'admin:aed_locate' %}" data-search-url="{% url 'admin:aed_search' %}" novalidate>{% csrf_token %}
 
-<fieldset class="aed-step"><legend><span>1</span>Gdzie jest?</legend>
-<button type="button" class="aed-btn aed-btn--wide" data-locate>Jestem przy AED – użyj mojej lokalizacji</button>
-<p class="aed-small" data-locate-status aria-live="polite">Możesz też kliknąć miejsce na mapie albo przesunąć pinezkę.</p>
-<div class="aed-pinmap" data-map role="region" aria-label="Mapa: miejsce AED"></div>
+<section class="aed-sec" aria-labelledby="sec-place">
+<h3 id="sec-place">Miejsce</h3>
+{% if organizations|length == 1 %}<input type="hidden" name="organization" value="{{ organizations.0.pk }}">
+{% else %}<div class="aed-fld"><label for="organization">Instytucja</label>
+<select id="organization" name="organization" required>{% for o in organizations %}<option value="{{ o.pk }}"{% if values.organization == o.pk|stringformat:"s" %} selected{% endif %}>{{ o.title }}</option>{% endfor %}</select></div>{% endif %}
+<div class="aed-fld"><label for="nazwa_obiektu">Nazwa miejsca</label>
+<input id="nazwa_obiektu" name="nazwa_obiektu" required value="{{ values.nazwa_obiektu|default:'' }}" placeholder="np. Urząd Miasta Marki"></div>
+<div class="aed-fld aed-combo"><label for="address-search">Adres</label>
+<input id="address-search" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="address-list" aria-autocomplete="list" placeholder="np. Marki, Piłsudskiego 95" data-search>
+<ul id="address-list" class="aed-combo__list" role="listbox" hidden data-results></ul>
+<p class="aed-hint" data-search-status aria-live="polite">Wpisz miejscowość i ulicę, wybierz podpowiedź, a potem kliknij dokładne miejsce na mapie.</p></div>
+<div class="aed-mapbox">
+<div class="aed-pinmap" data-map role="region" aria-label="Mapa: dokładne miejsce AED"></div>
+<div class="aed-maptools" role="group" aria-label="Widok mapy">
+<button type="button" class="on" data-layer="map" aria-pressed="true">Mapa</button><button type="button" data-layer="orto" aria-pressed="false">Zdjęcie lotnicze</button>
+</div>
+</div>
+<div class="aed-row"><button type="button" class="aed-btn sec sm" data-locate>Użyj mojej lokalizacji</button><span class="aed-hint" data-locate-status aria-live="polite"></span></div>
 <input type="hidden" name="lat" value="{{ values.lat|default:'' }}" data-lat><input type="hidden" name="lon" value="{{ values.lon|default:'' }}" data-lon>
-<label class="aed-label" for="nazwa_obiektu">Nazwa miejsca</label>
-<input id="nazwa_obiektu" name="nazwa_obiektu" required value="{{ values.nazwa_obiektu|default:'' }}" placeholder="np. Urząd Miasta Marki">
-<div class="aed-grid2">
-<label>Ulica<input name="ulica" value="{{ values.ulica|default:'' }}" data-field="ulica" autocomplete="address-line1"></label>
-<label>Numer<input name="numer_budynku" value="{{ values.numer_budynku|default:'' }}" data-field="numer_budynku"></label>
-<label>Kod pocztowy<input name="kod_pocztowy" value="{{ values.kod_pocztowy|default:'' }}" data-field="kod_pocztowy" inputmode="numeric"></label>
-<label>Miejscowość<input name="miejscowosc" value="{{ values.miejscowosc|default:'' }}" data-field="miejscowosc"></label>
+<div class="aed-cols aed-cols--addr">
+<div class="aed-fld"><label for="ulica">Ulica</label><input id="ulica" name="ulica" value="{{ values.ulica|default:'' }}" data-field="ulica"></div>
+<div class="aed-fld"><label for="numer_budynku">Numer</label><input id="numer_budynku" name="numer_budynku" value="{{ values.numer_budynku|default:'' }}" data-field="numer_budynku"></div>
+<div class="aed-fld"><label for="kod_pocztowy">Kod</label><input id="kod_pocztowy" name="kod_pocztowy" value="{{ values.kod_pocztowy|default:'' }}" data-field="kod_pocztowy" inputmode="numeric" placeholder="00-000"></div>
+<div class="aed-fld"><label for="miejscowosc">Miejscowość</label><input id="miejscowosc" name="miejscowosc" value="{{ values.miejscowosc|default:'' }}" data-field="miejscowosc"></div>
 </div>
-</fieldset>
+</section>
 
-<fieldset class="aed-step"><legend><span>2</span>Kiedy jest dostępny?</legend>
-<div class="aed-chips">
-<label><input type="radio" name="hours_mode" value="always"{% if values.hours_mode == "always" %} checked{% endif %}><span>Całą dobę</span></label>
-<label><input type="radio" name="hours_mode" value="workdays"{% if values.hours_mode == "workdays" %} checked{% endif %}><span>pn–pt 8–16</span></label>
-<label><input type="radio" name="hours_mode" value="other"{% if values.hours_mode == "other" %} checked{% endif %}><span>Inne godziny</span></label>
+<section class="aed-sec" aria-labelledby="sec-hours">
+<h3 id="sec-hours">Dostępność</h3>
+<div class="aed-seg" role="radiogroup" aria-labelledby="sec-hours">
+<label><input type="radio" name="hours_mode" value="always"{% if values.hours_mode != "range" %} checked{% endif %}><span>Całą dobę</span></label>
+<label><input type="radio" name="hours_mode" value="range"{% if values.hours_mode == "range" %} checked{% endif %}><span>W wybranych godzinach</span></label>
 </div>
-<input name="hours_text" value="{{ values.hours_text|default:'' }}" placeholder="np. pn–pt 7–18, sob. 9–14" aria-label="Inne godziny" data-hours-text>
-</fieldset>
-
-<fieldset class="aed-step"><legend><span>3</span>Jak go znaleźć?</legend>
-<input name="opis_lokalizacji" value="{{ values.opis_lokalizacji|default:'' }}" placeholder="np. parter, przy portierni" aria-label="Opis miejsca">
-<p class="aed-small">Daty z naklejki na AED – przypomnimy Ci e-mailem przed terminem:</p>
-<div class="aed-grid3">
-<label>Ostatni przegląd<input type="date" name="data_ostatniego_przegladu" value="{{ values.data_ostatniego_przegladu|default:'' }}"></label>
-<label>Elektrody ważne do<input type="date" name="data_waznosci_elektrod" value="{{ values.data_waznosci_elektrod|default:'' }}"></label>
-<label>Bateria ważna do<input type="date" name="data_waznosci_baterii" value="{{ values.data_waznosci_baterii|default:'' }}"></label>
+<div class="aed-hours" data-hours-range>
+<div class="aed-fld"><span class="aed-fld__label" id="days-label">Dni</span>
+<div class="aed-days" role="group" aria-labelledby="days-label">{% for d in week %}<label class="aed-day" title="{{ d.name }}"><input type="checkbox" name="hours_day" value="{{ d.code }}"{% if d.on %} checked{% endif %} data-day="{{ d.code }}"><span aria-hidden="true">{{ d.short }}</span><span class="aed-sr">{{ d.name }}</span></label>{% endfor %}</div></div>
+<div class="aed-cols aed-cols--time" data-same-hours>
+<div class="aed-fld"><label for="hours_from">Od</label><input id="hours_from" type="time" name="hours_from" value="{{ values.hours_from|default:'08:00' }}"></div>
+<div class="aed-fld"><label for="hours_to">Do</label><input id="hours_to" type="time" name="hours_to" value="{{ values.hours_to|default:'16:00' }}"></div>
 </div>
-</fieldset>
+<label class="aed-check"><input type="checkbox" name="hours_per_day" value="1"{% if values.hours_per_day %} checked{% endif %} data-per-day><span>Różne godziny w różne dni</span></label>
+<div class="aed-week" data-week>{% for d in week %}<div class="aed-week__row" data-row="{{ d.code }}">
+<span class="aed-week__day">{{ d.name }}</span>
+<input type="time" name="from_{{ d.code }}" value="{{ d.start }}" aria-label="{{ d.name }} od"><span class="aed-week__dash" aria-hidden="true">–</span><input type="time" name="to_{{ d.code }}" value="{{ d.end }}" aria-label="{{ d.name }} do">
+</div>{% endfor %}</div>
+</div>
+</section>
 
-<fieldset class="aed-step"><legend><span>4</span>Publikuj</legend>
-<div class="aed-chips">{% for license in licenses %}<label><input type="radio" name="license" value="{{ license.code }}"{% if values.license == license.code|stringformat:"s" or not values.license and forloop.first %} checked{% endif %}><span>{{ license.name }} – {{ license.title }}</span></label>{% endfor %}</div>
-<label class="aed-consent"><input type="checkbox" name="consent" value="1" required{% if values.consent %} checked{% endif %}><span>Mamy prawo udostępnić te dane i odpowiadamy za ich aktualność. Nie zawierają danych osobowych.</span></label>
-</fieldset>
+<section class="aed-sec" aria-labelledby="sec-details">
+<h3 id="sec-details">Szczegóły <span class="aed-opt">nieobowiązkowe</span></h3>
+<div class="aed-fld"><label for="opis_lokalizacji">Gdzie dokładnie wisi</label>
+<input id="opis_lokalizacji" name="opis_lokalizacji" value="{{ values.opis_lokalizacji|default:'' }}" placeholder="np. parter, przy portierni"></div>
+<div class="aed-cols aed-cols--dates">
+<div class="aed-fld"><label for="d1">Ostatni przegląd</label><input id="d1" type="date" name="data_ostatniego_przegladu" value="{{ values.data_ostatniego_przegladu|default:'' }}"></div>
+<div class="aed-fld"><label for="d2">Elektrody ważne do</label><input id="d2" type="date" name="data_waznosci_elektrod" value="{{ values.data_waznosci_elektrod|default:'' }}"></div>
+<div class="aed-fld"><label for="d3">Bateria ważna do</label><input id="d3" type="date" name="data_waznosci_baterii" value="{{ values.data_waznosci_baterii|default:'' }}"></div>
+</div>
+<p class="aed-hint">Daty są na naklejce urządzenia. Przypomnimy o nich e-mailem 30 dni przed terminem.</p>
+</section>
+
+<section class="aed-sec" aria-labelledby="sec-publish">
+<h3 id="sec-publish">Publikacja</h3>
+<div class="aed-seg" role="radiogroup" aria-label="Licencja">{% for license in licenses %}<label><input type="radio" name="license" value="{{ license.code }}"{% if values.license == license.code|stringformat:"s" or not values.license and forloop.first %} checked{% endif %}><span>{{ license.name }} · {{ license.title }}</span></label>{% endfor %}</div>
+<label class="aed-consent"><input type="checkbox" name="consent" value="1"{% if values.consent %} checked{% endif %}><span>Mamy prawo udostępnić te dane i odpowiadamy za ich aktualność. Nie zawierają danych osobowych.</span></label>
+</section>
+
 <div class="aed-foot"><div class="aed-push"><button class="aed-btn" type="submit">Opublikuj AED</button></div></div>
 </form>
 {% endblock %}

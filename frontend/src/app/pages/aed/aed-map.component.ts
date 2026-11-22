@@ -22,6 +22,7 @@ import { AedAvailability, AedBrief } from './aed.models';
 
 declare const require: (name: string) => typeof Leaflet;
 
+const ORTHO_URL = 'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/StandardResolution';
 const POLAND_CENTER: Leaflet.LatLngTuple = [52.1, 19.4];
 const POLAND_ZOOM = 6;
 const CLUSTER_SPAN: Leaflet.LatLngTuple = [0.3, 0.45];
@@ -58,6 +59,33 @@ const COLOR_TOKENS: Record<AedAvailability, string> = {
       }
       :host ::ng-deep .aed-map__num::before {
         display: none;
+      }
+      :host ::ng-deep .aed-view {
+        display: flex;
+        overflow: hidden;
+        background: #fff;
+      }
+      :host ::ng-deep .aed-view__btn {
+        height: 34px;
+        padding: 0 12px;
+        border: 0;
+        background: #fff;
+        color: #0b2545;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      :host ::ng-deep .aed-view__btn + .aed-view__btn {
+        border-left: 1px solid #ccc;
+      }
+      :host ::ng-deep .aed-view__btn.on {
+        background: #0b2545;
+        color: #fff;
+      }
+      :host ::ng-deep .aed-view__btn:focus-visible {
+        outline: 3px solid #d62839;
+        outline-offset: -3px;
       }
     `,
   ],
@@ -96,10 +124,17 @@ export class AedMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         this.center ?? POLAND_CENTER,
         this.center ? this.zoom : POLAND_ZOOM,
       );
-      this.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      const street = this.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
       }).addTo(this.map);
+      const ortho = this.L.tileLayer.wms(ORTHO_URL, {
+        layers: 'Raster',
+        format: 'image/jpeg',
+        maxZoom: 19,
+        attribution: 'Ortofotomapa &copy; GUGiK',
+      });
+      this.addViewSwitch(street, ortho);
       this.layer = this.L.layerGroup().addTo(this.map);
       this.incidentLayer = this.L.layerGroup().addTo(this.map);
       this.map.on('click', (e: Leaflet.LeafletMouseEvent) =>
@@ -160,6 +195,41 @@ export class AedMapComponent implements AfterViewInit, OnChanges, OnDestroy {
       this.map.fitBounds(this.L.latLngBounds(this.densestCluster(coords)), { padding: [24, 24], maxZoom: 13 });
       this.fitted = true;
     }
+  }
+
+  /** "Mapa | Zdjęcie lotnicze" switch: the aerial photo shows which entrance or building the AED is at. */
+  private addViewSwitch(street: Leaflet.TileLayer, ortho: Leaflet.TileLayer): void {
+    const L = this.L!;
+    const map = this.map!;
+    const Switch = L.Control.extend({
+      onAdd: () => {
+        const box = L.DomUtil.create('div', 'aed-view leaflet-bar');
+        box.setAttribute('role', 'group');
+        box.setAttribute('aria-label', this.translate.instant('Aed.MapView.Label'));
+        const buttons = (['map', 'ortho'] as const).map((view) => {
+          const button = L.DomUtil.create('button', 'aed-view__btn', box) as HTMLButtonElement;
+          button.type = 'button';
+          button.textContent = this.translate.instant(view === 'map' ? 'Aed.MapView.Map' : 'Aed.MapView.Ortho');
+          L.DomEvent.disableClickPropagation(button);
+          L.DomEvent.on(button, 'click', () => {
+            const showOrtho = view === 'ortho';
+            (showOrtho ? street : ortho).remove();
+            (showOrtho ? ortho : street).addTo(map);
+            buttons.forEach((b, i) => {
+              const on = (i === 1) === showOrtho;
+              b.classList.toggle('on', on);
+              b.setAttribute('aria-pressed', String(on));
+            });
+          });
+          return button;
+        });
+        buttons[0].classList.add('on');
+        buttons[0].setAttribute('aria-pressed', 'true');
+        buttons[1].setAttribute('aria-pressed', 'false');
+        return box;
+      },
+    });
+    new Switch({ position: 'topright' }).addTo(map);
   }
 
   /** Incident point, numbered nearest available AED and lines to them; the view fits all of them. */

@@ -1,5 +1,7 @@
 """Provider tools beside the file wizard: "Dodaj jeden AED" (a phone-friendly form) and the "Zadania" inbox."""
 
+import re
+
 import requests
 from django.contrib import admin, messages
 from django.core.cache import cache
@@ -21,8 +23,9 @@ from mcod.aed.publishing import license_from_form, license_options
 from mcod.aed.reminders import send_reminders
 from mcod.aed.validation import RecordChecker
 
-WORKDAY_HOURS = "Mo-Fr 08:00-16:00"
-HOURS_PRESETS = {"always": ALWAYS_OPEN, "workdays": WORKDAY_HOURS}
+DAY_SPANS = {"everyday": "Mo-Su", "workdays": "Mo-Fr", "monsat": "Mo-Sa"}
+TIME = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+SUGGESTIONS = 8
 SINGLE_SOURCE = "Formularz „Dodaj jeden AED”, %s"
 DATE_FIELDS = ("data_ostatniego_przegladu", "data_waznosci_elektrod", "data_waznosci_baterii")
 TEXT_FIELDS = ("nazwa_obiektu", "opis_lokalizacji", "pietro", "ulica", "numer_budynku", "kod_pocztowy", "miejscowosc")
@@ -32,12 +35,76 @@ LAST_MAIL_TTL_S = 600
 REVERSE_URL = "https://services.gugik.gov.pl/uug/"
 
 
-def set_hours(record, mode, text):
-    """Hours from the preset buttons or free Polish text ("pn–pt 7–15, sob. 9–13")."""
-    spec = HOURS_PRESETS.get(mode)
-    if spec is None:
-        spec, _ = normalize_value("godziny_dostepnosci", text)
-    record["godziny_dostepnosci"] = spec
+WEEK = (
+    ("Mo", "Pn", "Poniedziałek"),
+    ("Tu", "Wt", "Wtorek"),
+    ("We", "Śr", "Środa"),
+    ("Th", "Cz", "Czwartek"),
+    ("Fr", "Pt", "Piątek"),
+    ("Sa", "Sb", "Sobota"),
+    ("Su", "Nd", "Niedziela"),
+)
+DEFAULT_DAYS = ("Mo", "Tu", "We", "Th", "Fr")
+DEFAULT_FROM, DEFAULT_TO = "08:00", "16:00"
+
+
+def _times(start, end):
+    start, end = (start or "").strip(), (end or "").strip()
+    return (start, end) if TIME.match(start) and TIME.match(end) and start != end else None
+
+
+def _group(ranges):
+    """[("Mo", "08:00", "16:00"), ...] -> "Mo-Fr 08:00-16:00; Sa 09:00-14:00" (consecutive days with equal hours merge)."""
+    codes = [code for code, _, _ in WEEK]
+    groups = []
+    for code, start, end in ranges:
+        last = groups[-1] if groups else None
+        if last and last["hours"] == (start, end) and codes.index(code) == codes.index(last["to"]) + 1:
+            last["to"] = code
+        else:
+            groups.append({"from": code, "to": code, "hours": (start, end)})
+    return "; ".join(
+        "%s %s-%s" % (g["from"] if g["from"] == g["to"] else "%s-%s" % (g["from"], g["to"]), *g["hours"]) for g in groups
+    )
+
+
+def hours_spec(values):
+    """ "24/7", or the chosen days with their hours; "" when a chosen day has no valid range."""
+    if values.get("hours_mode") == "always":
+        return ALWAYS_OPEN
+    if values.get("hours_days") in DAY_SPANS:
+        times = _times(values.get("hours_from"), values.get("hours_to"))
+        return "%s %s-%s" % (DAY_SPANS[values["hours_days"]], *times) if times else ""
+    days = values.getlist("hours_day") if hasattr(values, "getlist") else values.get("hours_day", [])
+    per_day = bool(values.get("hours_per_day"))
+    ranges = []
+    for code, _, _ in WEEK:
+        if code not in days:
+            continue
+        times = _times(values.get("from_" + code), values.get("to_" + code)) if per_day else None
+        times = times or (None if per_day else _times(values.get("hours_from"), values.get("hours_to")))
+        if times is None:
+            return ""
+        ranges.append((code,) + times)
+    return _group(ranges)
+
+
+def week_rows(values, days):
+    return [
+        {
+            "code": code,
+            "short": short,
+            "name": name,
+            "on": code in days,
+            "start": values.get("from_" + code) or values.get("hours_from") or DEFAULT_FROM,
+            "end": values.get("to_" + code) or values.get("hours_to") or DEFAULT_TO,
+        }
+        for code, short, name in WEEK
+    ]
+
+
+def set_hours(record, values):
+    record["godziny_dostepnosci"] = spec = hours_spec(values)
     record["dostepny_calodobowo"] = "true" if spec == ALWAYS_OPEN else "false"
 
 
@@ -57,6 +124,7 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
         return [
             path("single/", view(self.single_view), name="aed_single"),
             path("single/locate/", view(self.locate_view), name="aed_locate"),
+            path("single/search/", view(self.search_view), name="aed_search"),
             path("<int:pk>/resolve/", view(self.resolve_view), name="aed_task_resolve"),
             path("remind/", view(self.remind_view), name="aed_task_remind"),
         ] + super().get_urls()
@@ -79,7 +147,7 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
         return self.render(
             request,
             "tasks",
-            title="Zadania",
+            title="Do sprawdzenia",
             groups=groups,
             total=tasks.count(),
             kind=kind,
@@ -128,10 +196,10 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
             data[TaskKind.DATE_FIELDS[task.kind]] = value
         elif action == "faulty":
             data["sprawny"] = "false"
-        elif action == "hours":
-            set_hours(data, request.POST.get("hours_mode", ""), request.POST.get("hours_text", ""))
+        elif action in ("hours", "always"):
+            set_hours(data, {"hours_mode": "always"} if action == "always" else request.POST)
             if not data["godziny_dostepnosci"]:
-                messages.error(request, "Nie rozpoznano godzin – wpisz np. „pn–pt 8–16”.")
+                messages.error(request, "Podaj godziny od i do albo wybierz „Całą dobę”.")
                 return False
         elif action == "location":
             data["opis_lokalizacji"] = request.POST.get("location", "").strip()
@@ -148,11 +216,12 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
 
     def single_view(self, request):
         organizations = user_organizations(request.user)
-        values = {"hours_mode": "always", "license": "", "organization": ""}
+        values = {"hours_mode": "always", "hours_from": DEFAULT_FROM, "hours_to": DEFAULT_TO, "license": "", "organization": ""}
+        days = list(DEFAULT_DAYS)
         if request.method == "POST":
-            values = request.POST.dict()
+            values, days = request.POST.dict(), request.POST.getlist("hours_day")
             organization = organizations.filter(pk=values.get("organization")).first()
-            record, errors = self._single_record(organization, values)
+            record, errors = self._single_record(organization, values, request.POST)
             if not errors:
                 ProviderResource(organization, request.user).upsert(record, license_from_form(values.get("license", "")))
                 return self.render(request, "single_done", title="Dodaj jeden AED", record=record, organization=organization)
@@ -164,10 +233,11 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
             title="Dodaj jeden AED",
             organizations=organizations,
             values=values,
+            week=week_rows(values, days),
             licenses=license_options(),
         )
 
-    def _single_record(self, organization, values):
+    def _single_record(self, organization, values, form):
         errors = []
         if organization is None:
             errors.append("Wybierz instytucję.")
@@ -185,9 +255,9 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
             if (values.get(name) or "").strip():
                 record[name], _ = normalize_value(name, values[name])
         record["cecha_adresu"], record["ulica"], _ = AddressParser.split_street(record.get("ulica", ""))
-        set_hours(record, values.get("hours_mode"), values.get("hours_text", ""))
+        set_hours(record, form)
         if not record["godziny_dostepnosci"]:
-            return None, ["Nie rozpoznano godzin – wybierz przycisk albo wpisz np. „pn–pt 8–16, sob. 9–14”."]
+            return None, ["Wybierz dni i podaj godziny od–do albo zaznacz „Całą dobę”."]
         self._place(record, values)
         if not record.get("szerokosc_geograficzna"):
             return None, ["Nie mamy lokalizacji – kliknij „Jestem przy AED” albo podaj adres."]
@@ -206,6 +276,41 @@ class AedTaskAdmin(StaffOnlyMixin, admin.ModelAdmin):
         hit = GugikGeocoder(cache=cache).geocode(GugikGeocoder.query_for(record))
         if hit:
             record["szerokosc_geograficzna"], record["dlugosc_geograficzna"] = hit["lat"], hit["lon"]
+
+    def search_view(self, request):
+        """Address suggestions while typing (GUGiK): each one fills the address fields and moves the pin."""
+        query = (request.GET.get("q") or "").strip()
+        if len(query) < 3:
+            return JsonResponse({"results": []})
+        geocoder = GugikGeocoder(cache=cache, timeout=GEOCODE_TIMEOUT_S * 2)
+        results = []
+        for found in self._candidates(geocoder, query)[:SUGGESTIONS]:
+            feature, street, _ = AddressParser.split_street(found["street"])
+            place = " ".join(x for x in (feature, street, found["number"]) if x).strip()
+            results.append(
+                {
+                    "label": ", ".join(x for x in (place, found["city"]) if x),
+                    "ulica": " ".join(x for x in (feature, street) if x),
+                    "numer_budynku": found["number"],
+                    "kod_pocztowy": found.get("code", ""),
+                    "miejscowosc": found["city"],
+                    "lat": float(found["lat"]),
+                    "lon": float(found["lon"]),
+                    "exact": bool(found["number"]),
+                }
+            )
+        return JsonResponse({"results": results})
+
+    @staticmethod
+    def _candidates(geocoder, query):
+        """GUGiK expects "city, street number"; people also type "street number, city"."""
+        parts = [p.strip() for p in query.split(",") if p.strip()]
+        queries = [query] + ([", ".join(reversed(parts))] if len(parts) == 2 else [])
+        for candidate_query in queries:
+            found = geocoder.candidates(candidate_query)
+            if found:
+                return found
+        return []
 
     def locate_view(self, request):
         """Address of the point from the phone's location (GUGiK reverse geocoding), to prefill the form."""

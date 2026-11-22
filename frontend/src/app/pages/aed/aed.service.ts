@@ -36,10 +36,6 @@ export class AedService {
     return this.http.get<AedNearest>(`${this.base}/nearest`, { params });
   }
 
-  nearestApiUrl(lat: number, lon: number, at?: string): string {
-    return `${this.base}/nearest?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}${at ? '&at=' + at : ''}`;
-  }
-
   detail(id: string): Observable<AedDetail> {
     return this.http.get<ApiResponse<AedDetail>>(`${this.base}/${encodeURIComponent(id)}`).pipe(map((r) => r.data));
   }

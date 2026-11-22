@@ -163,7 +163,8 @@
     white-space: nowrap;
   }
   &__cta {
-    margin: 16px 0 0;
+    margin: 24px 0 0;
+    padding-bottom: 32px;
 
     a {
       font-weight: 700;
@@ -415,8 +416,9 @@ li:not(.on) > .aed-battery {
   }
   &__warn {
     margin-bottom: 14px;
-    padding: 10px 12px;
-    border-left: 4px solid var(--aed-accent);
+    padding: 12px 14px;
+    border: 1px solid var(--aed-accent);
+    border-radius: 8px;
     background: var(--aed-tint);
     font-size: 0.92rem;
 
@@ -496,16 +498,6 @@ li:not(.on) > .aed-battery {
     margin-top: 14px;
     color: var(--aed-muted);
     font-size: 0.9rem;
-  }
-  &__api {
-    margin-top: 14px !important;
-    color: var(--aed-muted);
-    font-size: 0.82rem;
-    overflow-wrap: anywhere;
-
-    code {
-      font-family: var(--aed-mono);
-    }
   }
 }
 

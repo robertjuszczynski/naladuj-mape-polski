@@ -172,3 +172,23 @@ def test_planner_opens_tasks_for_due_dates_and_missing_data():
     assert wanted["electrodes"] == datetime.date(2026, 11, 1)
     assert "battery" not in wanted and "missing_hours" in wanted and "missing_location" in wanted
     assert record_warnings(data, reported=True, today=today) == ["electrodes_expired", "reported"]
+
+
+def test_hours_from_day_buttons():
+    pytest = __import__("pytest")
+    pytest.importorskip("django")
+    from django.http import QueryDict
+
+    from mcod.aed.admin.tasks import hours_spec
+
+    same = QueryDict(
+        "hours_mode=range&hours_day=Mo&hours_day=Tu&hours_day=We&hours_day=Th&hours_day=Fr&hours_from=08:00&hours_to=16:00"
+    )
+    assert hours_spec(same) == "Mo-Fr 08:00-16:00"
+    per_day = QueryDict(
+        "hours_mode=range&hours_per_day=1&hours_day=Mo&hours_day=Tu&hours_day=Sa"
+        "&from_Mo=08:00&to_Mo=16:00&from_Tu=08:00&to_Tu=16:00&from_Sa=09:00&to_Sa=13:00"
+    )
+    assert hours_spec(per_day) == "Mo-Tu 08:00-16:00; Sa 09:00-13:00"
+    assert hours_spec(QueryDict("hours_mode=always")) == "24/7"
+    assert hours_spec(QueryDict("hours_mode=range&hours_from=08:00&hours_to=16:00")) == ""

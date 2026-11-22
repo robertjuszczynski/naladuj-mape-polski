@@ -3,71 +3,206 @@
   if (!form) return;
   var lat = form.querySelector("[data-lat]");
   var lon = form.querySelector("[data-lon]");
-  var status = form.querySelector("[data-locate-status]");
   var mapEl = form.querySelector("[data-map]");
-  var map, pin;
+  var search = form.querySelector("[data-search]");
+  var list = form.querySelector("[data-results]");
+  var searchStatus = form.querySelector("[data-search-status]");
+  var locateStatus = form.querySelector("[data-locate-status]");
+  var ORTO = "https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/StandardResolution";
+  var IMPRECISE_M = 150;
+  var map, pin, layers, results = [], active = -1, timer;
 
-  function fillAddress(la, lo) {
+  function field(name) {
+    return form.querySelector('[data-field="' + name + '"]');
+  }
+
+  function fill(address) {
+    ["ulica", "numer_budynku", "kod_pocztowy", "miejscowosc"].forEach(function (key) {
+      if (address[key] && field(key)) field(key).value = address[key];
+    });
+  }
+
+  function reverse(la, lo) {
     fetch(form.dataset.locateUrl + "?lat=" + la + "&lon=" + lo, { credentials: "same-origin" })
       .then(function (r) { return r.json(); })
-      .then(function (address) {
-        Object.keys(address).forEach(function (key) {
-          var input = form.querySelector('[data-field="' + key + '"]');
-          if (input && address[key]) input.value = address[key];
-        });
-        if (address.miejscowosc) status.textContent = "Adres uzupełniony z lokalizacji. Sprawdź go i popraw, jeśli trzeba.";
-      })
+      .then(fill)
       .catch(function () {});
   }
 
-  function place(la, lo, zoom) {
+  function place(la, lo, zoom, lookup) {
     lat.value = la.toFixed(6);
     lon.value = lo.toFixed(6);
     if (!map) return;
     if (pin) pin.setLatLng([la, lo]);
     else {
-      pin = L.marker([la, lo], { draggable: true }).addTo(map);
+      pin = L.marker([la, lo], { draggable: true, keyboard: true, title: "Miejsce AED" }).addTo(map);
       pin.on("dragend", function () {
         var p = pin.getLatLng();
-        place(p.lat, p.lng);
+        place(p.lat, p.lng, null, true);
       });
     }
     map.setView([la, lo], zoom || map.getZoom());
-    fillAddress(lat.value, lon.value);
+    if (lookup) reverse(lat.value, lon.value);
+  }
+
+  function setLayer(name) {
+    Object.keys(layers).forEach(function (key) {
+      if (key === name) layers[key].addTo(map);
+      else map.removeLayer(layers[key]);
+    });
+    form.querySelectorAll("[data-layer]").forEach(function (b) {
+      var on = b.dataset.layer === name;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
   }
 
   window.addEventListener("load", function () {
     if (!window.L || !mapEl) return;
     map = L.map(mapEl).setView([52.1, 19.4], 6);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap",
-    }).addTo(map);
-    map.on("click", function (e) { place(e.latlng.lat, e.latlng.lng, Math.max(map.getZoom(), 17)); });
-    if (lat.value && lon.value) place(parseFloat(lat.value), parseFloat(lon.value), 18);
+    layers = {
+      map: L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }),
+      orto: L.tileLayer.wms(ORTO, { layers: "Raster", format: "image/jpeg", maxZoom: 20, attribution: "Ortofotomapa &copy; GUGiK" }),
+    };
+    setLayer("map");
+    form.querySelectorAll("[data-layer]").forEach(function (b) {
+      b.addEventListener("click", function () { setLayer(b.dataset.layer); });
+    });
+    map.on("click", function (e) { place(e.latlng.lat, e.latlng.lng, Math.max(map.getZoom(), 18), true); });
+    if (lat.value && lon.value) place(parseFloat(lat.value), parseFloat(lon.value), 18, false);
   });
 
+  // Address combobox
+  function close() {
+    list.hidden = true;
+    search.setAttribute("aria-expanded", "false");
+    active = -1;
+  }
+
+  function render() {
+    list.innerHTML = "";
+    results.forEach(function (r, i) {
+      var li = document.createElement("li");
+      li.id = "address-opt-" + i;
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", i === active ? "true" : "false");
+      li.textContent = r.label;
+      if (!r.exact) {
+        var note = document.createElement("small");
+        note.textContent = "ulica – wskaż punkt na mapie";
+        li.appendChild(note);
+      }
+      li.addEventListener("mousedown", function (e) { e.preventDefault(); choose(i); });
+      list.appendChild(li);
+    });
+    list.hidden = !results.length;
+    search.setAttribute("aria-expanded", results.length ? "true" : "false");
+    search.setAttribute("aria-activedescendant", active >= 0 ? "address-opt-" + active : "");
+  }
+
+  function choose(i) {
+    var r = results[i];
+    if (!r) return;
+    search.value = r.label;
+    fill(r);
+    place(r.lat, r.lon, r.exact ? 19 : 17, false);
+    if (map && r.exact) setLayer("orto");
+    searchStatus.textContent = r.exact
+      ? "Pinezka stoi przy budynku. Przesuń ją na wejście albo miejsce, gdzie wisi AED."
+      : "Pokazujemy ulicę. Kliknij na mapie dokładne miejsce AED.";
+    close();
+  }
+
+  search.addEventListener("input", function () {
+    clearTimeout(timer);
+    var q = search.value.trim();
+    if (q.length < 3) {
+      results = [];
+      return render();
+    }
+    timer = setTimeout(function () {
+      searchStatus.textContent = "Szukam…";
+      fetch(form.dataset.searchUrl + "?q=" + encodeURIComponent(q), { credentials: "same-origin" })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          results = data.results || [];
+          active = -1;
+          render();
+          searchStatus.textContent = results.length
+            ? results.length + " podpowiedzi – wybierz jedną."
+            : "Brak podpowiedzi. Spróbuj: „Miejscowość, ulica numer” albo kliknij miejsce na mapie.";
+        })
+        .catch(function () { searchStatus.textContent = "Wyszukiwarka adresów nie odpowiada – kliknij miejsce na mapie."; });
+    }, 300);
+  });
+
+  search.addEventListener("keydown", function (e) {
+    if (list.hidden) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      active = (active + (e.key === "ArrowDown" ? 1 : -1) + results.length) % results.length;
+      render();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      choose(active >= 0 ? active : 0);
+    } else if (e.key === "Escape") {
+      close();
+    }
+  });
+  search.addEventListener("blur", function () { setTimeout(close, 150); });
+
+  // Device location: on Wi-Fi desktops it is often only the city, so say so and ask for the exact point.
   form.querySelector("[data-locate]").addEventListener("click", function () {
     if (!navigator.geolocation) {
-      status.textContent = "Ta przeglądarka nie udostępnia lokalizacji – kliknij miejsce na mapie.";
+      locateStatus.textContent = "Ta przeglądarka nie udostępnia lokalizacji.";
       return;
     }
-    status.textContent = "Ustalam lokalizację…";
+    locateStatus.textContent = "Ustalam lokalizację…";
     navigator.geolocation.getCurrentPosition(
       function (p) {
-        place(p.coords.latitude, p.coords.longitude, 18);
-        status.textContent = "Mamy lokalizację (dokładność ok. " + Math.round(p.coords.accuracy) + " m). Przesuń pinezkę, jeśli trzeba.";
+        var accuracy = Math.round(p.coords.accuracy);
+        place(p.coords.latitude, p.coords.longitude, accuracy > IMPRECISE_M ? 16 : 19, true);
+        locateStatus.textContent =
+          accuracy > IMPRECISE_M
+            ? "Lokalizacja przybliżona (±" + accuracy + " m, np. z sieci Wi-Fi). Wpisz adres albo kliknij dokładne miejsce."
+            : "Dokładność ±" + accuracy + " m. Przesuń pinezkę, jeśli trzeba.";
       },
-      function () { status.textContent = "Nie udało się ustalić lokalizacji – kliknij miejsce na mapie albo wpisz adres."; },
+      function () { locateStatus.textContent = "Nie udało się ustalić lokalizacji – wpisz adres."; },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   });
 
-  var hoursText = form.querySelector("[data-hours-text]");
+  // Hours: day buttons with one range for all, or a range per chosen day
+  var range = form.querySelector("[data-hours-range]");
+  var same = form.querySelector("[data-same-hours]");
+  var week = form.querySelector("[data-week]");
+  var perDay = form.querySelector("[data-per-day]");
+  var sameFrom = form.querySelector('input[name="hours_from"]');
+  var sameTo = form.querySelector('input[name="hours_to"]');
+
   function syncHours() {
-    var other = form.querySelector('input[name="hours_mode"]:checked');
-    hoursText.hidden = !other || other.value !== "other";
+    var mode = form.querySelector('input[name="hours_mode"]:checked');
+    range.hidden = !mode || mode.value !== "range";
+    same.hidden = perDay.checked;
+    week.hidden = !perDay.checked;
+    form.querySelectorAll("[data-day]").forEach(function (day) {
+      var row = week.querySelector('[data-row="' + day.dataset.day + '"]');
+      if (row) row.hidden = !day.checked;
+    });
   }
-  form.querySelectorAll('input[name="hours_mode"]').forEach(function (r) { r.addEventListener("change", syncHours); });
+
+  perDay.addEventListener("change", function () {
+    if (perDay.checked) {
+      week.querySelectorAll("[data-row]").forEach(function (row) {
+        var inputs = row.querySelectorAll("input");
+        inputs[0].value = sameFrom.value;
+        inputs[1].value = sameTo.value;
+      });
+    }
+    syncHours();
+  });
+  form.querySelectorAll('input[name="hours_mode"], [data-day]').forEach(function (el) {
+    el.addEventListener("change", syncHours);
+  });
   syncHours();
 })();

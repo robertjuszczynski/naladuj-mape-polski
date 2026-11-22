@@ -7,7 +7,7 @@
       </div>
       <p class="aed-hero__lead">{{ 'Aed.Lead' | translate }}</p>
       <div class="aed-actions">
-        <a class="aed-btn" [href]="singleUrl">{{ 'Aed.CtaSingle' | translate }}</a>
+        <app-aed-add-menu></app-aed-add-menu>
         <a class="aed-btn aed-btn--ghost" href="#aed-provider-title" (click)="scrollTo($event, 'aed-provider-title')">{{
           'Aed.CtaBecome' | translate
         }}</a>
@@ -190,13 +190,6 @@
                 <li *ngFor="let u of n.data.unknown">{{ u.name || 'AED' }}, {{ distance(u.distance_m) }}</li>
               </ul>
             </div>
-
-            <p class="aed-nearest__api">
-              {{ 'Aed.Nearest.Api' | translate }}
-              <a [href]="nearestApi()" target="_blank" rel="noopener"
-                ><code>GET {{ nearestApi() }}</code></a
-              >
-            </p>
           </ng-container>
         </section>
 
