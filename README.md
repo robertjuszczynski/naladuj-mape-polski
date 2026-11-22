@@ -134,10 +134,6 @@ Uruchomienie u siebie od zera:
 - Nie ma integracji z systemem dyspozytorskim 112. API (pole `verified`, dostępność na wskazaną godzinę, najbliższy AED) jest gotowe do podłączenia.
 - Dostępność sprawdziliśmy automatycznie (Lighthouse) na stronach publicznych. Kreatora w panelu dostawcy nie testowaliśmy, bo wymaga zalogowania; korzysta z szablonów panelu portalu.
 
-## Użycie AI (regulamin zadania §2.8)
-
-Przy pracy korzystaliśmy z asystenta AI (Claude) do analizy dokumentacji i kodu portalu, propozycji architektury, generowania i refaktoryzacji kodu (moduł Django, komponenty Angular, testy), konfiguracji serwera i szkiców materiałów. Głos lektora w filmie to syntezator ElevenLabs. Każdą zmianę przejrzał, uruchomił i zatwierdził autor. Decyzje autora: moduł w portalu zamiast kolejnej mapy, wykaz zbiorczy na wzór wykazu chronionych danych DGA, trzy koszyki danych zależnie od licencji, zakres 30 pól.
-
 ## Źródła grafiki
 
 Sygnet logo to uproszczony kontur Polski z danych Natural Earth (domena publiczna) z pulsem zaprojektowanym przez autora; napis złożono krojem Manrope (SIL OFL).

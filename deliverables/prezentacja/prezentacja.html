@@ -380,8 +380,8 @@ b, strong { font-weight: 800; }
 .ls p b { color: var(--ink); }
 .apx h2 { margin-bottom: 40px; }
 .apx h3 { font-size: 30px; margin: 0 0 20px; }
-.apx .list li { font-size: 21px; line-height: 1.4; margin-bottom: 12px; padding-left: 34px; }
-.apx .list li::before { top: 12px; }
+.apx .list li { font-size: 27px; line-height: 1.42; margin-bottom: 22px; padding-left: 40px; }
+.apx .list li::before { top: 16px; }
 .licclaim { margin-top: 12px; font: 800 28px/1.25 var(--sans); letter-spacing: -.01em; }
 </style>
 </head>
@@ -597,29 +597,23 @@ b, strong { font-weight: 800; }
   <aside class="notes">Ktoś upada. Tym razem wiadomo, gdzie jest najbliższy defibrylator, bo jakaś szkoła czy urząd dodały go w kilka minut. Naładujmy mapę Polski. Dziękuję.</aside>
 </section>
 
-<!-- ZAŁĄCZNIK · OGRANICZENIA I AI -->
+<!-- ZAŁĄCZNIK · OGRANICZENIA -->
 <section class="slide apx">
   <span class="tag">Załącznik</span>
-  <h2>Ograniczenia i użycie AI.</h2>
+  <h2>Ograniczenia.</h2>
   <div class="split">
     <div>
-      <h3>Ograniczenia</h3>
       <ul class="list">
         <li>Demonstracja działa na forku dane.gov.pl na naszym serwerze. W produkcyjnym portalu moduł wdraża operator: jedna migracja (pole „Wykaz zbiorczy” w zasobie) i schemat XML harvestera 1.14.</li>
         <li>Nie ma integracji z systemem 112. API z polem verified i dostępnością na godzinę jest gotowe do podłączenia.</li>
         <li>Osoba prywatna nie ma profilu dostawcy w portalu, a adres jej domu to dane osobowe. Jej AED może opublikować gmina za zgodą właściciela.</li>
-        <li>Granice gmin są tylko dla gmin z danych startowych (pełne: PRG z GUGiK). Logowanie login.gov.pl wymaga certyfikatu COI, w demo jest e-mail i hasło.</li>
-        <li>Godziny zapisane opisowo, np. „w godzinach otwarcia metra”, dają status „dostępność nieznana”.</li>
-        <li>WCAG: automatyczny test Lighthouse stron publicznych. Kreatora w panelu nie testowaliśmy.</li>
       </ul>
     </div>
     <div>
-      <h3>Użycie AI</h3>
       <ul class="list">
-        <li>Asystent AI (Claude): analiza dokumentacji i kodu portalu, propozycje architektury, generowanie i refaktoryzacja kodu (moduł Django, komponenty Angular, testy), konfiguracja serwera, szkice tekstów.</li>
-        <li>Głos lektora w filmie: syntezator ElevenLabs.</li>
-        <li>Każdą zmianę przejrzał, uruchomił i zatwierdził autor. Decyzje autora: moduł w portalu zamiast nowej mapy, wykaz na wzór wykazu DGA, trzy koszyki danych zależnie od licencji, zakres 30 pól.</li>
-        <li>Sygnet: kontur Polski z Natural Earth (domena publiczna) i puls zaprojektowany przez autora. Krój Manrope (SIL OFL).</li>
+        <li>Granice gmin są tylko dla gmin z danych startowych (pełne: PRG z GUGiK). Logowanie login.gov.pl wymaga certyfikatu COI, w demo jest e-mail i hasło.</li>
+        <li>Godziny zapisane opisowo, np. „w godzinach otwarcia metra”, dają status „dostępność nieznana”.</li>
+        <li>WCAG: automatyczny test Lighthouse stron publicznych. Kreatora w panelu nie testowaliśmy.</li>
       </ul>
     </div>
   </div>

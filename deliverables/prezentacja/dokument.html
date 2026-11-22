@@ -379,8 +379,8 @@ b, strong { font-weight: 800; }
 .ls p b { color: var(--ink); }
 .apx h2 { margin-bottom: 40px; }
 .apx h3 { font-size: 30px; margin: 0 0 20px; }
-.apx .list li { font-size: 21px; line-height: 1.4; margin-bottom: 12px; padding-left: 34px; }
-.apx .list li::before { top: 12px; }
+.apx .list li { font-size: 27px; line-height: 1.42; margin-bottom: 22px; padding-left: 40px; }
+.apx .list li::before { top: 16px; }
 .licclaim { margin-top: 12px; font: 800 28px/1.25 var(--sans); letter-spacing: -.01em; }
 
 @font-face { font-family: "ManropeS"; font-weight: 500; src: url("assets/fonts/manrope-latin-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+2000-206F, U+2190-2193; }
@@ -802,30 +802,23 @@ b, strong { font-weight: 800; }
   <div class="foot"><img src="assets/naladuj-mape-polski_poziomy_kolor.svg" alt=""><span class="pg"></span></div>
 </section>
 
-<!-- 21 · OGRANICZENIA I AI -->
+<!-- 21 · OGRANICZENIA -->
 <section class="slide">
-  <h2>Ograniczenia i użycie AI</h2>
+  <h2>Ograniczenia</h2>
   <div class="split">
     <div>
-      <h3 class="reqh">Ograniczenia</h3>
       <ul class="list sm">
         <li>Demonstracja działa na forku dane.gov.pl na naszym serwerze. W produkcyjnym portalu moduł wdraża operator: jedna migracja (pole „Wykaz zbiorczy” w zasobie) i schemat XML harvestera 1.14.</li>
         <li>Nie ma integracji z systemem dyspozytorskim 112. API z polem verified i dostępnością na wskazaną godzinę jest gotowe do podłączenia.</li>
         <li>Osoba prywatna nie ma profilu dostawcy w portalu, a adres jej domu to dane osobowe. Jej AED może opublikować gmina za zgodą właściciela.</li>
         <li>Reguła „punkt poza gminą” działa dla gmin z danych startowych; pełne granice to PRG z GUGiK. Logowanie login.gov.pl wymaga certyfikatu COI, w demonstracji jest e-mail i hasło.</li>
-        <li>Godziny zapisane opisowo, np. „w godzinach otwarcia stacji metra”, dają status „dostępność nieznana”.</li>
-        <li>Serwery OpenStreetMap (Overpass) bywają przeciążone; nieudane pobranie portal ponawia następnej nocy.</li>
-        <li>Dostępność: automatyczny test Lighthouse stron publicznych. Kreatora w panelu dostawcy nie testowaliśmy.</li>
       </ul>
     </div>
     <div>
-      <h3 class="reqh">Użycie AI</h3>
       <ul class="list sm">
-        <li>Asystent AI (Claude): analiza dokumentacji i kodu portalu, propozycje architektury, generowanie i refaktoryzacja kodu (moduł Django, komponenty Angular, testy), konfiguracja serwera, szkice tekstów.</li>
-        <li>Głos lektora w filmie: syntezator ElevenLabs.</li>
-        <li>Każdą zmianę przejrzał, uruchomił i zatwierdził autor.</li>
-        <li>Decyzje autora: moduł w portalu zamiast kolejnej mapy, wykaz zbiorczy na wzór wykazu chronionych danych DGA, trzy koszyki danych zależnie od licencji, zakres 30 pól.</li>
-        <li>Sygnet: kontur Polski z Natural Earth (domena publiczna) i puls zaprojektowany przez autora. Krój Manrope (SIL OFL).</li>
+        <li>Godziny zapisane opisowo, np. „w godzinach otwarcia stacji metra”, dają status „dostępność nieznana”.</li>
+        <li>Serwery OpenStreetMap (Overpass) bywają przeciążone; nieudane pobranie portal ponawia następnej nocy.</li>
+        <li>Dostępność: automatyczny test Lighthouse stron publicznych. Kreatora w panelu dostawcy nie testowaliśmy.</li>
       </ul>
     </div>
   </div>
